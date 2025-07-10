@@ -132,7 +132,10 @@ function CompanySettings() {
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
-    outline: 'none'
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const labelStyle = {

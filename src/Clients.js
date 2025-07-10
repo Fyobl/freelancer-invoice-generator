@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import {
@@ -156,7 +155,10 @@ function Clients() {
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
-    outline: 'none'
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const textareaStyle = {
@@ -166,8 +168,21 @@ function Clients() {
   };
 
   const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer'
+    width: '100%',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none'
   };
 
   const buttonStyle = {
@@ -257,7 +272,7 @@ function Clients() {
           <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.5rem' }}>
             {editingId ? '✏️ Edit Client' : '➕ Add New Client'}
           </h3>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
@@ -269,7 +284,7 @@ function Clients() {
                 onChange={(e) => setName(e.target.value)}
                 style={inputStyle}
               />
-              
+
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Email Address *
               </label>
@@ -280,7 +295,7 @@ function Clients() {
                 onChange={(e) => setEmail(e.target.value)}
                 style={inputStyle}
               />
-              
+
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Phone Number
               </label>
@@ -291,7 +306,7 @@ function Clients() {
                 style={inputStyle}
               />
             </div>
-            
+
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Address
@@ -302,7 +317,7 @@ function Clients() {
                 onChange={(e) => setAddress(e.target.value)}
                 style={textareaStyle}
               />
-              
+
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Notes
               </label>
@@ -314,7 +329,7 @@ function Clients() {
               />
             </div>
           </div>
-          
+
           <div style={{ marginTop: '20px' }}>
             <button
               onClick={editingId ? updateClient : addClient}
@@ -324,7 +339,7 @@ function Clients() {
             >
               {editingId ? '💾 Update Client' : '➕ Add Client'}
             </button>
-            
+
             {editingId && (
               <button
                 onClick={resetForm}
@@ -343,7 +358,7 @@ function Clients() {
           <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.5rem' }}>
             📋 Your Clients ({filteredClients.length})
           </h3>
-          
+
           {filteredClients.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
               <p style={{ fontSize: '1.2rem', margin: '0 0 10px 0' }}>
@@ -375,7 +390,7 @@ function Clients() {
                       <h4 style={{ margin: '0 0 15px 0', fontSize: '1.3rem', color: '#333' }}>
                         {client.name}
                       </h4>
-                      
+
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                         <div>
                           <p style={{ margin: '0 0 8px 0', color: '#666' }}>
@@ -387,7 +402,7 @@ function Clients() {
                             </p>
                           )}
                         </div>
-                        
+
                         <div>
                           {client.address && (
                             <p style={{ margin: '0 0 8px 0', color: '#666' }}>
@@ -402,7 +417,7 @@ function Clients() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '120px' }}>
                       <button
                         onClick={() => editClient(client)}

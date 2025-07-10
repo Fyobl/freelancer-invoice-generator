@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { db, auth } from './firebase.js';
 import {
@@ -174,12 +173,28 @@ function Products({ user }) {
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
-    outline: 'none'
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer'
+    width: '100%',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none'
   };
 
   const buttonStyle = {
@@ -266,7 +281,7 @@ function Products({ user }) {
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
             {editingProduct ? '✏️ Edit Product' : '➕ Add New Product'}
           </h2>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
@@ -487,7 +502,7 @@ function Products({ user }) {
                         </span>
                       )}
                     </div>
-                    
+
                     {product.vat > 0 && (
                       <div style={{ fontSize: '0.9rem', color: '#666' }}>
                         <strong>Total with VAT: £{(product.price * (1 + product.vat / 100)).toFixed(2)}</strong>

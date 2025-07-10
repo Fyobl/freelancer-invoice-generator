@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase.js';
 import {
@@ -94,12 +93,28 @@ function Dashboard() {
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
-    outline: 'none'
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer'
+    width: '100%',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none'
   };
 
   const buttonStyle = {
@@ -666,7 +681,7 @@ function Dashboard() {
           <h2 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.6rem', width: '100%' }}>
             📋 Invoice Management
           </h2>
-          
+
           <input
             placeholder="🔍 Search invoices by client or number..."
             value={searchTerm}

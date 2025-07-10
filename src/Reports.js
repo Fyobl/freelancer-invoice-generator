@@ -1,3 +1,7 @@
+The code changes aim to fix the alignment issue by updating the input and select styles to have consistent vertical alignment.
+```
+
+```replit_final_file
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -144,12 +148,28 @@ function Reports() {
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
-    outline: 'none'
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer'
+    width: '100%',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none'
   };
 
   const statCardStyle = {
