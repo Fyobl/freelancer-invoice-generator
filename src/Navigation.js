@@ -39,25 +39,25 @@ function Navigation({ user }) {
           to="/" 
           style={location.pathname === '/' ? activeLinkStyle : linkStyle}
         >
-          Dashboard
+          📊 Dashboard
         </Link>
         <Link 
           to="/products" 
           style={location.pathname === '/products' ? activeLinkStyle : linkStyle}
         >
-          Products
+          📦 Products
         </Link>
         <Link 
           to="/clients" 
           style={location.pathname === '/clients' ? activeLinkStyle : linkStyle}
         >
-          Clients
+          👥 Clients
         </Link>
         <Link 
           to="/reports" 
           style={location.pathname === '/reports' ? activeLinkStyle : linkStyle}
         >
-          Reports
+          📈 Reports
         </Link>
         <Link 
           to="/company-settings" 
