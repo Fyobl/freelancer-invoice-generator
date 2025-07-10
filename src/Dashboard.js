@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import {
@@ -103,9 +104,7 @@ function Dashboard() {
     color: isDarkMode ? '#ffffff' : '#333333',
     boxSizing: 'border-box',
     outline: 'none',
-    height: '44px',
-    lineHeight: '20px',
-    verticalAlign: 'top'
+    height: '44px'
   };
 
   const textareaStyle = {
@@ -116,21 +115,7 @@ function Dashboard() {
   };
 
   const selectStyle = {
-    width: '100%',
-    padding: '12px 15px',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
-    borderRadius: '8px',
-    fontSize: '14px',
-    marginBottom: '15px',
-    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
-    fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    boxSizing: 'border-box',
-    outline: 'none',
-    height: '44px',
-    lineHeight: '20px',
-    verticalAlign: 'top',
+    ...inputStyle,
     appearance: 'none'
   };
 
@@ -170,57 +155,74 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchInvoices();
-    fetchProducts();
-    fetchClients();
-    fetchCompanySettings();
-  }, []);
+    if (user) {
+      fetchInvoices();
+      fetchProducts();
+      fetchClients();
+      fetchCompanySettings();
+    }
+  }, [user]);
 
   const fetchInvoices = async () => {
-    const q = query(
-      collection(db, 'invoices'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setInvoices(data);
+    try {
+      const q = query(
+        collection(db, 'invoices'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setInvoices(data);
 
-    // Set next invoice number
-    const invoiceNumbers = data.map(inv => parseInt(inv.invoiceNumber) || 0);
-    const maxNumber = Math.max(...invoiceNumbers, 0);
-    setNextInvoiceNumber(maxNumber + 1);
+      const invoiceNumbers = data.map(inv => parseInt(inv.invoiceNumber) || 0);
+      const maxNumber = Math.max(...invoiceNumbers, 0);
+      setNextInvoiceNumber(maxNumber + 1);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+    }
   };
 
   const fetchProducts = async () => {
-    const q = query(collection(db, 'products'), where('userId', '==', user.uid));
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setProducts(data);
+    try {
+      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
   };
 
   const fetchClients = async () => {
-    const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setClients(data);
+    try {
+      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClients(data);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
   };
 
   const fetchCompanySettings = async () => {
-    const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-      const data = snapshot.docs[0].data();
-      setCompanySettings(data);
+    try {
+      const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        setCompanySettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
     }
   };
 
@@ -247,35 +249,46 @@ function Dashboard() {
   const addInvoice = async () => {
     if (!clientName.trim() || !amount.trim()) return;
 
-    const invoiceData = {
-      invoiceNumber: nextInvoiceNumber.toString(),
-      clientName: clientName.trim(),
-      clientId: selectedClientId || null,
-      amount: parseFloat(amount) || 0,
-      vat: parseFloat(vat) || 0,
-      dueDate: dueDate || null,
-      status: status,
-      notes: notes.trim(),
-      template: template,
-      userId: user.uid,
-      createdAt: serverTimestamp()
-    };
+    try {
+      const invoiceData = {
+        invoiceNumber: nextInvoiceNumber.toString(),
+        clientName: clientName.trim(),
+        clientId: selectedClientId || null,
+        amount: parseFloat(amount) || 0,
+        vat: parseFloat(vat) || 0,
+        dueDate: dueDate || null,
+        status: status,
+        notes: notes.trim(),
+        template: template,
+        userId: user.uid,
+        createdAt: serverTimestamp()
+      };
 
-    await addDoc(collection(db, 'invoices'), invoiceData);
-
-    resetForm();
-    fetchInvoices();
+      await addDoc(collection(db, 'invoices'), invoiceData);
+      resetForm();
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error adding invoice:', error);
+    }
   };
 
   const updateInvoice = async (id, updates) => {
-    await updateDoc(doc(db, 'invoices', id), updates);
-    fetchInvoices();
+    try {
+      await updateDoc(doc(db, 'invoices', id), updates);
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+    }
   };
 
   const deleteInvoice = async (id) => {
     if (window.confirm('Are you sure you want to delete this invoice?')) {
-      await deleteDoc(doc(db, 'invoices', id));
-      fetchInvoices();
+      try {
+        await deleteDoc(doc(db, 'invoices', id));
+        fetchInvoices();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
     }
   };
 
@@ -317,6 +330,10 @@ function Dashboard() {
       default: return '#6c757d';
     }
   };
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div style={containerStyle}>
@@ -375,8 +392,6 @@ function Dashboard() {
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
@@ -386,8 +401,6 @@ function Dashboard() {
                 value={selectedProductId}
                 onChange={(e) => handleProductSelect(e.target.value)}
                 style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="">Select a product</option>
                 {products.map(prod => (
@@ -407,8 +420,6 @@ function Dashboard() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
@@ -421,8 +432,6 @@ function Dashboard() {
                 value={vat}
                 onChange={(e) => setVat(e.target.value)}
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
             </div>
 
@@ -435,8 +444,6 @@ function Dashboard() {
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
@@ -446,8 +453,6 @@ function Dashboard() {
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="Unpaid">Unpaid</option>
                 <option value="Paid">Paid</option>
@@ -461,8 +466,6 @@ function Dashboard() {
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
                 style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="standard">Standard</option>
                 <option value="modern">Modern</option>
@@ -477,25 +480,12 @@ function Dashboard() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 style={textareaStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
             </div>
           </div>
 
           <div style={{ marginTop: '30px' }}>
-            <button
-              onClick={addInvoice}
-              style={buttonStyle}
-              onMouseOver={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.6)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-              }}
-            >
+            <button onClick={addInvoice} style={buttonStyle}>
               🚀 Create Invoice
             </button>
           </div>
@@ -545,7 +535,7 @@ function Dashboard() {
               <h3 style={{ fontSize: '1.5rem', margin: '0 0 15px 0', fontWeight: '300' }}>
                 📄 No invoices found
               </h3>
-              <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0, color: isDarkMode ? '#9ca3af' : '#666' }}>
+              <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
                 {searchTerm || filterStatus !== 'all' 
                   ? 'Try adjusting your search or filter criteria.' 
                   : 'Create your first invoice using the form above!'}
@@ -634,8 +624,6 @@ function Dashboard() {
                           cursor: 'pointer',
                           transition: 'all 0.2s ease'
                         }}
-                        onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
-                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
                       >
                         🗑️ Delete
                       </button>
