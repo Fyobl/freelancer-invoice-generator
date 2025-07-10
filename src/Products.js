@@ -145,7 +145,8 @@ function Products({ user }) {
 
   const containerStyle = {
     maxWidth: '1200px',
-    margin: '0 auto'
+    margin: '0 auto',
+    paddingTop: '70px'
   };
 
   const formStyle = {
@@ -296,7 +297,7 @@ function Products({ user }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          
+
           <div style={{ marginTop: '20px' }}>
             {editingProduct ? (
               <div>
@@ -357,7 +358,7 @@ function Products({ user }) {
           <h2 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#e2e8f0' : '#333' }}>
             📋 Product Catalog
           </h2>
-          
+
           {filteredAndSortedProducts.length > 0 ? (
             <div style={{ display: 'grid', gap: '20px' }}>
               {filteredAndSortedProducts.map(product => (

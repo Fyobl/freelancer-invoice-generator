@@ -107,7 +107,8 @@ function Clients() {
   const containerStyle = {
     minHeight: '100vh',
     background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    paddingTop: '70px'
   };
 
   const contentStyle = {

@@ -35,9 +35,12 @@ function Dashboard() {
 
   // Styling objects
   const containerStyle = {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     minHeight: '100vh',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    paddingTop: '70px'
   };
 
   const contentStyle = {

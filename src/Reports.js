@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -73,7 +72,7 @@ function Reports() {
 
   const getTopClients = () => {
     const clientTotals = {};
-    
+
     invoices.forEach(invoice => {
       const clientName = invoice.clientName;
       if (!clientTotals[clientName]) {
@@ -90,7 +89,7 @@ function Reports() {
 
   const getTopProducts = () => {
     const productSales = {};
-    
+
     invoices.forEach(invoice => {
       const productId = invoice.selectedProductId;
       if (productId && productId !== '') {
@@ -124,7 +123,8 @@ function Reports() {
     background: isDarkMode 
       ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'
       : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    color: isDarkMode ? '#ffffff' : '#333333',
+    paddingTop: '70px'
   };
 
   const contentStyle = {
