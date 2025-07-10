@@ -200,4 +200,3 @@ function Navigation({ user }) {
 }
 
 
-import React from 'react';

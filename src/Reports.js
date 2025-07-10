@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -7,54 +8,92 @@ import { useDarkMode } from './DarkModeContext.js';
 function Reports() {
   const { isDarkMode } = useDarkMode();
   const [invoices, setInvoices] = useState([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [pendingAmount, setPendingAmount] = useState(0);
-  const [paidAmount, setPaidAmount] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  const user = auth.currentUser;
+  const [user, setUser] = useState(null);
+  const [dateRange, setDateRange] = useState('all');
+  const [status, setStatus] = useState('all');
 
   useEffect(() => {
-    fetchReports();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+      if (user) {
+        fetchInvoices(user.uid);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchReports = async () => {
-    if (!user) return;
-
-    setLoading(true);
+  const fetchInvoices = async (userId) => {
     try {
-      const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      const invoiceData = snapshot.docs.map(doc => ({
+      const q = query(
+        collection(db, 'invoices'),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(q);
+      const invoiceData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-
       setInvoices(invoiceData);
-
-      // Calculate totals
-      const total = invoiceData.reduce((sum, invoice) => sum + (parseFloat(invoice.amount) || 0), 0);
-      const pending = invoiceData
-        .filter(invoice => invoice.status === 'Unpaid' || invoice.status === 'Overdue')
-        .reduce((sum, invoice) => sum + (parseFloat(invoice.amount) || 0), 0);
-      const paid = invoiceData
-        .filter(invoice => invoice.status === 'Paid')
-        .reduce((sum, invoice) => sum + (parseFloat(invoice.amount) || 0), 0);
-
-      setTotalRevenue(total);
-      setPendingAmount(pending);
-      setPaidAmount(paid);
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      console.error('Error fetching invoices:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const filterInvoices = () => {
+    let filtered = invoices;
+
+    if (dateRange !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (dateRange) {
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'year':
+          filterDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          break;
+      }
+      
+      filtered = filtered.filter(invoice => {
+        const invoiceDate = new Date(invoice.date);
+        return invoiceDate >= filterDate;
+      });
+    }
+
+    if (status !== 'all') {
+      filtered = filtered.filter(invoice => invoice.status === status);
+    }
+
+    return filtered;
+  };
+
+  const calculateTotals = () => {
+    const filtered = filterInvoices();
+    const total = filtered.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    const paid = filtered.filter(inv => inv.status === 'paid').reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    const pending = filtered.filter(inv => inv.status === 'pending').reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    
+    return { total, paid, pending, count: filtered.length };
   };
 
   const containerStyle = {
     minHeight: '100vh',
-    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    color: isDarkMode ? 'white' : 'black'
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const contentStyle = {
@@ -64,61 +103,47 @@ function Reports() {
   };
 
   const headerStyle = {
-    color: isDarkMode ? '#f0f0f0' : 'white',
     textAlign: 'center',
-    marginBottom: '40px'
+    marginBottom: '40px',
+    padding: '40px 20px',
+    background: isDarkMode ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.1)',
+    borderRadius: '20px',
+    backdropFilter: 'blur(20px)',
+    border: isDarkMode ? '1px solid rgba(71,85,105,0.3)' : '1px solid rgba(255,255,255,0.2)'
   };
 
-  const statsStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '25px',
-    marginBottom: '40px'
-  };
-
-  const statCardStyle = {
-    background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
+  const cardStyle = {
+    background: isDarkMode ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+    borderRadius: '15px',
     padding: '25px',
-    borderRadius: '16px',
-    textAlign: 'center',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: '2px solid #f8f9fa',
-    color: isDarkMode ? 'white' : 'black'
+    marginBottom: '25px',
+    backdropFilter: 'blur(10px)',
+    border: isDarkMode ? '1px solid rgba(71,85,105,0.3)' : '1px solid rgba(255,255,255,0.2)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
   };
 
-  const tableStyle = {
+  const inputStyle = {
     width: '100%',
-    borderCollapse: 'collapse',
-    background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0',
+    background: isDarkMode ? '#2d3748' : '#ffffff',
+    color: isDarkMode ? '#ffffff' : '#333333',
+    fontSize: '16px',
+    boxSizing: 'border-box',
+    height: '48px',
+    display: 'flex',
+    alignItems: 'center'
   };
 
-  const thStyle = {
-    background: isDarkMode ? '#2d3748' : '#f8f9fa',
-    padding: '15px',
-    textAlign: 'left',
-    fontWeight: 'bold',
-    color: isDarkMode ? '#e2e8f0' : '#333',
-    borderBottom: '2px solid #e9ecef'
-  };
-
-  const tdStyle = {
-    padding: '15px',
-    borderBottom: '1px solid #e9ecef',
-    color: isDarkMode ? '#e2e8f0' : '#333'
-  };
+  const totals = calculateTotals();
 
   if (loading) {
     return (
       <div style={containerStyle}>
         <Navigation user={user} />
         <div style={contentStyle}>
-          <div style={{ textAlign: 'center', color: 'white', fontSize: '18px' }}>
-            Loading reports...
-          </div>
+          <p style={{ textAlign: 'center', fontSize: '18px' }}>Loading reports...</p>
         </div>
       </div>
     );
@@ -130,94 +155,102 @@ function Reports() {
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
-            📈 Reports & Analytics
+            📈 Business Reports
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Track your business performance and revenue
+            Track your business performance and analytics
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div style={statsStyle}>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>💰 Total Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{totalRevenue.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>✅ Paid Amount</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{paidAmount.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#dc3545' }}>⏳ Pending Amount</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{pendingAmount.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#6f42c1' }}>📄 Total Invoices</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              {invoices.length}
-            </p>
+        <div style={cardStyle}>
+          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>Filters</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Date Range:</label>
+              <select 
+                value={dateRange} 
+                onChange={(e) => setDateRange(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="all">All Time</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+                <option value="year">Last Year</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Status:</label>
+              <select 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Invoice Table */}
-        <div style={{
-          background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
-          padding: '30px',
-          borderRadius: '16px',
-          backdropFilter: 'blur(15px)',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ margin: '0 0 20px 0', color: isDarkMode ? '#e2e8f0' : '#333' }}>
-            📋 Recent Invoices
-          </h2>
-          {invoices.length > 0 ? (
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Invoice #</th>
-                  <th style={thStyle}>Client</th>
-                  <th style={thStyle}>Amount</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map(invoice => (
-                  <tr key={invoice.id}>
-                    <td style={tdStyle}>#{invoice.invoiceNumber}</td>
-                    <td style={tdStyle}>{invoice.clientName}</td>
-                    <td style={tdStyle}>£{parseFloat(invoice.amount || 0).toFixed(2)}</td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        backgroundColor: invoice.status === 'Paid' ? '#d4edda' : 
-                                       invoice.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                        color: invoice.status === 'Paid' ? '#155724' : 
-                               invoice.status === 'Overdue' ? '#721c24' : '#856404'
-                      }}>
-                        {invoice.status}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      {invoice.createdAt ? new Date(invoice.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          <div style={{...cardStyle, textAlign: 'center'}}>
+            <h3 style={{ color: '#667eea', marginBottom: '10px' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.total.toFixed(2)}</p>
+          </div>
+          <div style={{...cardStyle, textAlign: 'center'}}>
+            <h3 style={{ color: '#51cf66', marginBottom: '10px' }}>Paid</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.paid.toFixed(2)}</p>
+          </div>
+          <div style={{...cardStyle, textAlign: 'center'}}>
+            <h3 style={{ color: '#ffd43b', marginBottom: '10px' }}>Pending</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.pending.toFixed(2)}</p>
+          </div>
+          <div style={{...cardStyle, textAlign: 'center'}}>
+            <h3 style={{ color: '#ff6b6b', marginBottom: '10px' }}>Total Invoices</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>{totals.count}</p>
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>Recent Invoices</h2>
+          {filterInvoices().length === 0 ? (
+            <p style={{ textAlign: 'center', fontSize: '16px', opacity: '0.7' }}>No invoices found for the selected criteria.</p>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px', color: isDarkMode ? '#a0aec0' : '#666' }}>
-              <p style={{ fontSize: '18px', margin: 0 }}>📊 No invoices found</p>
-              <p style={{ margin: '10px 0 0 0' }}>Create your first invoice to see reports here</p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Invoice #</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Client</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Date</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Amount</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filterInvoices().map((invoice, index) => (
+                    <tr key={invoice.id} style={{ borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>#{index + 1}</td>
+                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>{invoice.clientName || 'N/A'}</td>
+                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>{invoice.date || 'N/A'}</td>
+                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>£{(invoice.total || 0).toFixed(2)}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          background: invoice.status === 'paid' ? '#51cf66' : '#ffd43b',
+                          color: invoice.status === 'paid' ? 'white' : '#333'
+                        }}>
+                          {invoice.status || 'pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
