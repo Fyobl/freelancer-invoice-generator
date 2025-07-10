@@ -183,7 +183,9 @@ function Reports() {
             <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
               {stats.totalInvoices}
             </p>
-          </div<div style={statCardStyle}>
+          </div>
+
+          <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 15px 0', color: '#ffc107', fontSize: '1.2rem' }}>
               ✅ Paid Invoices
             </h3>
@@ -199,7 +201,7 @@ function Reports() {
             <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
               {stats.unpaidCount + stats.overdueCount}
             </p>
-          </div>v>
+          </div>
         </div>
 
         {/* Charts */}
