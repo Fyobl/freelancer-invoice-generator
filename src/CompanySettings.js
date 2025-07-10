@@ -11,7 +11,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
-import { DarkModeContext } from './DarkModeContext.js';
+import { useDarkMode } from './DarkModeContext.js';
 
 function CompanySettings() {
   const [companyData, setCompanyData] = useState({
@@ -29,7 +29,7 @@ function CompanySettings() {
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const { isDarkMode } = useContext(DarkModeContext);
+  const { isDarkMode } = useDarkMode();
 
   const user = auth.currentUser;
 

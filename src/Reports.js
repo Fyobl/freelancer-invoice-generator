@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -5,13 +6,13 @@ import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Reports() {
-  const { isDarkMode } = useDarkMode();
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { isDarkMode } = useDarkMode();
 
   const user = auth.currentUser;
 
@@ -20,25 +21,37 @@ function Reports() {
   }, []);
 
   const fetchData = async () => {
+    if (!user) return;
+
+    setLoading(true);
     try {
       // Fetch invoices
       const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const invoicesSnapshot = await getDocs(invoicesQuery);
-      const invoicesData = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInvoices(invoicesData);
+      const invoicesData = invoicesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
       // Fetch clients
       const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
       const clientsSnapshot = await getDocs(clientsQuery);
-      const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(clientsData);
+      const clientsData = clientsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
       // Fetch products
       const productsQuery = query(collection(db, 'products'), where('userId', '==', user.uid));
       const productsSnapshot = await getDocs(productsQuery);
-      const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(productsData);
+      const productsData = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
+      setInvoices(invoicesData);
+      setClients(clientsData);
+      setProducts(productsData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -105,37 +118,36 @@ function Reports() {
     appearance: 'none'
   };
 
-  if (loading) {
-    return (
-      <div style={containerStyle}>
-        <Navigation user={user} />
-        <div style={contentStyle}>
-          <div style={cardStyle}>
-            <h2>Loading reports...</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Calculate statistics
+  const totalRevenue = invoices.reduce((sum, invoice) => {
+    return sum + (parseFloat(invoice.amount) || 0);
+  }, 0);
 
-  const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const paidInvoices = invoices.filter(invoice => invoice.status === 'Paid');
+  const unpaidInvoices = invoices.filter(invoice => invoice.status === 'Unpaid');
+  const overdueInvoices = invoices.filter(invoice => 
+    invoice.status === 'Unpaid' && new Date(invoice.dueDate) < new Date()
+  );
 
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
       <div style={contentStyle}>
-        <div style={cardStyle}>
-          <h1 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '2.5rem', marginBottom: '30px' }}>
-            📈 Business Reports
+        <div style={{ textAlign: 'center', marginBottom: '40px', color: isDarkMode ? '#ffffff' : 'white', padding: '20px 0' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            📈 Reports & Analytics
           </h1>
+          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
+            Track your business performance and insights
+          </p>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        {/* Filter Section */}
+        <div style={cardStyle}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '1.3rem' }}>🔍 Filters</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#a0aec0' : '#555' }}>
-                Date Range
-              </label>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Date Range</label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
@@ -147,88 +159,118 @@ function Reports() {
                 <option value="thisYear">This Year</option>
               </select>
             </div>
-
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#a0aec0' : '#555' }}>
-                Status Filter
-              </label>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 style={selectStyle}
               >
-                <option value="all">All Status</option>
+                <option value="all">All Statuses</option>
                 <option value="Paid">Paid</option>
                 <option value="Unpaid">Unpaid</option>
                 <option value="Overdue">Overdue</option>
               </select>
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-            <div style={{ ...cardStyle, textAlign: 'center' }}>
-              <h3 style={{ color: '#667eea', marginBottom: '10px' }}>Total Revenue</h3>
-              <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-                £{totalRevenue.toFixed(2)}
-              </p>
-            </div>
-
-            <div style={{ ...cardStyle, textAlign: 'center' }}>
-              <h3 style={{ color: '#28a745', marginBottom: '10px' }}>Paid Amount</h3>
-              <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-                £{paidAmount.toFixed(2)}
-              </p>
-            </div>
-
-            <div style={{ ...cardStyle, textAlign: 'center' }}>
-              <h3 style={{ color: '#dc3545', marginBottom: '10px' }}>Outstanding</h3>
-              <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-                £{unpaidAmount.toFixed(2)}
-              </p>
-            </div>
-
-            <div style={{ ...cardStyle, textAlign: 'center' }}>
-              <h3 style={{ color: '#6f42c1', marginBottom: '10px' }}>Total Invoices</h3>
-              <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-                {invoices.length}
-              </p>
-            </div>
+        {/* Statistics Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          <div style={cardStyle}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>💰 Total Revenue</h4>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{totalRevenue.toFixed(2)}
+            </p>
           </div>
+          <div style={cardStyle}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#28a745' }}>✅ Paid Invoices</h4>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              {paidInvoices.length}
+            </p>
+          </div>
+          <div style={cardStyle}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#ffc107' }}>⏳ Unpaid Invoices</h4>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              {unpaidInvoices.length}
+            </p>
+          </div>
+          <div style={cardStyle}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#dc3545' }}>🚨 Overdue Invoices</h4>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              {overdueInvoices.length}
+            </p>
+          </div>
+        </div>
 
-          <div style={{ ...cardStyle, marginTop: '30px' }}>
-            <h3 style={{ marginBottom: '20px' }}>Recent Invoices</h3>
+        {/* Recent Invoices */}
+        <div style={cardStyle}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '1.3rem' }}>📋 Recent Invoices</h3>
+          {loading ? (
+            <p>Loading invoices...</p>
+          ) : invoices.length === 0 ? (
+            <p>No invoices found.</p>
+          ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e1e5e9' }}>Invoice #</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e1e5e9' }}>Client</th>
-                    <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #e1e5e9' }}>Amount</th>
-                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #e1e5e9' }}>Status</th>
+                  <tr style={{ borderBottom: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9' }}>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Invoice #</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Client</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Amount</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Status</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Due Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoices.slice(0, 10).map((invoice, index) => (
-                    <tr key={invoice.id} style={{ backgroundColor: index % 2 === 0 ? (isDarkMode ? '#2d3748' : '#f8f9fa') : 'transparent' }}>
-                      <td style={{ padding: '12px' }}>{invoice.invoiceNumber}</td>
-                      <td style={{ padding: '12px' }}>{invoice.clientName}</td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>£{Number(invoice.amount).toFixed(2)}</td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <span style={{ 
+                    <tr key={invoice.id} style={{ borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #f1f1f1' }}>
+                      <td style={{ padding: '10px' }}>#{invoice.invoiceNumber || index + 1}</td>
+                      <td style={{ padding: '10px' }}>{invoice.clientName}</td>
+                      <td style={{ padding: '10px' }}>£{parseFloat(invoice.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
                           padding: '4px 8px',
-                          borderRadius: '12px',
+                          borderRadius: '4px',
                           fontSize: '12px',
                           fontWeight: 'bold',
-                          backgroundColor: invoice.status === 'Paid' ? '#d4edda' : invoice.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                          color: invoice.status === 'Paid' ? '#155724' : invoice.status === 'Overdue' ? '#721c24' : '#856404'
+                          backgroundColor: invoice.status === 'Paid' ? '#28a745' : 
+                                         invoice.status === 'Unpaid' ? '#ffc107' : '#dc3545',
+                          color: 'white'
                         }}>
                           {invoice.status}
                         </span>
                       </td>
+                      <td style={{ padding: '10px' }}>{invoice.dueDate || 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* Summary */}
+        <div style={cardStyle}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '1.3rem' }}>📊 Business Summary</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div>
+              <h4 style={{ margin: '0 0 10px 0' }}>Total Clients</h4>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{clients.length}</p>
+            </div>
+            <div>
+              <h4 style={{ margin: '0 0 10px 0' }}>Total Products</h4>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{products.length}</p>
+            </div>
+            <div>
+              <h4 style={{ margin: '0 0 10px 0' }}>Total Invoices</h4>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{invoices.length}</p>
+            </div>
+            <div>
+              <h4 style={{ margin: '0 0 10px 0' }}>Average Invoice Value</h4>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                £{invoices.length > 0 ? (totalRevenue / invoices.length).toFixed(2) : '0.00'}
+              </p>
             </div>
           </div>
         </div>
