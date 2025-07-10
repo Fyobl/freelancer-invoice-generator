@@ -102,39 +102,127 @@ function CompanySettings() {
     setLoading(false);
   };
 
+  // Styles
+  const containerStyle = {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+  };
+
+  const contentStyle = {
+    padding: '30px',
+    maxWidth: '1200px',
+    margin: '0 auto'
+  };
+
+  const headerStyle = {
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: '40px'
+  };
+
   const inputStyle = {
     width: '100%',
-    padding: '10px',
-    margin: '5px 0',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: 'white'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '5px',
+    fontWeight: 'bold',
+    color: '#333',
     fontSize: '14px'
   };
 
   const sectionStyle = {
-    background: 'white',
-    padding: '20px',
-    marginBottom: '20px',
+    background: 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    marginBottom: '30px',
+    borderRadius: '16px',
+    border: '2px solid #f8f9fa',
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '15px 30px',
     borderRadius: '8px',
-    border: '1px solid #ddd'
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+  };
+
+  const previewStyle = {
+    border: '2px solid #e9ecef',
+    borderRadius: '12px',
+    padding: '25px',
+    backgroundColor: '#f8f9fa',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+  };
+
+  const fileInputStyle = {
+    padding: '10px',
+    border: '2px dashed #667eea',
+    borderRadius: '8px',
+    backgroundColor: '#f8f9fa',
+    cursor: 'pointer',
+    transition: 'border-color 0.3s ease'
   };
 
   return (
-    <div>
+    <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={{ padding: '30px', fontFamily: 'Arial', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-        <h2>Company Settings</h2>
-        <p>Customize your company information to appear on invoices and branding.</p>
+      <div style={contentStyle}>
+        <div style={headerStyle}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            🏢 Company Settings
+          </h1>
+          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
+            Customize your company information to appear on invoices and branding
+          </p>
+        </div>
 
-        <div style={sectionStyle}>
-          <h3>Company Logo</h3>
+        {/* Company Logo Section */}
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
+          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            🎨 Company Logo
+          </h3>
           <div style={{ marginBottom: '20px' }}>
             {companyData.logo && (
-              <div style={{ marginBottom: '15px' }}>
+              <div style={{ marginBottom: '20px', textAlign: 'center' }}>
                 <img 
                   src={companyData.logo} 
                   alt="Company Logo" 
-                  style={{ maxWidth: '200px', maxHeight: '100px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ 
+                    maxWidth: '250px', 
+                    maxHeight: '125px', 
+                    border: '2px solid #e9ecef', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}
                 />
               </div>
             )}
@@ -142,19 +230,32 @@ function CompanySettings() {
               type="file"
               accept="image/*"
               onChange={handleLogoUpload}
-              style={{ padding: '5px' }}
+              style={fileInputStyle}
             />
-            <p style={{ fontSize: '12px', color: '#666', margin: '5px 0' }}>
-              Upload your company logo (PNG, JPG, GIF). Recommended size: 200x100px
+            <p style={{ fontSize: '12px', color: '#666', margin: '10px 0 0 0', textAlign: 'center' }}>
+              📸 Upload your company logo (PNG, JPG, GIF). Recommended size: 250x125px
             </p>
           </div>
         </div>
 
-        <div style={sectionStyle}>
-          <h3>Basic Information</h3>
+        {/* Basic Information Section */}
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
+          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            ℹ️ Basic Information
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
-              <label>Company Name *</label>
+              <label style={labelStyle}>Company Name *</label>
               <input
                 type="text"
                 placeholder="Enter company name"
@@ -164,7 +265,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>Email Address</label>
+              <label style={labelStyle}>Email Address</label>
               <input
                 type="email"
                 placeholder="company@example.com"
@@ -174,7 +275,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>Phone Number</label>
+              <label style={labelStyle}>Phone Number</label>
               <input
                 type="tel"
                 placeholder="+44 20 1234 5678"
@@ -184,7 +285,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>Website</label>
+              <label style={labelStyle}>Website</label>
               <input
                 type="url"
                 placeholder="https://www.company.com"
@@ -196,11 +297,24 @@ function CompanySettings() {
           </div>
         </div>
 
-        <div style={sectionStyle}>
-          <h3>Address</h3>
+        {/* Address Section */}
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
+          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            📍 Address
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label>Street Address</label>
+              <label style={labelStyle}>Street Address</label>
               <input
                 type="text"
                 placeholder="123 Main Street"
@@ -210,7 +324,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>City</label>
+              <label style={labelStyle}>City</label>
               <input
                 type="text"
                 placeholder="London"
@@ -220,7 +334,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>Postcode</label>
+              <label style={labelStyle}>Postcode</label>
               <input
                 type="text"
                 placeholder="SW1A 1AA"
@@ -230,7 +344,7 @@ function CompanySettings() {
               />
             </div>
             <div>
-              <label>Country</label>
+              <label style={labelStyle}>Country</label>
               <input
                 type="text"
                 placeholder="United Kingdom"
@@ -242,11 +356,24 @@ function CompanySettings() {
           </div>
         </div>
 
-        <div style={sectionStyle}>
-          <h3>Business Registration</h3>
+        {/* Business Registration Section */}
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
+          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            🏛️ Business Registration
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
-              <label>VAT Number</label>
+              <label style={labelStyle}>VAT Number</label>
               <input
                 type="text"
                 placeholder="GB123456789"
@@ -254,12 +381,12 @@ function CompanySettings() {
                 onChange={(e) => handleInputChange('vatNumber', e.target.value)}
                 style={inputStyle}
               />
-              <p style={{ fontSize: '12px', color: '#666', margin: '5px 0' }}>
-                Your VAT registration number (if applicable)
+              <p style={{ fontSize: '12px', color: '#666', margin: '5px 0 0 0' }}>
+                💼 Your VAT registration number (if applicable)
               </p>
             </div>
             <div>
-              <label>Company Registration Number</label>
+              <label style={labelStyle}>Company Registration Number</label>
               <input
                 type="text"
                 placeholder="12345678"
@@ -267,56 +394,102 @@ function CompanySettings() {
                 onChange={(e) => handleInputChange('companyNumber', e.target.value)}
                 style={inputStyle}
               />
-              <p style={{ fontSize: '12px', color: '#666', margin: '5px 0' }}>
-                Your company registration number
+              <p style={{ fontSize: '12px', color: '#666', margin: '5px 0 0 0' }}>
+                🏢 Your company registration number
               </p>
             </div>
           </div>
         </div>
 
-        <div style={sectionStyle}>
-          <h3>Preview</h3>
-          <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '20px', backgroundColor: '#f9f9f9' }}>
+        {/* Preview Section */}
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
+          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            👁️ Preview
+          </h3>
+          <div style={previewStyle}>
             {companyData.logo && (
               <img 
                 src={companyData.logo} 
                 alt="Company Logo" 
-                style={{ maxWidth: '150px', maxHeight: '75px', marginBottom: '15px' }}
+                style={{ 
+                  maxWidth: '200px', 
+                  maxHeight: '100px', 
+                  marginBottom: '20px',
+                  display: 'block'
+                }}
               />
             )}
-            <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>{companyData.name || 'Your Company Name'}</h4>
-            {companyData.address && <p style={{ margin: '2px 0', fontSize: '14px' }}>{companyData.address}</p>}
-            {companyData.city && <p style={{ margin: '2px 0', fontSize: '14px' }}>{companyData.city}, {companyData.postcode}</p>}
-            {companyData.country && <p style={{ margin: '2px 0', fontSize: '14px' }}>{companyData.country}</p>}
-            {companyData.email && <p style={{ margin: '2px 0', fontSize: '14px' }}>Email: {companyData.email}</p>}
-            {companyData.phone && <p style={{ margin: '2px 0', fontSize: '14px' }}>Phone: {companyData.phone}</p>}
-            {companyData.website && <p style={{ margin: '2px 0', fontSize: '14px' }}>Website: {companyData.website}</p>}
-            {companyData.vatNumber && <p style={{ margin: '2px 0', fontSize: '14px' }}>VAT: {companyData.vatNumber}</p>}
-            {companyData.companyNumber && <p style={{ margin: '2px 0', fontSize: '14px' }}>Company No: {companyData.companyNumber}</p>}
+            <h4 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '1.3rem' }}>
+              {companyData.name || 'Your Company Name'}
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+              <div>
+                {companyData.address && <p style={{ margin: '3px 0', fontSize: '14px' }}>📍 {companyData.address}</p>}
+                {companyData.city && <p style={{ margin: '3px 0', fontSize: '14px' }}>🏙️ {companyData.city}, {companyData.postcode}</p>}
+                {companyData.country && <p style={{ margin: '3px 0', fontSize: '14px' }}>🌍 {companyData.country}</p>}
+              </div>
+              <div>
+                {companyData.email && <p style={{ margin: '3px 0', fontSize: '14px' }}>📧 {companyData.email}</p>}
+                {companyData.phone && <p style={{ margin: '3px 0', fontSize: '14px' }}>📱 {companyData.phone}</p>}
+                {companyData.website && <p style={{ margin: '3px 0', fontSize: '14px' }}>🌐 {companyData.website}</p>}
+                {companyData.vatNumber && <p style={{ margin: '3px 0', fontSize: '14px' }}>💼 VAT: {companyData.vatNumber}</p>}
+                {companyData.companyNumber && <p style={{ margin: '3px 0', fontSize: '14px' }}>🏢 Company No: {companyData.companyNumber}</p>}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+        {/* Save Button */}
+        <div style={{ textAlign: 'center', marginTop: '40px' }}>
           <button
             onClick={saveCompanySettings}
             disabled={loading}
             style={{
-              padding: '12px 30px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer'
+              ...buttonStyle,
+              backgroundColor: loading ? '#ccc' : undefined,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1
+            }}
+            onMouseOver={(e) => {
+              if (!loading) {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.4)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!loading) {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+              }
             }}
           >
-            {loading ? 'Saving...' : 'Save Company Settings'}
+            {loading ? '⏳ Saving...' : '💾 Save Company Settings'}
           </button>
           
           {saved && (
-            <p style={{ color: '#28a745', marginTop: '10px', fontSize: '14px' }}>
-              ✅ Company settings saved successfully!
-            </p>
+            <div style={{ 
+              marginTop: '20px',
+              padding: '15px',
+              backgroundColor: '#d4edda',
+              color: '#155724',
+              borderRadius: '8px',
+              border: '1px solid #c3e6cb',
+              display: 'inline-block'
+            }}>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
+                ✅ Company settings saved successfully!
+              </p>
+            </div>
           )}
         </div>
       </div>
