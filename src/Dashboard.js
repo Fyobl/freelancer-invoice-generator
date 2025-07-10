@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase.js';
 import {
@@ -33,6 +34,106 @@ function Dashboard() {
   const [companySettings, setCompanySettings] = useState({});
 
   const user = auth.currentUser;
+
+  // Styling objects
+  const containerStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    minHeight: '100vh',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+  };
+
+  const contentStyle = {
+    padding: '30px',
+    maxWidth: '1400px',
+    margin: '0 auto'
+  };
+
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '40px',
+    color: 'white',
+    padding: '20px 0'
+  };
+
+  const statsStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '25px',
+    marginBottom: '40px'
+  };
+
+  const statCardStyle = {
+    background: 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    borderRadius: '16px',
+    textAlign: 'center',
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    border: '2px solid rgba(255,255,255,0.2)',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+  };
+
+  const formStyle = {
+    background: 'rgba(255,255,255,0.95)',
+    padding: '40px',
+    borderRadius: '20px',
+    marginBottom: '40px',
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
+    border: '2px solid rgba(255,255,255,0.2)'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '10px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff'
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    cursor: 'pointer'
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '15px 30px',
+    borderRadius: '10px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
+  };
+
+  const tableStyle = {
+    background: 'rgba(255,255,255,0.95)',
+    borderRadius: '20px',
+    overflow: 'hidden',
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
+    border: '2px solid rgba(255,255,255,0.2)'
+  };
+
+  const searchFilterStyle = {
+    background: 'rgba(255,255,255,0.9)',
+    padding: '25px',
+    borderRadius: '16px',
+    marginBottom: '30px',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
+    display: 'flex',
+    gap: '20px',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -356,43 +457,70 @@ function Dashboard() {
   });
 
   return (
-    <div>
+    <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={{ padding: '30px', fontFamily: 'Arial' }}>
-        <h2>Invoice Dashboard</h2>
+      <div style={contentStyle}>
+        <div style={headerStyle}>
+          <h1 style={{ fontSize: '3rem', margin: '0 0 15px 0', fontWeight: '300' }}>
+            📊 Invoice Dashboard
+          </h1>
+          <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
+            Manage your invoices, track payments, and grow your business
+          </p>
+        </div>
 
-        {/* Quick Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-          <div style={{ background: '#e3f2fd', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>Total Invoices</h3>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{invoices.length}</p>
+        {/* Statistics Cards */}
+        <div style={statsStyle}>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Invoices</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
+              {invoices.length}
+            </p>
           </div>
-          <div style={{ background: '#e8f5e8', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>Total Revenue</h3>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
               £{invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
             </p>
           </div>
-          <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>Unpaid</h3>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Outstanding</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
               £{invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
+            </p>
+          </div>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>This Month</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
+              £{invoices.filter(inv => {
+                const invoiceDate = new Date(inv.createdAt?.seconds * 1000);
+                const currentMonth = new Date().getMonth();
+                return invoiceDate.getMonth() === currentMonth;
+              }).reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
             </p>
           </div>
         </div>
 
         {/* Create Invoice Form */}
-        <div style={{ background: '#f8f9fa', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
-          <h3>Create New Invoice</h3>
-          <p>Next Invoice Number: <strong>INV-{String(nextInvoiceNumber).padStart(4, '0')}</strong></p>
+        <div style={formStyle}>
+          <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.8rem', marginBottom: '10px' }}>
+            ✨ Create New Invoice
+          </h2>
+          <p style={{ color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
+            Next Invoice Number: <strong style={{ color: '#667eea' }}>INV-{String(nextInvoiceNumber).padStart(4, '0')}</strong>
+          </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
             <div>
-              <label>Select Client</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Select Client
+              </label>
               <select
                 value={selectedClientId}
                 onChange={(e) => handleClientSelect(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                style={selectStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="">Select existing client or enter new</option>
                 {clients.map(client => (
@@ -402,19 +530,27 @@ function Dashboard() {
                 ))}
               </select>
 
-              <label>Client Name</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Client Name *
+              </label>
               <input
-                placeholder="Client Name"
+                placeholder="Enter client name"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
-              /><br />
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
 
-              <label>Select Product (Optional)</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Select Product (Optional)
+              </label>
               <select
                 value={selectedProductId}
                 onChange={(e) => handleProductSelect(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                style={selectStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="">Select a product</option>
                 {products.map(prod => (
@@ -422,90 +558,124 @@ function Dashboard() {
                     {prod.name} - £{Number(prod.price).toFixed(2)}
                   </option>
                 ))}
-              </select><br />
+              </select>
 
-              <label>Amount (£)</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Amount (£) *
+              </label>
               <input
                 type="number"
-                placeholder="Amount"
+                placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
-              /><br />
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
             </div>
 
             <div>
-              <label>VAT (%)</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                VAT (%)
+              </label>
               <input
                 type="number"
-                placeholder="VAT"
+                placeholder="VAT percentage"
                 value={vat}
                 onChange={(e) => setVat(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
-              /><br />
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
 
-              <label>Due Date</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Due Date
+              </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
-              /><br />
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
 
-              <label>Status</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Status
+              </label>
               <select 
                 value={status} 
                 onChange={(e) => setStatus(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                style={selectStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="Unpaid">Unpaid</option>
                 <option value="Paid">Paid</option>
                 <option value="Overdue">Overdue</option>
-              </select><br />
+              </select>
 
-              <label>Invoice Template</label><br />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                Invoice Template
+              </label>
               <select
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
-                style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                style={selectStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="standard">Standard</option>
                 <option value="professional">Professional</option>
-              </select><br />
+              </select>
             </div>
           </div>
 
-          <label>Notes</label><br />
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', marginTop: '20px' }}>
+            Notes
+          </label>
           <textarea
-            placeholder="Notes"
+            placeholder="Add any additional notes or terms..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            style={{ width: '100%', padding: '8px', margin: '5px 0', height: '60px' }}
-          /><br />
+            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+            onFocus={(e) => e.target.style.borderColor = '#667eea'}
+            onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+          />
 
           <button 
             onClick={handleAddInvoice}
-            style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+            style={buttonStyle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 12px 25px rgba(102, 126, 234, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.3)';
+            }}
           >
-            Create Invoice
+            🚀 Create Invoice
           </button>
         </div>
 
-        {/* Invoice List with Filters */}
-        <h3>Invoice Management</h3>
-
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+        {/* Search and Filter Section */}
+        <div style={searchFilterStyle}>
+          <h2 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.6rem', width: '100%' }}>
+            📋 Invoice Management
+          </h2>
+          
           <input
-            placeholder="Search invoices..."
+            placeholder="🔍 Search invoices by client or number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: '8px', width: '300px' }}
+            style={{ ...inputStyle, marginBottom: 0, minWidth: '300px', flex: 1 }}
           />
 
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ padding: '8px' }}
+            style={{ ...selectStyle, marginBottom: 0, minWidth: '150px' }}
           >
             <option value="all">All Status</option>
             <option value="Unpaid">Unpaid</option>
@@ -514,75 +684,104 @@ function Dashboard() {
           </select>
         </div>
 
+        {/* Invoice Table */}
         {filteredInvoices.length === 0 ? (
-          <p>No invoices found.</p>
+          <div style={{ ...formStyle, textAlign: 'center', padding: '60px' }}>
+            <h3 style={{ color: '#666', fontSize: '1.4rem', marginBottom: '15px' }}>
+              📄 No invoices found
+            </h3>
+            <p style={{ color: '#999', fontSize: '1.1rem' }}>
+              {searchTerm || filterStatus !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Create your first invoice to get started!'}
+            </p>
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
-              <thead>
-                <tr style={{ background: '#f8f9fa' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Invoice #</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Client</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #dee2e6' }}>Amount</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>Status</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>Due Date</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map(inv => (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '12px' }}>{inv.invoiceNumber}</td>
-                    <td style={{ padding: '12px' }}>{inv.clientName}</td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>£{Number(inv.amount).toFixed(2)}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <select
-                        value={inv.status}
-                        onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                        style={{ 
-                          padding: '4px 8px', 
-                          background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px'
-                        }}
-                      >
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>{inv.dueDate}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <button
-                        onClick={() => exportPDF(inv)}
-                        style={{ 
-                          padding: '4px 8px', 
-                          background: '#28a745', 
-                          color: 'white', 
-                          border: 'none', 
-                          borderRadius: '4px', 
-                          marginRight: '5px' 
-                        }}
-                      >
-                        📄 PDF
-                      </button>
-                      <button
-                        onClick={() => handleDelete(inv.id)}
-                        style={{ 
-                          padding: '4px 8px', 
-                          background: '#dc3545', 
-                          color: 'white', 
-                          border: 'none', 
-                          borderRadius: '4px' 
-                        }}
-                      >
-                        ❌
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={tableStyle}>
+            <div style={{ padding: '25px' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
+                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInvoices.map((inv, index) => (
+                      <tr key={inv.id} style={{ 
+                        borderBottom: '1px solid #f1f3f4',
+                        backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
+                        transition: 'background-color 0.2s ease'
+                      }}>
+                        <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
+                        <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
+                        <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
+                          £{Number(inv.amount).toFixed(2)}
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <select
+                            value={inv.status}
+                            onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                            style={{ 
+                              padding: '6px 12px', 
+                              background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
+                              border: '2px solid',
+                              borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
+                              borderRadius: '8px',
+                              fontWeight: 'bold',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => exportPDF(inv)}
+                            style={{ 
+                              padding: '8px 15px', 
+                              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '6px', 
+                              marginRight: '8px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📄 PDF
+                          </button>
+                          <button
+                            onClick={() => handleDelete(inv.id)}
+                            style={{ 
+                              padding: '8px 15px', 
+                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
