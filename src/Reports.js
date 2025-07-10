@@ -46,18 +46,17 @@ function Reports() {
     return {
       totalRevenue: totalRevenue.toFixed(2),
       totalInvoices,
-      paidAmount: paidAmount.toFixed(2),
-      unpaidAmount: unpaidAmount.toFixed(2),
-      overdueAmount: overdueAmount.toFixed(2),
       paidCount: paidInvoices.length,
       unpaidCount: unpaidInvoices.length,
-      overdueCount: overdueInvoices.length
+      overdueCount: overdueInvoices.length,
+      paidAmount: paidAmount.toFixed(2),
+      unpaidAmount: unpaidAmount.toFixed(2),
+      overdueAmount: overdueAmount.toFixed(2)
     };
   };
 
   const getTopClients = () => {
     const clientTotals = {};
-
     invoices.forEach(invoice => {
       const clientName = invoice.clientName;
       if (!clientTotals[clientName]) {
@@ -78,8 +77,10 @@ function Reports() {
   // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
     paddingLeft: '20px',
     paddingRight: '20px',
     paddingTop: '80px',
@@ -177,37 +178,28 @@ function Reports() {
 
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 15px 0', color: '#28a745', fontSize: '1.2rem' }}>
-              ✅ Paid Invoices
+              📄 Total Invoices
             </h3>
-            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-              £{stats.paidAmount}
-            </p>
-            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
-              {stats.paidCount} invoices
+            <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
+              {stats.totalInvoices}
             </p>
           </div>
 
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 15px 0', color: '#ffc107', fontSize: '1.2rem' }}>
-              ⏳ Unpaid Invoices
+              ✅ Paid Invoices
             </h3>
-            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-              £{stats.unpaidAmount}
-            </p>
-            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
-              {stats.unpaidCount} invoices
+            <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
+              {stats.paidCount}
             </p>
           </div>
 
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 15px 0', color: '#dc3545', fontSize: '1.2rem' }}>
-              🚨 Overdue Invoices
+              ⏰ Pending Invoices
             </h3>
-            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-              £{stats.overdueAmount}
-            </p>
-            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
-              {stats.overdueCount} invoices
+            <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
+              {stats.unpaidCount + stats.overdueCount}
             </p>
           </div>
         </div>
