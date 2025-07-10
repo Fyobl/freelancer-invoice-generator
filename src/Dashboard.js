@@ -156,16 +156,26 @@ function Dashboard() {
     doc.setFillColor(41, 128, 185);
     doc.rect(0, 0, pageWidth, 40, 'F');
 
+    // Company logo on left side of header
+    if (companySettings.logo) {
+      try {
+        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+      } catch (error) {
+        console.log('Error adding logo to PDF:', error);
+      }
+    }
+
     // Company branding section
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
-    doc.text('INVOICE', 20, 25);
+    const invoiceTextX = companySettings.logo ? 55 : 20;
+    doc.text('INVOICE', invoiceTextX, 25);
 
     // Company details on right side of header
-    if (companySettings.companyName) {
+    if (companySettings.name || companySettings.companyName) {
       doc.setFontSize(12);
-      doc.text(companySettings.companyName, pageWidth - 20, 15, { align: 'right' });
+      doc.text(companySettings.name || companySettings.companyName, pageWidth - 20, 15, { align: 'right' });
     }
     if (companySettings.address) {
       doc.setFontSize(10);
