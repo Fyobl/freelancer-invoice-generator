@@ -73,25 +73,27 @@ function Dashboard() {
   };
 
   const formStyle = {
-    background: 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '40px',
     borderRadius: '20px',
     marginBottom: '40px',
     backdropFilter: 'blur(15px)',
     boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-    border: '2px solid rgba(255,255,255,0.2)'
+    border: '2px solid rgba(255,255,255,0.2)',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const inputStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
+    color: isDarkMode ? '#ffffff' : '#333333',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
