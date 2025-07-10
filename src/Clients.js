@@ -12,8 +12,10 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
+import { useDarkMode } from './DarkModeContext.js';
 
 function Clients() {
+  const { isDarkMode } = useDarkMode();
   const [clients, setClients] = useState([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

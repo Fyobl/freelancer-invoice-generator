@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'firebase/auth';
+import { DarkModeProvider } from './DarkModeContext.js';
 
 import Login from './Login.js';
 import Dashboard from './Dashboard.js';
@@ -26,7 +27,8 @@ function App() {
   if (!authChecked) return <p>Checking authentication...</p>;
 
   return (
-    <Router>
+    <DarkModeProvider>
+      <Router>
       <Routes>
         <Route
           path="/"
@@ -54,6 +56,7 @@ function App() {
         />
       </Routes>
     </Router>
+    </DarkModeProvider>
   );
 }
 

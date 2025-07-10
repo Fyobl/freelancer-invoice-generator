@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from './firebase.js';
+import { db, auth } from './firebase.js';
 import {
   collection,
   addDoc,
   query,
   where,
   getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import Navigation from './Navigation.js';
+import { useDarkMode } from './DarkModeContext.js';
 
 function Dashboard() {
+  const { isDarkMode } = useDarkMode();
   const [clientName, setClientName] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
   const [amount, setAmount] = useState('');
@@ -62,14 +61,15 @@ function Dashboard() {
   };
 
   const statCardStyle = {
-    background: 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
     textAlign: 'center',
     backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: '2px solid rgba(255,255,255,0.2)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const formStyle = {
@@ -720,7 +720,7 @@ function Dashboard() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
+<th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
                       <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
                       <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
                       <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>

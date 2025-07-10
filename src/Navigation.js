@@ -66,9 +66,28 @@ function Navigation({ user }) {
           🏢 Company Settings
         </Link>
       </div>
-      <div>
-        <span style={{ marginRight: '15px' }}>Welcome, {user?.email}</span>
-        <button onClick={handleLogout} style={{ padding: '5px 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <button 
+          onClick={toggleDarkMode}
+          style={toggleButtonStyle}
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDarkMode ? '☀️' : '🌙'}
+        </button>
+        <span style={{ marginRight: '15px', color: isDarkMode ? '#a0aec0' : '#6c757d' }}>
+          Welcome, {user?.email}
+        </span>
+        <button 
+          onClick={handleLogout}
+          style={{
+            background: '#dc3545',
+            color: 'white',
+            border: 'none',
+            padding: '5px 15px',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
           Logout
         </button>
       </div>
