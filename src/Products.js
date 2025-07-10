@@ -9,7 +9,7 @@ import {
   query,
   where
 } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
+import Navigation from './Navigation.js';
 
 function Products({ user }) {
   const [products, setProducts] = useState([]);
@@ -61,10 +61,10 @@ function Products({ user }) {
   };
 
   return (
-    <div style={{ padding: 30 }}>
-      <h2>Product List</h2>
-      <button onClick={() => signOut(auth)}>Logout</button>
-      <hr />
+    <div>
+      <Navigation user={user} />
+      <div style={{ padding: 30 }}>
+        <h2>Product Management</h2>
 
       <h3>Add Product</h3>
       <input
@@ -109,6 +109,7 @@ function Products({ user }) {
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 }

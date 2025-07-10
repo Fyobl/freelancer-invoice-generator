@@ -5,7 +5,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import Login from './Login.js';
 import Dashboard from './Dashboard.js';
-import Products from './Products.js'; // ✅ Add Products screen
+import Products from './Products.js';
+import Clients from './Clients.js';
+import Reports from './Reports.js';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -37,7 +39,14 @@ function App() {
           path="/products"
           element={user ? <Products user={user} /> : <Navigate to="/login" />}
         />
-        {/* You can add more routes here later */}
+        <Route
+          path="/clients"
+          element={user ? <Clients user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/reports"
+          element={user ? <Reports user={user} /> : <Navigate to="/login" />}
+        />
       </Routes>
     </Router>
   );
