@@ -2,18 +2,20 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase.js';
+import { useDarkMode } from './DarkModeContext.js';
 
 function Navigation({ user }) {
   const location = useLocation();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   const handleLogout = () => {
     signOut(auth);
   };
 
   const navStyle = {
-    background: '#f8f9fa',
+    background: isDarkMode ? '#2d3748' : '#f8f9fa',
     padding: '10px 20px',
-    borderBottom: '1px solid #dee2e6',
+    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #dee2e6',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -22,14 +24,26 @@ function Navigation({ user }) {
   const linkStyle = {
     margin: '0 15px',
     textDecoration: 'none',
-    color: '#007bff',
+    color: isDarkMode ? '#63b3ed' : '#007bff',
     fontWeight: 'bold'
   };
 
   const activeLinkStyle = {
     ...linkStyle,
-    color: '#0056b3',
-    borderBottom: '2px solid #0056b3'
+    color: isDarkMode ? '#90cdf4' : '#0056b3',
+    borderBottom: isDarkMode ? '2px solid #90cdf4' : '2px solid #0056b3'
+  };
+
+  const toggleButtonStyle = {
+    background: isDarkMode ? '#4a5568' : '#e2e8f0',
+    color: isDarkMode ? '#ffffff' : '#2d3748',
+    border: 'none',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    marginRight: '15px',
+    transition: 'background-color 0.2s ease'
   };
 
   return (
