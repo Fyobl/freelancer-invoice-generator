@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -8,42 +9,53 @@ function Navigation({ user }) {
   const location = useLocation();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
-  const handleLogout = () => {
-    signOut(auth);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const navStyle = {
-    background: isDarkMode ? '#2d3748' : '#f8f9fa',
-    padding: '10px 20px',
-    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #dee2e6',
+    background: isDarkMode ? 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '15px 30px',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    borderBottom: isDarkMode ? '1px solid #4a5568' : 'none'
   };
 
   const linkStyle = {
-    margin: '0 15px',
+    color: isDarkMode ? '#a0aec0' : 'rgba(255,255,255,0.8)',
     textDecoration: 'none',
-    color: isDarkMode ? '#63b3ed' : '#007bff',
-    fontWeight: 'bold'
+    margin: '0 15px',
+    fontWeight: '500',
+    transition: 'color 0.3s ease',
+    fontSize: '16px'
   };
 
   const activeLinkStyle = {
     ...linkStyle,
-    color: isDarkMode ? '#90cdf4' : '#0056b3',
-    borderBottom: isDarkMode ? '2px solid #90cdf4' : '2px solid #0056b3'
+    color: isDarkMode ? '#ffffff' : '#ffffff',
+    fontWeight: 'bold',
+    textShadow: '0 1px 3px rgba(0,0,0,0.3)'
   };
 
   const toggleButtonStyle = {
-    background: isDarkMode ? '#4a5568' : '#e2e8f0',
-    color: isDarkMode ? '#ffffff' : '#2d3748',
+    background: isDarkMode ? '#4a5568' : 'rgba(255,255,255,0.2)',
     border: 'none',
-    padding: '8px 12px',
-    borderRadius: '6px',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
     cursor: 'pointer',
-    fontSize: '16px',
+    fontSize: '18px',
     marginRight: '15px',
-    transition: 'background-color 0.2s ease'
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   };
 
   return (
@@ -97,9 +109,11 @@ function Navigation({ user }) {
             background: '#dc3545',
             color: 'white',
             border: 'none',
-            padding: '5px 15px',
-            borderRadius: '4px',
-            cursor: 'pointer'
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            transition: 'background-color 0.3s ease'
           }}
         >
           Logout
