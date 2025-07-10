@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { auth, db } from './firebase.js';
 import {
   collection,
@@ -12,6 +11,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
+import { DarkModeContext } from './DarkModeContext.js';
 
 function CompanySettings() {
   const [companyData, setCompanyData] = useState({
@@ -29,6 +29,7 @@ function CompanySettings() {
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const { isDarkMode } = useContext(DarkModeContext);
 
   const user = auth.currentUser;
 
@@ -41,7 +42,7 @@ function CompanySettings() {
 
     const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data();
       setCompanyData(data);
@@ -78,7 +79,7 @@ function CompanySettings() {
     try {
       const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      
+
       const dataToSave = {
         ...companyData,
         userId: user.uid,
@@ -105,8 +106,9 @@ function CompanySettings() {
   // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    color: isDarkMode ? 'white' : 'black'
   };
 
   const contentStyle = {
@@ -116,7 +118,7 @@ function CompanySettings() {
   };
 
   const headerStyle = {
-    color: 'white',
+    color: isDarkMode ? '#f0f0f0' : 'white',
     textAlign: 'center',
     marginBottom: '40px'
   };
@@ -130,7 +132,8 @@ function CompanySettings() {
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? '#333' : '#fff',
+    color: isDarkMode ? 'white' : 'black',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
@@ -142,19 +145,20 @@ function CompanySettings() {
     display: 'block',
     marginBottom: '5px',
     fontWeight: 'bold',
-    color: '#333',
+    color: isDarkMode ? '#ddd' : '#333',
     fontSize: '14px'
   };
 
   const sectionStyle = {
-    background: 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     marginBottom: '30px',
     borderRadius: '16px',
     border: '2px solid #f8f9fa',
     backdropFilter: 'blur(15px)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    color: isDarkMode ? 'white' : 'black'
   };
 
   const buttonStyle = {
@@ -174,7 +178,8 @@ function CompanySettings() {
     border: '2px solid #e9ecef',
     borderRadius: '12px',
     padding: '25px',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: isDarkMode ? '#222' : '#f8f9fa',
+    color: isDarkMode ? 'white' : 'black',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
   };
 
@@ -212,7 +217,7 @@ function CompanySettings() {
             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
           }}
         >
-          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.5rem' }}>
             🎨 Company Logo
           </h3>
           <div style={{ marginBottom: '20px' }}>
@@ -255,7 +260,7 @@ function CompanySettings() {
             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
           }}
         >
-          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.5rem' }}>
             ℹ️ Basic Information
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -314,7 +319,7 @@ function CompanySettings() {
             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
           }}
         >
-          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.5rem' }}>
             📍 Address
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
@@ -373,7 +378,7 @@ function CompanySettings() {
             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
           }}
         >
-          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.5rem' }}>
             🏛️ Business Registration
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -418,7 +423,7 @@ function CompanySettings() {
             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
           }}
         >
-          <h3 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.5rem' }}>
             👁️ Preview
           </h3>
           <div style={previewStyle}>
@@ -434,21 +439,21 @@ function CompanySettings() {
                 }}
               />
             )}
-            <h4 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '1.3rem' }}>
+            <h4 style={{ margin: '0 0 15px 0', color: isDarkMode ? '#eee' : '#333', fontSize: '1.3rem' }}>
               {companyData.name || 'Your Company Name'}
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
               <div>
-                {companyData.address && <p style={{ margin: '3px 0', fontSize: '14px' }}>📍 {companyData.address}</p>}
-                {companyData.city && <p style={{ margin: '3px 0', fontSize: '14px' }}>🏙️ {companyData.city}, {companyData.postcode}</p>}
-                {companyData.country && <p style={{ margin: '3px 0', fontSize: '14px' }}>🌍 {companyData.country}</p>}
+                {companyData.address && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>📍 {companyData.address}</p>}
+                {companyData.city && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>🏙️ {companyData.city}, {companyData.postcode}</p>}
+                {companyData.country && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>🌍 {companyData.country}</p>}
               </div>
               <div>
-                {companyData.email && <p style={{ margin: '3px 0', fontSize: '14px' }}>📧 {companyData.email}</p>}
-                {companyData.phone && <p style={{ margin: '3px 0', fontSize: '14px' }}>📱 {companyData.phone}</p>}
-                {companyData.website && <p style={{ margin: '3px 0', fontSize: '14px' }}>🌐 {companyData.website}</p>}
-                {companyData.vatNumber && <p style={{ margin: '3px 0', fontSize: '14px' }}>💼 VAT: {companyData.vatNumber}</p>}
-                {companyData.companyNumber && <p style={{ margin: '3px 0', fontSize: '14px' }}>🏢 Company No: {companyData.companyNumber}</p>}
+                {companyData.email && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>📧 {companyData.email}</p>}
+                {companyData.phone && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>📱 {companyData.phone}</p>}
+                {companyData.website && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>🌐 {companyData.website}</p>}
+                {companyData.vatNumber && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>💼 VAT: {companyData.vatNumber}</p>}
+                {companyData.companyNumber && <p style={{ margin: '3px 0', fontSize: '14px', color: isDarkMode ? '#ddd' : 'black' }}>🏢 Company No: {companyData.companyNumber}</p>}
               </div>
             </div>
           </div>
@@ -480,7 +485,7 @@ function CompanySettings() {
           >
             {loading ? '⏳ Saving...' : '💾 Save Company Settings'}
           </button>
-          
+
           {saved && (
             <div style={{ 
               marginTop: '20px',

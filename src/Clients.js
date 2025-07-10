@@ -106,7 +106,7 @@ function Clients() {
   // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   };
 
@@ -206,12 +206,14 @@ function Clients() {
   };
 
   const clientCardStyle = {
-    background: 'white',
-    border: '2px solid #f8f9fa',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #f8f9fa',
     borderRadius: '12px',
     padding: '25px',
     marginBottom: '20px',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+    cursor: 'pointer',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const searchStyle = {

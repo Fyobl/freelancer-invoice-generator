@@ -138,6 +138,7 @@ function Products({ user }) {
     });
 
   const pageStyle = {
+    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     minHeight: '100vh',
     padding: '20px'
   };
@@ -178,13 +179,14 @@ function Products({ user }) {
   const selectStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
+    color: isDarkMode ? '#ffffff' : '#333333',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
@@ -207,13 +209,14 @@ function Products({ user }) {
   };
 
   const productCardStyle = {
-    background: 'white',
-    border: '2px solid #f8f9fa',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #f8f9fa',
     borderRadius: '12px',
     padding: '25px',
     marginBottom: '20px',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const productCardHoverStyle = {
