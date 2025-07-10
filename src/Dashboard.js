@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase.js';
 import {
@@ -79,7 +78,7 @@ function Dashboard() {
     if (!clientName || !amount) return;
 
     const invoiceNumber = `INV-${String(nextInvoiceNumber).padStart(4, '0')}`;
-    
+
     const newInvoice = {
       userId: user.uid,
       clientName,
@@ -149,111 +148,191 @@ function Dashboard() {
 
   const exportPDF = (invoice) => {
     const doc = new jsPDF();
-    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     let currentY = 20;
 
-    // Add company logo if available
-    if (companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 20, currentY, 40, 20);
-        currentY += 25;
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
-      }
+    // Professional header with gradient-like effect
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Company branding section
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('INVOICE', 20, 25);
+
+    // Company details on right side of header
+    if (companySettings.companyName) {
+      doc.setFontSize(12);
+      doc.text(companySettings.companyName, pageWidth - 20, 15, { align: 'right' });
+    }
+    if (companySettings.address) {
+      doc.setFontSize(10);
+      doc.text(companySettings.address, pageWidth - 20, 25, { align: 'right' });
+    }
+    if (companySettings.email) {
+      doc.text(companySettings.email, pageWidth - 20, 32, { align: 'right' });
     }
 
-    // Company information header
-    if (companySettings.name) {
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text(companySettings.name, 20, currentY);
-      currentY += 8;
-    }
+    currentY = 60;
+    doc.setTextColor(0, 0, 0);
+
+    // Invoice details section with clean layout
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, currentY, pageWidth - 40, 35, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, currentY, pageWidth - 40, 35);
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Invoice Details', 25, currentY + 12);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+
+    // Left column
+    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 25, currentY + 22);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, currentY + 30);
+
+    // Right column
+    doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - 120, currentY + 22);
+    doc.text(`Status: ${invoice.status}`, pageWidth - 120, currentY + 30);
+
+    currentY += 55;
+
+    // Bill To section
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, currentY, pageWidth - 40, 25, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, currentY, pageWidth - 40, 25);
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill To:', 25, currentY + 12);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(invoice.clientName, 25, currentY + 20);
+
+    currentY += 45;
+
+    // Items/Services table header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('Description', 25, currentY + 10);
+    doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
+
+    currentY += 15;
+    doc.setTextColor(0, 0, 0);
+
+    // Service/product line
+    doc.setFillColor(255, 255, 255);
+    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, currentY, pageWidth - 40, 15);
 
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    
-    if (companySettings.address) {
-      doc.text(companySettings.address, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.city) {
-      doc.text(`${companySettings.city}, ${companySettings.postcode || ''}`, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.country) {
-      doc.text(companySettings.country, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.email) {
-      doc.text(`Email: ${companySettings.email}`, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.phone) {
-      doc.text(`Phone: ${companySettings.phone}`, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.website) {
-      doc.text(`Website: ${companySettings.website}`, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.vatNumber) {
-      doc.text(`VAT: ${companySettings.vatNumber}`, 20, currentY);
-      currentY += 5;
-    }
-    if (companySettings.companyNumber) {
-      doc.text(`Company No: ${companySettings.companyNumber}`, 20, currentY);
-      currentY += 5;
-    }
+    doc.text(invoice.productName || 'Service', 25, currentY + 10);
+    doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
 
-    currentY += 10;
+    currentY += 35;
 
-    // Invoice template styling
-    if (template === 'professional') {
-      // Professional template
-      doc.setFillColor(41, 128, 185);
-      doc.rect(0, currentY, 210, 15, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.text('INVOICE', 20, currentY + 10);
-      doc.setTextColor(0, 0, 0);
-      currentY += 20;
-    } else {
-      // Standard template
-      doc.setFontSize(18);
-      doc.setFont(undefined, 'bold');
-      doc.text('INVOICE', 20, currentY);
-      currentY += 10;
-    }
+    // Financial summary section
+    const summaryStartY = currentY;
+    const summaryWidth = 100;
+    const summaryX = pageWidth - 120;
+
+    doc.setFillColor(248, 249, 250);
+    doc.rect(summaryX, summaryStartY, summaryWidth, 45, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(summaryX, summaryStartY, summaryWidth, 45);
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+
+    // Subtotal
+    doc.text('Subtotal:', summaryX + 5, summaryStartY + 10);
+    doc.text(`£${Number(invoice.amount).toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 10, { align: 'right' });
+
+    // VAT
+    const vatAmount = Number(invoice.amount) * Number(invoice.vat) / 100;
+    doc.text(`VAT (${invoice.vat}%):`, summaryX + 5, summaryStartY + 20);
+    doc.text(`£${vatAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 20, { align: 'right' });
+
+    // Total line
+    doc.setDrawColor(41, 128, 185);
+    doc.line(summaryX + 5, summaryStartY + 25, summaryX + summaryWidth - 5, summaryStartY + 25);
 
     doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 20, currentY);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 10);
-    doc.text(`Due Date: ${invoice.dueDate}`, 20, currentY + 20);
-    
-    currentY += 40;
     doc.setFont(undefined, 'bold');
-    doc.text(`Bill To:`, 20, currentY);
-    doc.setFont(undefined, 'normal');
-    doc.text(`${invoice.clientName}`, 20, currentY + 10);
-    
-    currentY += 30;
-    doc.text(`Amount: £${Number(invoice.amount).toFixed(2)}`, 20, currentY);
-    doc.text(`VAT (${invoice.vat}%): £${(Number(invoice.amount) * Number(invoice.vat) / 100).toFixed(2)}`, 20, currentY + 10);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total: £${(Number(invoice.amount) + (Number(invoice.amount) * Number(invoice.vat) / 100)).toFixed(2)}`, 20, currentY + 20);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Status: ${invoice.status}`, 20, currentY + 30);
-    
+    const totalAmount = Number(invoice.amount) + vatAmount;
+    doc.text('Total:', summaryX + 5, summaryStartY + 35);
+    doc.text(`£${totalAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 35, { align: 'right' });
+
+    currentY += 65;
+
+    // Notes section
     if (invoice.notes) {
-      currentY += 50;
+      doc.setFillColor(248, 249, 250);
+      doc.rect(20, currentY, pageWidth - 40, 30, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(20, currentY, pageWidth - 40, 30);
+
+      doc.setFontSize(11);
       doc.setFont(undefined, 'bold');
-      doc.text(`Notes:`, 20, currentY);
+      doc.text('Notes:', 25, currentY + 12);
       doc.setFont(undefined, 'normal');
-      doc.text(`${invoice.notes}`, 20, currentY + 10);
+      doc.setFontSize(10);
+
+      // Split notes into lines if too long
+      const noteLines = doc.splitTextToSize(invoice.notes, pageWidth - 50);
+      doc.text(noteLines, 25, currentY + 22);
+
+      currentY += 40;
     }
+
+    // Payment terms section
+    if (companySettings.paymentTerms) {
+      currentY += 10;
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text('Payment Terms:', 20, currentY);
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(10);
+      const termsLines = doc.splitTextToSize(companySettings.paymentTerms, pageWidth - 40);
+      doc.text(termsLines, 20, currentY + 10);
+      currentY += 10 + (termsLines.length * 5);
+    }
+
+    // Footer with company registration details
+    const footerY = pageHeight - 30;
+    doc.setDrawColor(41, 128, 185);
+    doc.line(20, footerY, pageWidth - 20, footerY);
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100, 100, 100);
+
+    let footerText = [];
+    if (companySettings.companyNumber) {
+      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+    }
+    if (companySettings.vatNumber) {
+      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+    }
+
+    if (footerText.length > 0) {
+      doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
+    }
+
+    // Thank you message
+    doc.setTextColor(41, 128, 185);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'italic');
+    doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
 
     doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
   };
@@ -296,7 +375,7 @@ function Dashboard() {
         <div style={{ background: '#f8f9fa', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
           <h3>Create New Invoice</h3>
           <p>Next Invoice Number: <strong>INV-{String(nextInvoiceNumber).padStart(4, '0')}</strong></p>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
               <label>Select Client</label><br />
@@ -404,7 +483,7 @@ function Dashboard() {
 
         {/* Invoice List with Filters */}
         <h3>Invoice Management</h3>
-        
+
         <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
           <input
             placeholder="Search invoices..."
@@ -412,7 +491,7 @@ function Dashboard() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ padding: '8px', width: '300px' }}
           />
-          
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
