@@ -1,7 +1,4 @@
-The code changes aim to fix the alignment issue by updating the input and select styles to have consistent vertical alignment.
-```
 
-```replit_final_file
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
