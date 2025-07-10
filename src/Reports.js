@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -7,111 +6,70 @@ import { useDarkMode } from './DarkModeContext.js';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
-  const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
-  });
+  const user = auth.currentUser;
   const { isDarkMode } = useDarkMode();
 
   useEffect(() => {
-    fetchData();
-  }, [dateRange]);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const user = auth.currentUser;
-      if (!user) return;
+      const [invoicesSnapshot, productsSnapshot, clientsSnapshot] = await Promise.all([
+        getDocs(query(collection(db, 'invoices'), where('userId', '==', user.uid))),
+        getDocs(query(collection(db, 'products'), where('userId', '==', user.uid))),
+        getDocs(query(collection(db, 'clients'), where('userId', '==', user.uid)))
+      ]);
 
-      // Fetch invoices
-      const invoicesQuery = query(
-        collection(db, 'invoices'),
-        where('userId', '==', user.uid)
-      );
-      const invoicesSnapshot = await getDocs(invoicesQuery);
-      const invoicesData = invoicesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate ? doc.data().date.toDate() : new Date(doc.data().date)
-      }));
-
-      // Filter by date range
-      const filteredInvoices = invoicesData.filter(invoice => {
-        const invoiceDate = new Date(invoice.date);
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
-        return invoiceDate >= startDate && invoiceDate <= endDate;
-      });
-
-      setInvoices(filteredInvoices);
-
-      // Fetch clients
-      const clientsQuery = query(
-        collection(db, 'clients'),
-        where('userId', '==', user.uid)
-      );
-      const clientsSnapshot = await getDocs(clientsQuery);
-      const clientsData = clientsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setClients(clientsData);
-
-      // Fetch products
-      const productsQuery = query(
-        collection(db, 'products'),
-        where('userId', '==', user.uid)
-      );
-      const productsSnapshot = await getDocs(productsQuery);
-      const productsData = productsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProducts(productsData);
-
+      setInvoices(invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setClients(clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
-    } finally {
       setLoading(false);
     }
   };
 
   const calculateStats = () => {
-    const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-    const totalInvoices = invoices.length;
-    const averageInvoice = totalInvoices > 0 ? totalRevenue / totalInvoices : 0;
-    
+    const totalRevenue = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0);
+    const paidInvoices = invoices.filter(invoice => invoice.status === 'Paid');
+    const unpaidInvoices = invoices.filter(invoice => invoice.status === 'Unpaid');
+
     return {
       totalRevenue,
-      totalInvoices,
-      averageInvoice,
-      totalClients: clients.length,
-      totalProducts: products.length
+      totalInvoices: invoices.length,
+      paidInvoices: paidInvoices.length,
+      unpaidInvoices: unpaidInvoices.length,
+      paidRevenue: paidInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0),
+      unpaidRevenue: unpaidInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
     };
   };
 
   const getTopClients = () => {
     const clientRevenue = {};
-    
+
     invoices.forEach(invoice => {
-      const clientId = invoice.clientId;
-      if (clientRevenue[clientId]) {
-        clientRevenue[clientId] += invoice.total || 0;
-      } else {
-        clientRevenue[clientId] = invoice.total || 0;
+      const clientId = invoice.selectedClientId || invoice.clientName;
+      if (!clientRevenue[clientId]) {
+        clientRevenue[clientId] = { revenue: 0, invoiceCount: 0 };
       }
+      clientRevenue[clientId].revenue += parseFloat(invoice.amount || 0);
+      clientRevenue[clientId].invoiceCount += 1;
     });
 
     return Object.entries(clientRevenue)
-      .map(([clientId, revenue]) => {
+      .map(([clientId, data]) => {
         const client = clients.find(c => c.id === clientId);
         return {
           clientId,
-          clientName: client ? client.name : 'Unknown Client',
-          revenue
+          clientName: client ? client.name : clientId,
+          ...data
         };
       })
       .sort((a, b) => b.revenue - a.revenue)
@@ -120,20 +78,15 @@ function Reports() {
 
   const getTopProducts = () => {
     const productSales = {};
-    
+
     invoices.forEach(invoice => {
-      if (invoice.items) {
-        invoice.items.forEach(item => {
-          if (productSales[item.productId]) {
-            productSales[item.productId].quantity += item.quantity || 0;
-            productSales[item.productId].revenue += (item.quantity || 0) * (item.price || 0);
-          } else {
-            productSales[item.productId] = {
-              quantity: item.quantity || 0,
-              revenue: (item.quantity || 0) * (item.price || 0)
-            };
-          }
-        });
+      const productId = invoice.selectedProductId;
+      if (productId && productId !== '') {
+        if (!productSales[productId]) {
+          productSales[productId] = { revenue: 0, salesCount: 0 };
+        }
+        productSales[productId].revenue += parseFloat(invoice.amount || 0);
+        productSales[productId].salesCount += 1;
       }
     });
 
@@ -192,21 +145,22 @@ function Reports() {
   };
 
   const statCardStyle = {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    padding: '25px',
+    background: isDarkMode ? 'rgba(40,44,52,0.8)' : 'rgba(255,255,255,0.9)',
+    padding: '20px',
     borderRadius: '12px',
     textAlign: 'center',
-    boxShadow: '0 10px 25px rgba(102, 126, 234, 0.3)'
+    border: '2px solid rgba(102, 126, 234, 0.1)',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Navigation user={auth.currentUser} />
+        <Navigation user={user} />
         <div style={contentStyle}>
-          <div style={{ textAlign: 'center', color: 'white', fontSize: '1.2rem' }}>
-            Loading reports...
+          <div style={headerStyle}>
+            <h1>📈 Reports</h1>
+            <p>Loading your business analytics...</p>
           </div>
         </div>
       </div>
@@ -215,165 +169,112 @@ function Reports() {
 
   return (
     <div style={containerStyle}>
-      <Navigation user={auth.currentUser} />
+      <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             📈 Reports & Analytics
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Analyze your business performance
+            Track your business performance and insights
           </p>
-        </div>
-
-        <div style={cardStyle}>
-          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
-            📅 Date Range
-          </h2>
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                Start Date:
-              </label>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                style={{
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '2px solid #e1e5e9',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                End Date:
-              </label>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                style={{
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '2px solid #e1e5e9',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-          </div>
         </div>
 
         <div style={statsGridStyle}>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
-              Total Revenue
-            </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-              ${stats.totalRevenue.toFixed(2)}
-            </div>
+            <h3 style={{ color: '#667eea', margin: '0 0 10px 0' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.totalRevenue.toFixed(2)}
+            </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
-              Total Invoices
-            </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+            <h3 style={{ color: '#667eea', margin: '0 0 10px 0' }}>Total Invoices</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
               {stats.totalInvoices}
-            </div>
+            </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
-              Average Invoice
-            </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-              ${stats.averageInvoice.toFixed(2)}
-            </div>
+            <h3 style={{ color: '#28a745', margin: '0 0 10px 0' }}>Paid Revenue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.paidRevenue.toFixed(2)}
+            </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
-              Total Clients
-            </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-              {stats.totalClients}
-            </div>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
-              Total Products
-            </h3>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-              {stats.totalProducts}
-            </div>
+            <h3 style={{ color: '#dc3545', margin: '0 0 10px 0' }}>Unpaid Revenue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.unpaidRevenue.toFixed(2)}
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
-          <div style={cardStyle}>
-            <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
-              👥 Top Clients by Revenue
-            </h2>
-            {topClients.length > 0 ? (
-              <div>
-                {topClients.map((client, index) => (
-                  <div key={client.clientId} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '15px',
-                    marginBottom: '10px',
-                    background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.1)',
-                    borderRadius: '8px'
-                  }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>#{index + 1}</span>
-                      <span style={{ marginLeft: '10px' }}>{client.clientName}</span>
-                    </div>
-                    <div style={{ fontWeight: 'bold', color: '#667eea' }}>
-                      ${client.revenue.toFixed(2)}
-                    </div>
+        <div style={cardStyle}>
+          <h2 style={{ color: isDarkMode ? '#ffffff' : '#333333', marginBottom: '20px' }}>
+            👥 Top Clients
+          </h2>
+          {topClients.length > 0 ? (
+            <div>
+              {topClients.map((client, index) => (
+                <div key={client.clientId} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '15px 0',
+                  borderBottom: index < topClients.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none'
+                }}>
+                  <div>
+                    <h4 style={{ margin: 0, color: isDarkMode ? '#ffffff' : '#333333' }}>
+                      {client.clientName}
+                    </h4>
+                    <p style={{ margin: 0, color: isDarkMode ? '#cccccc' : '#666666' }}>
+                      {client.invoiceCount} invoices
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#666' }}>No client data available</p>
-            )}
-          </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
+                      £{client.revenue.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: isDarkMode ? '#cccccc' : '#666666' }}>No client data available</p>
+          )}
+        </div>
 
-          <div style={cardStyle}>
-            <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
-              📦 Top Products by Revenue
-            </h2>
-            {topProducts.length > 0 ? (
-              <div>
-                {topProducts.map((product, index) => (
-                  <div key={product.productId} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '15px',
-                    marginBottom: '10px',
-                    background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.1)',
-                    borderRadius: '8px'
-                  }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>#{index + 1}</span>
-                      <span style={{ marginLeft: '10px' }}>{product.productName}</span>
-                      <div style={{ fontSize: '0.9rem', opacity: '0.7', marginTop: '5px' }}>
-                        Qty: {product.quantity}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 'bold', color: '#667eea' }}>
-                      ${product.revenue.toFixed(2)}
-                    </div>
+        <div style={cardStyle}>
+          <h2 style={{ color: isDarkMode ? '#ffffff' : '#333333', marginBottom: '20px' }}>
+            📦 Top Products
+          </h2>
+          {topProducts.length > 0 ? (
+            <div>
+              {topProducts.map((product, index) => (
+                <div key={product.productId} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '15px 0',
+                  borderBottom: index < topProducts.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none'
+                }}>
+                  <div>
+                    <h4 style={{ margin: 0, color: isDarkMode ? '#ffffff' : '#333333' }}>
+                      {product.productName}
+                    </h4>
+                    <p style={{ margin: 0, color: isDarkMode ? '#cccccc' : '#666666' }}>
+                      {product.salesCount} sales
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#666' }}>No product data available</p>
-            )}
-          </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
+                      £{product.revenue.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: isDarkMode ? '#cccccc' : '#666666' }}>No product data available</p>
+          )}
         </div>
       </div>
     </div>
