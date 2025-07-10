@@ -170,12 +170,16 @@ function Products({ user }) {
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
-    transition: 'border-color 0.3s ease',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
     outline: 'none'
   };
 
-  const inputFocusStyle = {
-    borderColor: '#667eea'
+  const selectStyle = {
+    ...inputStyle,
+    cursor: 'pointer'
   };
 
   const buttonStyle = {
@@ -382,7 +386,7 @@ function Products({ user }) {
                 🔄 Sort By
               </label>
               <select
-                style={inputStyle}
+                style={selectStyle}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}

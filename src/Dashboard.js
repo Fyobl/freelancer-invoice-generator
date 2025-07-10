@@ -85,14 +85,16 @@ function Dashboard() {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
+    padding: '12px 15px',
     border: '2px solid #e1e5e9',
-    borderRadius: '10px',
+    borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none'
   };
 
   const selectStyle = {

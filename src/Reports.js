@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -48,7 +47,7 @@ function Reports() {
     if (dateRange !== 'all') {
       const now = new Date();
       const cutoffDate = new Date();
-      
+
       switch (dateRange) {
         case 'week':
           cutoffDate.setDate(now.getDate() - 7);
@@ -74,7 +73,7 @@ function Reports() {
     const paidRevenue = filteredInvoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
     const unpaidRevenue = filteredInvoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
     const overdueRevenue = filteredInvoices.filter(inv => inv.status === 'Overdue').reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    
+
     const statusCounts = {
       paid: filteredInvoices.filter(inv => inv.status === 'Paid').length,
       unpaid: filteredInvoices.filter(inv => inv.status === 'Unpaid').length,
@@ -134,13 +133,23 @@ function Reports() {
     backdropFilter: 'blur(10px)'
   };
 
-  const selectStyle = {
-    padding: '10px 15px',
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 15px',
     border: '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '14px',
-    marginLeft: '10px',
-    backgroundColor: 'white'
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none'
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    cursor: 'pointer'
   };
 
   const statCardStyle = {
@@ -240,7 +249,7 @@ function Reports() {
                 £{stats.totalRevenue?.toFixed(2) || '0.00'}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {
@@ -257,7 +266,7 @@ function Reports() {
                 £{stats.paidRevenue?.toFixed(2) || '0.00'}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {
@@ -274,7 +283,7 @@ function Reports() {
                 £{stats.unpaidRevenue?.toFixed(2) || '0.00'}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {
@@ -316,7 +325,7 @@ function Reports() {
                 {stats.totalInvoices || 0}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {
@@ -333,7 +342,7 @@ function Reports() {
                 £{stats.averageInvoiceValue?.toFixed(2) || '0.00'}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {
@@ -350,7 +359,7 @@ function Reports() {
                 {clients.length}
               </p>
             </div>
-            
+
             <div 
               style={statCardStyle}
               onMouseOver={(e) => {

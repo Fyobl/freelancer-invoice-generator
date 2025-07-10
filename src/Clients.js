@@ -152,14 +152,22 @@ function Clients() {
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
-    transition: 'border-color 0.3s ease',
-    fontFamily: 'inherit'
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none'
   };
 
   const textareaStyle = {
     ...inputStyle,
     minHeight: '80px',
     resize: 'vertical'
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    cursor: 'pointer'
   };
 
   const buttonStyle = {

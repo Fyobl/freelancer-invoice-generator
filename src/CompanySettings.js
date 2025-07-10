@@ -128,9 +128,11 @@ function CompanySettings() {
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
-    transition: 'border-color 0.3s ease',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: 'white'
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none'
   };
 
   const labelStyle = {
