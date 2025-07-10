@@ -155,19 +155,29 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchInvoices();
-      fetchProducts();
-      fetchClients();
-      fetchCompanySettings();
-    }
-  }, [user]);
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        fetchInvoices();
+        fetchProducts();
+        fetchClients();
+        fetchCompanySettings();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const fetchInvoices = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.log('No authenticated user');
+      return;
+    }
+
     try {
       const q = query(
         collection(db, 'invoices'),
-        where('userId', '==', user.uid),
+        where('userId', '==', currentUser.uid),
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(q);
@@ -186,8 +196,11 @@ function Dashboard() {
   };
 
   const fetchProducts = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     try {
-      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const q = query(collection(db, 'products'), where('userId', '==', currentUser.uid));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -200,8 +213,11 @@ function Dashboard() {
   };
 
   const fetchClients = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     try {
-      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const q = query(collection(db, 'clients'), where('userId', '==', currentUser.uid));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -214,8 +230,11 @@ function Dashboard() {
   };
 
   const fetchCompanySettings = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     try {
-      const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+      const q = query(collection(db, 'companySettings'), where('userId', '==', currentUser.uid));
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data();
@@ -247,7 +266,8 @@ function Dashboard() {
   };
 
   const addInvoice = async () => {
-    if (!clientName.trim() || !amount.trim()) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser || !clientName.trim() || !amount.trim()) return;
 
     try {
       const invoiceData = {
@@ -260,7 +280,7 @@ function Dashboard() {
         status: status,
         notes: notes.trim(),
         template: template,
-        userId: user.uid,
+        userId: currentUser.uid,
         createdAt: serverTimestamp()
       };
 
