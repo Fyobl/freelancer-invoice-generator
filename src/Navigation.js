@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -199,4 +200,4 @@ function Navigation({ user }) {
   );
 }
 
-
+export default Navigation;
