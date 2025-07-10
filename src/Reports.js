@@ -6,93 +6,159 @@ import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Reports() {
-  const { isDarkMode } = useDarkMode();
   const [invoices, setInvoices] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [dateRange, setDateRange] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [dateRange, setDateRange] = useState({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
+  const { isDarkMode } = useDarkMode();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      if (user) {
-        fetchInvoices(user.uid);
-      } else {
-        setLoading(false);
-      }
-    });
+    fetchData();
+  }, [dateRange]);
 
-    return () => unsubscribe();
-  }, []);
-
-  const fetchInvoices = async (userId) => {
+  const fetchData = async () => {
     try {
-      const q = query(
+      setLoading(true);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      // Fetch invoices
+      const invoicesQuery = query(
         collection(db, 'invoices'),
-        where('userId', '==', userId)
+        where('userId', '==', user.uid)
       );
-      const querySnapshot = await getDocs(q);
-      const invoiceData = querySnapshot.docs.map(doc => ({
+      const invoicesSnapshot = await getDocs(invoicesQuery);
+      const invoicesData = invoicesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().date?.toDate ? doc.data().date.toDate() : new Date(doc.data().date)
+      }));
+
+      // Filter by date range
+      const filteredInvoices = invoicesData.filter(invoice => {
+        const invoiceDate = new Date(invoice.date);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        return invoiceDate >= startDate && invoiceDate <= endDate;
+      });
+
+      setInvoices(filteredInvoices);
+
+      // Fetch clients
+      const clientsQuery = query(
+        collection(db, 'clients'),
+        where('userId', '==', user.uid)
+      );
+      const clientsSnapshot = await getDocs(clientsQuery);
+      const clientsData = clientsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setInvoices(invoiceData);
+      setClients(clientsData);
+
+      // Fetch products
+      const productsQuery = query(
+        collection(db, 'products'),
+        where('userId', '==', user.uid)
+      );
+      const productsSnapshot = await getDocs(productsQuery);
+      const productsData = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(productsData);
+
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterInvoices = () => {
-    let filtered = invoices;
-
-    if (dateRange !== 'all') {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch (dateRange) {
-        case 'week':
-          filterDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          filterDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'year':
-          filterDate.setFullYear(now.getFullYear() - 1);
-          break;
-        default:
-          break;
-      }
-      
-      filtered = filtered.filter(invoice => {
-        const invoiceDate = new Date(invoice.date);
-        return invoiceDate >= filterDate;
-      });
-    }
-
-    if (status !== 'all') {
-      filtered = filtered.filter(invoice => invoice.status === status);
-    }
-
-    return filtered;
-  };
-
-  const calculateTotals = () => {
-    const filtered = filterInvoices();
-    const total = filtered.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-    const paid = filtered.filter(inv => inv.status === 'paid').reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-    const pending = filtered.filter(inv => inv.status === 'pending').reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+  const calculateStats = () => {
+    const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    const totalInvoices = invoices.length;
+    const averageInvoice = totalInvoices > 0 ? totalRevenue / totalInvoices : 0;
     
-    return { total, paid, pending, count: filtered.length };
+    return {
+      totalRevenue,
+      totalInvoices,
+      averageInvoice,
+      totalClients: clients.length,
+      totalProducts: products.length
+    };
   };
+
+  const getTopClients = () => {
+    const clientRevenue = {};
+    
+    invoices.forEach(invoice => {
+      const clientId = invoice.clientId;
+      if (clientRevenue[clientId]) {
+        clientRevenue[clientId] += invoice.total || 0;
+      } else {
+        clientRevenue[clientId] = invoice.total || 0;
+      }
+    });
+
+    return Object.entries(clientRevenue)
+      .map(([clientId, revenue]) => {
+        const client = clients.find(c => c.id === clientId);
+        return {
+          clientId,
+          clientName: client ? client.name : 'Unknown Client',
+          revenue
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  };
+
+  const getTopProducts = () => {
+    const productSales = {};
+    
+    invoices.forEach(invoice => {
+      if (invoice.items) {
+        invoice.items.forEach(item => {
+          if (productSales[item.productId]) {
+            productSales[item.productId].quantity += item.quantity || 0;
+            productSales[item.productId].revenue += (item.quantity || 0) * (item.price || 0);
+          } else {
+            productSales[item.productId] = {
+              quantity: item.quantity || 0,
+              revenue: (item.quantity || 0) * (item.price || 0)
+            };
+          }
+        });
+      }
+    });
+
+    return Object.entries(productSales)
+      .map(([productId, data]) => {
+        const product = products.find(p => p.id === productId);
+        return {
+          productId,
+          productName: product ? product.name : 'Unknown Product',
+          ...data
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  };
+
+  const stats = calculateStats();
+  const topClients = getTopClients();
+  const topProducts = getTopProducts();
 
   const containerStyle = {
     minHeight: '100vh',
     background: isDarkMode 
-      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -105,45 +171,43 @@ function Reports() {
   const headerStyle = {
     textAlign: 'center',
     marginBottom: '40px',
-    padding: '40px 20px',
-    background: isDarkMode ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.1)',
-    borderRadius: '20px',
-    backdropFilter: 'blur(20px)',
-    border: isDarkMode ? '1px solid rgba(71,85,105,0.3)' : '1px solid rgba(255,255,255,0.2)'
+    color: 'white'
   };
 
   const cardStyle = {
-    background: isDarkMode ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-    borderRadius: '15px',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    borderRadius: '16px',
+    marginBottom: '30px',
+    backdropFilter: 'blur(15px)',
+    border: '2px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+  };
+
+  const statsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px',
+    marginBottom: '30px'
+  };
+
+  const statCardStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
     padding: '25px',
-    marginBottom: '25px',
-    backdropFilter: 'blur(10px)',
-    border: isDarkMode ? '1px solid rgba(71,85,105,0.3)' : '1px solid rgba(255,255,255,0.2)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+    borderRadius: '12px',
+    textAlign: 'center',
+    boxShadow: '0 10px 25px rgba(102, 126, 234, 0.3)'
   };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0',
-    background: isDarkMode ? '#2d3748' : '#ffffff',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    fontSize: '16px',
-    boxSizing: 'border-box',
-    height: '48px',
-    display: 'flex',
-    alignItems: 'center'
-  };
-
-  const totals = calculateTotals();
 
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Navigation user={user} />
+        <Navigation user={auth.currentUser} />
         <div style={contentStyle}>
-          <p style={{ textAlign: 'center', fontSize: '18px' }}>Loading reports...</p>
+          <div style={{ textAlign: 'center', color: 'white', fontSize: '1.2rem' }}>
+            Loading reports...
+          </div>
         </div>
       </div>
     );
@@ -151,108 +215,165 @@ function Reports() {
 
   return (
     <div style={containerStyle}>
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser} />
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
-            📈 Business Reports
+            📈 Reports & Analytics
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Track your business performance and analytics
+            Analyze your business performance
           </p>
         </div>
 
         <div style={cardStyle}>
-          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>Filters</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
+            📅 Date Range
+          </h2>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Date Range:</label>
-              <select 
-                value={dateRange} 
-                onChange={(e) => setDateRange(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="all">All Time</option>
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="year">Last Year</option>
-              </select>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                Start Date:
+              </label>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                style={{
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '2px solid #e1e5e9',
+                  fontSize: '14px'
+                }}
+              />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Status:</label>
-              <select 
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-              </select>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                End Date:
+              </label>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                style={{
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '2px solid #e1e5e9',
+                  fontSize: '14px'
+                }}
+              />
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-          <div style={{...cardStyle, textAlign: 'center'}}>
-            <h3 style={{ color: '#667eea', marginBottom: '10px' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.total.toFixed(2)}</p>
+        <div style={statsGridStyle}>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
+              Total Revenue
+            </h3>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              ${stats.totalRevenue.toFixed(2)}
+            </div>
           </div>
-          <div style={{...cardStyle, textAlign: 'center'}}>
-            <h3 style={{ color: '#51cf66', marginBottom: '10px' }}>Paid</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.paid.toFixed(2)}</p>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
+              Total Invoices
+            </h3>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              {stats.totalInvoices}
+            </div>
           </div>
-          <div style={{...cardStyle, textAlign: 'center'}}>
-            <h3 style={{ color: '#ffd43b', marginBottom: '10px' }}>Pending</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>£{totals.pending.toFixed(2)}</p>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
+              Average Invoice
+            </h3>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              ${stats.averageInvoice.toFixed(2)}
+            </div>
           </div>
-          <div style={{...cardStyle, textAlign: 'center'}}>
-            <h3 style={{ color: '#ff6b6b', marginBottom: '10px' }}>Total Invoices</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>{totals.count}</p>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
+              Total Clients
+            </h3>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              {stats.totalClients}
+            </div>
+          </div>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1rem', opacity: '0.9' }}>
+              Total Products
+            </h3>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              {stats.totalProducts}
+            </div>
           </div>
         </div>
 
-        <div style={cardStyle}>
-          <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>Recent Invoices</h2>
-          {filterInvoices().length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '16px', opacity: '0.7' }}>No invoices found for the selected criteria.</p>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Invoice #</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Client</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Date</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Amount</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: isDarkMode ? '#ffffff' : '#333333' }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filterInvoices().map((invoice, index) => (
-                    <tr key={invoice.id} style={{ borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>#{index + 1}</td>
-                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>{invoice.clientName || 'N/A'}</td>
-                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>{invoice.date || 'N/A'}</td>
-                      <td style={{ padding: '12px', color: isDarkMode ? '#ffffff' : '#333333' }}>£{(invoice.total || 0).toFixed(2)}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          background: invoice.status === 'paid' ? '#51cf66' : '#ffd43b',
-                          color: invoice.status === 'paid' ? 'white' : '#333'
-                        }}>
-                          {invoice.status || 'pending'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
+          <div style={cardStyle}>
+            <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
+              👥 Top Clients by Revenue
+            </h2>
+            {topClients.length > 0 ? (
+              <div>
+                {topClients.map((client, index) => (
+                  <div key={client.clientId} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '15px',
+                    marginBottom: '10px',
+                    background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.1)',
+                    borderRadius: '8px'
+                  }}>
+                    <div>
+                      <span style={{ fontWeight: 'bold' }}>#{index + 1}</span>
+                      <span style={{ marginLeft: '10px' }}>{client.clientName}</span>
+                    </div>
+                    <div style={{ fontWeight: 'bold', color: '#667eea' }}>
+                      ${client.revenue.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#666' }}>No client data available</p>
+            )}
+          </div>
+
+          <div style={cardStyle}>
+            <h2 style={{ marginBottom: '20px', color: isDarkMode ? '#ffffff' : '#333333' }}>
+              📦 Top Products by Revenue
+            </h2>
+            {topProducts.length > 0 ? (
+              <div>
+                {topProducts.map((product, index) => (
+                  <div key={product.productId} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '15px',
+                    marginBottom: '10px',
+                    background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.1)',
+                    borderRadius: '8px'
+                  }}>
+                    <div>
+                      <span style={{ fontWeight: 'bold' }}>#{index + 1}</span>
+                      <span style={{ marginLeft: '10px' }}>{product.productName}</span>
+                      <div style={{ fontSize: '0.9rem', opacity: '0.7', marginTop: '5px' }}>
+                        Qty: {product.quantity}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 'bold', color: '#667eea' }}>
+                      ${product.revenue.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#666' }}>No product data available</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

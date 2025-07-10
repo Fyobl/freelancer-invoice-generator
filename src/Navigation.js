@@ -6,59 +6,59 @@ import { auth } from './firebase.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Navigation({ user }) {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const location = useLocation();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await signOut(auth);
     } catch (error) {
-      alert('Error logging out: ' + error.message);
+      console.error('Error signing out:', error);
     }
   };
 
   const navStyle = {
-    background: isDarkMode ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    backdropFilter: 'blur(15px)',
+    borderBottom: '2px solid rgba(102, 126, 234, 0.1)',
     padding: '15px 30px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(255,255,255,0.2)',
-    color: 'white'
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
   };
 
   const logoStyle = {
     fontSize: '1.5rem',
     fontWeight: 'bold',
+    color: isDarkMode ? '#ffffff' : '#333333',
     textDecoration: 'none',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text'
   };
 
   const linkStyle = {
+    color: isDarkMode ? '#cccccc' : '#666666',
     textDecoration: 'none',
-    color: 'white',
-    marginRight: '25px',
-    fontSize: '16px',
-    fontWeight: '500',
-    transition: 'all 0.3s ease',
-    padding: '8px 16px',
+    margin: '0 20px',
+    padding: '10px 15px',
     borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px'
+    transition: 'all 0.3s ease',
+    fontSize: '0.95rem',
+    fontWeight: '500'
   };
 
   const activeLinkStyle = {
     ...linkStyle,
-    background: 'rgba(255,255,255,0.2)',
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 12px rgba(255,255,255,0.1)'
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
   };
 
   const userMenuStyle = {
@@ -138,59 +138,68 @@ function Navigation({ user }) {
         >
           {isDarkMode ? '☀️ Light' : '🌙 Dark'}
         </button>
-
+        
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             style={{
-              background: 'rgba(255,255,255,0.2)',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
               border: 'none',
               borderRadius: '25px',
-              padding: '8px 16px',
-              color: 'white',
+              padding: '10px 20px',
               cursor: 'pointer',
               fontSize: '14px',
-              transition: 'all 0.3s ease'
+              fontWeight: '500',
+              transition: 'transform 0.2s ease'
             }}
+            onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
           >
-            👤 {user?.email || 'User'}
+            👤 {user?.email?.split('@')[0] || 'User'}
           </button>
 
           {showUserMenu && (
             <div style={{
               position: 'absolute',
               top: '100%',
-              right: '0',
-              marginTop: '5px',
-              background: isDarkMode ? '#2d3748' : 'white',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              minWidth: '150px',
-              zIndex: 1000
+              right: 0,
+              marginTop: '10px',
+              background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
+              border: '2px solid #f8f9fa',
+              borderRadius: '12px',
+              padding: '15px',
+              minWidth: '200px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+              backdropFilter: 'blur(15px)',
+              zIndex: 1001
             }}>
+              <div style={{ 
+                padding: '10px 0', 
+                borderBottom: '1px solid #eee', 
+                marginBottom: '10px',
+                color: isDarkMode ? '#ffffff' : '#333333'
+              }}>
+                <strong>{user?.email}</strong>
+              </div>
               <button
-                onClick={handleLogout}
+                onClick={handleSignOut}
                 style={{
-                  width: '100%',
-                  padding: '12px 16px',
+                  background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                  color: 'white',
                   border: 'none',
-                  background: 'transparent',
-                  color: isDarkMode ? 'white' : '#333',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  textAlign: 'left',
-                  borderRadius: '8px',
-                  transition: 'background 0.2s ease'
+                  fontWeight: '500',
+                  width: '100%',
+                  transition: 'transform 0.2s ease'
                 }}
-                onMouseOver={(e) => {
-                  e.target.style.background = isDarkMode ? '#4a5568' : '#f7fafc';
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
               >
-                🚪 Logout
+                🚪 Sign Out
               </button>
             </div>
           )}
