@@ -3,12 +3,15 @@ import { db, auth } from './firebase.js';
 import {
   collection,
   addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
   query,
   where,
-  getDocs,
-  serverTimestamp
+  serverTimestamp,
+  orderBy
 } from 'firebase/firestore';
-import jsPDF from 'jspdf';
 import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
@@ -40,11 +43,13 @@ function Dashboard() {
       ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%)'
       : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
     fontFamily: 'system-ui, -apple-system, sans-serif',
-    paddingTop: '70px'
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    paddingTop: '80px',
+    paddingBottom: '40px'
   };
 
   const contentStyle = {
-    padding: '30px',
     maxWidth: '1400px',
     margin: '0 auto'
   };
@@ -58,20 +63,19 @@ function Dashboard() {
 
   const statsStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '25px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px',
     marginBottom: '40px'
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
-    padding: '30px',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    padding: '25px',
     borderRadius: '16px',
     textAlign: 'center',
     backdropFilter: 'blur(15px)',
-    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -104,6 +108,13 @@ function Dashboard() {
     verticalAlign: 'top'
   };
 
+  const textareaStyle = {
+    ...inputStyle,
+    minHeight: '80px',
+    resize: 'vertical',
+    lineHeight: '1.5'
+  };
+
   const selectStyle = {
     width: '100%',
     padding: '12px 15px',
@@ -128,136 +139,144 @@ function Dashboard() {
     color: 'white',
     border: 'none',
     padding: '15px 30px',
-    borderRadius: '10px',
+    borderRadius: '12px',
     fontSize: '16px',
     fontWeight: 'bold',
     cursor: 'pointer',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
+    transition: 'all 0.3s ease',
+    marginRight: '15px',
+    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
   };
 
-  const tableStyle = {
-    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
-    borderRadius: '20px',
-    overflow: 'hidden',
-    backdropFilter: 'blur(15px)',
-    boxShadow: isDarkMode ? '0 25px 50px rgba(0,0,0,0.3)' : '0 25px 50px rgba(0,0,0,0.15)',
-    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)'
+  const invoiceCardStyle = {
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #f8f9fa',
+    borderRadius: '16px',
+    padding: '25px',
+    marginBottom: '20px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   const searchFilterStyle = {
-    background: isDarkMode ? 'rgba(45,55,72,0.9)' : 'rgba(255,255,255,0.9)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '25px',
     borderRadius: '16px',
     marginBottom: '30px',
-    backdropFilter: 'blur(10px)',
-    boxShadow: isDarkMode ? '0 15px 30px rgba(0,0,0,0.3)' : '0 15px 30px rgba(0,0,0,0.1)',
-    display: 'flex',
-    gap: '20px',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    backdropFilter: 'blur(15px)',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   useEffect(() => {
-    if (!user) return;
-    fetchAllData();
-  }, [user]);
+    fetchInvoices();
+    fetchProducts();
+    fetchClients();
+    fetchCompanySettings();
+  }, []);
 
-  const fetchAllData = async () => {
-    // Fetch invoices
-    const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
-    const invoicesSnapshot = await getDocs(invoicesQuery);
-    const invoicesData = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setInvoices(invoicesData);
+  const fetchInvoices = async () => {
+    const q = query(
+      collection(db, 'invoices'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setInvoices(data);
 
-    // Calculate next invoice number
-    const invoiceNumbers = invoicesData
-      .map(inv => parseInt(inv.invoiceNumber?.replace('INV-', '') || '0'))
-      .filter(num => !isNaN(num));
-    const maxNumber = invoiceNumbers.length > 0 ? Math.max(...invoiceNumbers) : 0;
+    // Set next invoice number
+    const invoiceNumbers = data.map(inv => parseInt(inv.invoiceNumber) || 0);
+    const maxNumber = Math.max(...invoiceNumbers, 0);
     setNextInvoiceNumber(maxNumber + 1);
+  };
 
-    // Fetch products
-    const productsQuery = query(collection(db, 'products'), where('userId', '==', user.uid));
-    const productsSnapshot = await getDocs(productsQuery);
-    const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setProducts(productsData);
+  const fetchProducts = async () => {
+    const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setProducts(data);
+  };
 
-    // Fetch clients
-    const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
-    const clientsSnapshot = await getDocs(clientsQuery);
-    const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setClients(clientsData);
+  const fetchClients = async () => {
+    const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setClients(data);
+  };
 
-    // Fetch company settings
-    const companyQuery = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
-    const companySnapshot = await getDocs(companyQuery);
-    if (!companySnapshot.empty) {
-      const companyData = companySnapshot.docs[0].data();
-      setCompanySettings(companyData);
+  const fetchCompanySettings = async () => {
+    const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const data = snapshot.docs[0].data();
+      setCompanySettings(data);
     }
   };
 
-  const handleAddInvoice = async () => {
-    if (!clientName || !amount) return;
-
-    const invoiceNumber = `INV-${String(nextInvoiceNumber).padStart(4, '0')}`;
-
-    const newInvoice = {
-      userId: user.uid,
-      clientName,
-      clientId: selectedClientId || null,
-      amount: parseFloat(amount),
-      vat: parseFloat(vat) || 0,
-      dueDate,
-      status,
-      notes,
-      template,
-      productId: selectedProductId || null,
-      createdAt: serverTimestamp(),
-      invoiceNumber
-    };
-
-    const docRef = await addDoc(collection(db, 'invoices'), newInvoice);
-    setInvoices(prev => [...prev, { ...newInvoice, id: docRef.id }]);
-    setNextInvoiceNumber(prev => prev + 1);
-
-    // Reset form
-    resetForm();
-  };
-
-  const handleStatusChange = async (invoiceId, newStatus) => {
-    await updateDoc(doc(db, 'invoices', invoiceId), { status: newStatus });
-    setInvoices(prev => prev.map(inv => 
-      inv.id === invoiceId ? { ...inv, status: newStatus } : inv
-    ));
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      await deleteDoc(doc(db, 'invoices', id));
-      setInvoices(prev => prev.filter(inv => inv.id !== id));
+  const handleProductSelect = (productId) => {
+    setSelectedProductId(productId);
+    if (productId) {
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        setAmount(product.price);
+      }
     }
   };
 
   const handleClientSelect = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
-    if (client) {
-      setSelectedClientId(clientId);
-      setClientName(client.name);
-    } else {
-      setSelectedClientId('');
-      setClientName('');
+    setSelectedClientId(clientId);
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        setClientName(client.name);
+      }
     }
   };
 
-  const handleProductSelect = (id) => {
-    const product = products.find(p => p.id === id);
-    if (!product) return;
-    setSelectedProductId(id);
-    setAmount(product.price || '');
-    setVat(product.vat || '');
+  const addInvoice = async () => {
+    if (!clientName.trim() || !amount.trim()) return;
+
+    const invoiceData = {
+      invoiceNumber: nextInvoiceNumber.toString(),
+      clientName: clientName.trim(),
+      clientId: selectedClientId || null,
+      amount: parseFloat(amount) || 0,
+      vat: parseFloat(vat) || 0,
+      dueDate: dueDate || null,
+      status: status,
+      notes: notes.trim(),
+      template: template,
+      userId: user.uid,
+      createdAt: serverTimestamp()
+    };
+
+    await addDoc(collection(db, 'invoices'), invoiceData);
+
+    resetForm();
+    fetchInvoices();
+  };
+
+  const updateInvoice = async (id, updates) => {
+    await updateDoc(doc(db, 'invoices', id), updates);
+    fetchInvoices();
+  };
+
+  const deleteInvoice = async (id) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      await deleteDoc(doc(db, 'invoices', id));
+      fetchInvoices();
+    }
   };
 
   const resetForm = () => {
@@ -269,210 +288,9 @@ function Dashboard() {
     setStatus('Unpaid');
     setNotes('');
     setSelectedProductId('');
+    setTemplate('standard');
   };
 
-  const exportPDF = (invoice) => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let currentY = 20;
-
-    // Professional header with gradient-like effect
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-
-    // Company logo on left side of header
-    if (companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
-      }
-    }
-
-    // Company branding section
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont(undefined, 'bold');
-    const invoiceTextX = companySettings.logo ? 55 : 20;
-    doc.text('INVOICE', invoiceTextX, 25);
-
-    // Company details on right side of header
-    if (companySettings.name || companySettings.companyName) {
-      doc.setFontSize(12);
-      doc.text(companySettings.name || companySettings.companyName, pageWidth - 20, 15, { align: 'right' });
-    }
-    if (companySettings.address) {
-      doc.setFontSize(10);
-      doc.text(companySettings.address, pageWidth - 20, 25, { align: 'right' });
-    }
-    if (companySettings.email) {
-      doc.text(companySettings.email, pageWidth - 20, 32, { align: 'right' });
-    }
-
-    currentY = 60;
-    doc.setTextColor(0, 0, 0);
-
-    // Invoice details section with clean layout
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 35, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 35);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Invoice Details', 25, currentY + 12);
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-
-    // Left column
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 25, currentY + 22);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, currentY + 30);
-
-    // Right column
-    doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - 120, currentY + 22);
-    doc.text(`Status: ${invoice.status}`, pageWidth - 120, currentY + 30);
-
-    currentY += 55;
-
-    // Bill To section
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 25, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 25);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Bill To:', 25, currentY + 12);
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    doc.text(invoice.clientName, 25, currentY + 20);
-
-    currentY += 45;
-
-    // Items/Services table header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text('Description', 25, currentY + 10);
-    doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
-
-    currentY += 15;
-    doc.setTextColor(0, 0, 0);
-
-    // Service/product line
-    doc.setFillColor(255, 255, 255);
-    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 15);
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(invoice.productName || 'Service', 25, currentY + 10);
-    doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
-
-    currentY += 35;
-
-    // Financial summary section
-    const summaryStartY = currentY;
-    const summaryWidth = 100;
-    const summaryX = pageWidth - 120;
-
-    doc.setFillColor(248, 249, 250);
-    doc.rect(summaryX, summaryStartY, summaryWidth, 45, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(summaryX, summaryStartY, summaryWidth, 45);
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-
-    // Subtotal
-    doc.text('Subtotal:', summaryX + 5, summaryStartY + 10);
-    doc.text(`£${Number(invoice.amount).toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 10, { align: 'right' });
-
-    // VAT
-    const vatAmount = Number(invoice.amount) * Number(invoice.vat) / 100;
-    doc.text(`VAT (${invoice.vat}%):`, summaryX + 5, summaryStartY + 20);
-    doc.text(`£${vatAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 20, { align: 'right' });
-
-    // Total line
-    doc.setDrawColor(41, 128, 185);
-    doc.line(summaryX + 5, summaryStartY + 25, summaryX + summaryWidth - 5, summaryStartY + 25);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    const totalAmount = Number(invoice.amount) + vatAmount;
-    doc.text('Total:', summaryX + 5, summaryStartY + 35);
-    doc.text(`£${totalAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 35, { align: 'right' });
-
-    currentY += 65;
-
-    // Notes section
-    if (invoice.notes) {
-      doc.setFillColor(248, 249, 250);
-      doc.rect(20, currentY, pageWidth - 40, 30, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(20, currentY, pageWidth - 40, 30);
-
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.text('Notes:', 25, currentY + 12);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-
-      // Split notes into lines if too long
-      const noteLines = doc.splitTextToSize(invoice.notes, pageWidth - 50);
-      doc.text(noteLines, 25, currentY + 22);
-
-      currentY += 40;
-    }
-
-    // Payment terms section
-    if (companySettings.paymentTerms) {
-      currentY += 10;
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.text('Payment Terms:', 20, currentY);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-      const termsLines = doc.splitTextToSize(companySettings.paymentTerms, pageWidth - 40);
-      doc.text(termsLines, 20, currentY + 10);
-      currentY += 10 + (termsLines.length * 5);
-    }
-
-    // Footer with company registration details
-    const footerY = pageHeight - 30;
-    doc.setDrawColor(41, 128, 185);
-    doc.line(20, footerY, pageWidth - 20, footerY);
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100, 100, 100);
-
-    let footerText = [];
-    if (companySettings.companyNumber) {
-      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
-    }
-    if (companySettings.vatNumber) {
-      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
-    }
-
-    if (footerText.length > 0) {
-      doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
-    }
-
-    // Thank you message
-    doc.setTextColor(41, 128, 185);
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'italic');
-    doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
-
-    doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
-  };
-
-  // Filter invoices based on search and status
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
@@ -480,80 +298,75 @@ function Dashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  const calculateStats = () => {
+    const total = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const paid = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const unpaid = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const overdue = invoices.filter(inv => inv.status === 'Overdue').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
+    return { total, paid, unpaid, overdue };
+  };
+
+  const stats = calculateStats();
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Paid': return '#28a745';
+      case 'Unpaid': return '#ffc107';
+      case 'Overdue': return '#dc3545';
+      default: return '#6c757d';
+    }
+  };
+
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '3rem', margin: '0 0 15px 0', fontWeight: '300' }}>
-            📊 Invoice Dashboard
+          <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            📋 Invoice Dashboard
           </h1>
           <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-            Manage your invoices, track payments, and grow your business
+            Create and manage your invoices with ease
           </p>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Statistics */}
         <div style={statsStyle}>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Invoices</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
-              {invoices.length}
+            <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.total.toFixed(2)}
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
-              £{invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
+            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>Paid</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.paid.toFixed(2)}
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Outstanding</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
-              £{invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
+            <h3 style={{ margin: '0 0 10px 0', color: '#ffc107' }}>Unpaid</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.unpaid.toFixed(2)}
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>This Month</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
-              £{invoices.filter(inv => {
-                const invoiceDate = new Date(inv.createdAt?.seconds * 1000);
-                const currentMonth = new Date().getMonth();
-                return invoiceDate.getMonth() === currentMonth;
-              }).reduce((sum, inv) => sum + (inv.amount || 0), 0).toFixed(2)}
+            <h3 style={{ margin: '0 0 10px 0', color: '#dc3545' }}>Overdue</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+              £{stats.overdue.toFixed(2)}
             </p>
           </div>
         </div>
 
         {/* Create Invoice Form */}
         <div style={formStyle}>
-          <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.8rem', marginBottom: '10px' }}>
+          <h2 style={{ margin: '0 0 30px 0', fontSize: '2rem', fontWeight: '300' }}>
             ✨ Create New Invoice
           </h2>
-          <p style={{ color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
-            Next Invoice Number: <strong style={{ color: '#667eea' }}>INV-{String(nextInvoiceNumber).padStart(4, '0')}</strong>
-          </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Select Client
-              </label>
-              <select
-                value={selectedClientId}
-                onChange={(e) => handleClientSelect(e.target.value)}
-                style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              >
-                <option value="">Select existing client or enter new</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} ({client.email})
-                  </option>
-                ))}
-              </select>
-
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Client Name *
               </label>
@@ -588,10 +401,25 @@ function Dashboard() {
                 Amount (£) *
               </label>
               <input
-                type="number"
                 placeholder="0.00"
+                type="number"
+                step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
+                VAT (£)
+              </label>
+              <input
+                placeholder="0.00"
+                type="number"
+                step="0.01"
+                value={vat}
+                onChange={(e) => setVat(e.target.value)}
                 style={inputStyle}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
@@ -599,19 +427,6 @@ function Dashboard() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                VAT (%)
-              </label>
-              <input
-                type="number"
-                placeholder="VAT percentage"
-                value={vat}
-                onChange={(e) => setVat(e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              />
-
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Due Date
               </label>
@@ -627,8 +442,8 @@ function Dashboard() {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Status
               </label>
-              <select 
-                value={status} 
+              <select
+                value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 style={selectStyle}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
@@ -640,7 +455,7 @@ function Dashboard() {
               </select>
 
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Invoice Template
+                Template Style
               </label>
               <select
                 value={template}
@@ -650,164 +465,187 @@ function Dashboard() {
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
                 <option value="standard">Standard</option>
-                <option value="professional">Professional</option>
+                <option value="modern">Modern</option>
+                <option value="classic">Classic</option>
+              </select>
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
+                Notes
+              </label>
+              <textarea
+                placeholder="Additional notes or terms..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                style={textareaStyle}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginTop: '30px' }}>
+            <button
+              onClick={addInvoice}
+              style={buttonStyle}
+              onMouseOver={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.6)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+              }}
+            >
+              🚀 Create Invoice
+            </button>
+          </div>
+        </div>
+
+        {/* Search and Filter */}
+        <div style={searchFilterStyle}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '1.5rem' }}>🔍 Search & Filter</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
+                Search Invoices
+              </label>
+              <input
+                placeholder="Search by client name or invoice number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
+                Filter by Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                style={selectStyle}
+              >
+                <option value="all">All Statuses</option>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+                <option value="Overdue">Overdue</option>
               </select>
             </div>
           </div>
-
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555', marginTop: '20px' }}>
-            Notes
-          </label>
-          <textarea
-            placeholder="Add any additional notes or terms..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-          />
-
-          <button 
-            onClick={handleAddInvoice}
-            style={buttonStyle}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 12px 25px rgba(102, 126, 234, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.3)';
-            }}
-          >
-            🚀 Create Invoice
-          </button>
         </div>
 
-        {/* Search and Filter Section */}
-        <div style={searchFilterStyle}>
-          <h2 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.6rem', width: '100%' }}>
-            📋 Invoice Management
-          </h2>
+        {/* Invoices List */}
+        <div style={{ background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)', padding: '30px', borderRadius: '20px', backdropFilter: 'blur(15px)', border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)' }}>
+          <h3 style={{ margin: '0 0 25px 0', fontSize: '1.8rem', fontWeight: '300', color: isDarkMode ? '#ffffff' : '#333' }}>
+            📄 Your Invoices ({filteredInvoices.length})
+          </h3>
 
-          <input
-            placeholder="🔍 Search invoices by client or number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ ...inputStyle, marginBottom: 0, minWidth: '300px', flex: 1 }}
-          />
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ ...selectStyle, marginBottom: 0, minWidth: '150px' }}
-          >
-            <option value="all">All Status</option>
-            <option value="Unpaid">Unpaid</option>
-            <option value="Paid">Paid</option>
-            <option value="Overdue">Overdue</option>
-          </select>
-        </div>
-
-        {/* Invoice Table */}
-        {filteredInvoices.length === 0 ? (
-          <div style={{ ...formStyle, textAlign: 'center', padding: '60px' }}>
-            <h3 style={{ color: '#666', fontSize: '1.4rem', marginBottom: '15px' }}>
-              📄 No invoices found
-            </h3>
-            <p style={{ color: isDarkMode ? '#9ca3af' : '#999', fontSize: '1.1rem' }}>
-              {searchTerm || filterStatus !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Create your first invoice to get started!'}
-            </p>
-          </div>
-        ) : (
-          <div style={tableStyle}>
-            <div style={{ padding: '25px' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-<th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
-                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInvoices.map((inv, index) => (
-                      <tr key={inv.id} style={{ 
-                        borderBottom: '1px solid #f1f3f4',
-                        backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
-                        transition: 'background-color 0.2s ease'
-                      }}>
-                        <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
-                        <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
-                        <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
-                          £{Number(inv.amount).toFixed(2)}
-                        </td>
-                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                          <select
-                            value={inv.status}
-                            onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                            style={{ 
-                              padding: '6px 12px', 
-                              background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                              border: '2px solid',
-                              borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
-                              borderRadius: '8px',
-                              fontWeight: 'bold',
-                              fontSize: '12px'
-                            }}
-                          >
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Overdue">Overdue</option>
-                          </select>
-                        </td>
-                        <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
-                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => exportPDF(inv)}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              marginRight: '8px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            📄 PDF
-                          </button>
-                          <button
-                            onClick={() => handleDelete(inv.id)}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {filteredInvoices.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: isDarkMode ? '#9ca3af' : '#666' }}>
+              <h3 style={{ fontSize: '1.5rem', margin: '0 0 15px 0', fontWeight: '300' }}>
+                📄 No invoices found
+              </h3>
+              <p style={{ color: isDarkMode ? '#9ca3af' : '#999', fontSize: '1.1rem' }}>
+                {searchTerm || filterStatus !== 'all' 
+                  ? 'Try adjusting your search or filter criteria.' 
+                  : 'Create your first invoice using the form above!'}
+              </p>
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {filteredInvoices.map(invoice => (
+                <div key={invoice.id} style={invoiceCardStyle}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '600' }}>
+                          Invoice #{invoice.invoiceNumber}
+                        </h4>
+                        <span style={{
+                          background: getStatusColor(invoice.status),
+                          color: 'white',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}>
+                          {invoice.status}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                        <div>
+                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                            <strong>Client:</strong> {invoice.clientName}
+                          </p>
+                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                            <strong>Amount:</strong> £{Number(invoice.amount).toFixed(2)}
+                          </p>
+                          {invoice.vat > 0 && (
+                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                              <strong>VAT:</strong> £{Number(invoice.vat).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          {invoice.dueDate && (
+                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                              <strong>Due Date:</strong> {invoice.dueDate}
+                            </p>
+                          )}
+                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                            <strong>Template:</strong> {invoice.template}
+                          </p>
+                          {invoice.notes && (
+                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
+                              <strong>Notes:</strong> {invoice.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '120px' }}>
+                      <select
+                        value={invoice.status}
+                        onChange={(e) => updateInvoice(invoice.id, { status: e.target.value })}
+                        style={{
+                          ...selectStyle,
+                          marginBottom: '8px',
+                          fontSize: '12px',
+                          padding: '6px 10px',
+                          height: '32px'
+                        }}
+                      >
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Overdue">Overdue</option>
+                      </select>
+                      <button
+                        onClick={() => deleteInvoice(invoice.id)}
+                        style={{
+                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

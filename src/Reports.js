@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -5,44 +6,28 @@ import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Reports() {
-  const [invoices, setInvoices] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [dateRange, setDateRange] = useState('all');
-  const [loading, setLoading] = useState(true);
   const { isDarkMode } = useDarkMode();
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const user = auth.currentUser;
 
   useEffect(() => {
-    fetchData();
+    fetchInvoices();
   }, []);
 
-  const fetchData = async () => {
-    if (!user) return;
-
+  const fetchInvoices = async () => {
     try {
-      // Fetch invoices
-      const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
-      const invoicesSnapshot = await getDocs(invoicesQuery);
-      const invoicesData = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInvoices(invoicesData);
-
-      // Fetch products
-      const productsQuery = query(collection(db, 'products'), where('userId', '==', user.uid));
-      const productsSnapshot = await getDocs(productsQuery);
-      const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(productsData);
-
-      // Fetch clients
-      const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
-      const clientsSnapshot = await getDocs(clientsQuery);
-      const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(clientsData);
-
-      setLoading(false);
+      const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setInvoices(data);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching invoices:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -87,73 +72,45 @@ function Reports() {
       .slice(0, 5);
   };
 
-  const getTopProducts = () => {
-    const productSales = {};
-
-    invoices.forEach(invoice => {
-      const productId = invoice.selectedProductId;
-      if (productId && productId !== '') {
-        if (!productSales[productId]) {
-          productSales[productId] = { revenue: 0, salesCount: 0 };
-        }
-        productSales[productId].revenue += parseFloat(invoice.amount || 0);
-        productSales[productId].salesCount += 1;
-      }
-    });
-
-    return Object.entries(productSales)
-      .map(([productId, data]) => {
-        const product = products.find(p => p.id === productId);
-        return {
-          productId,
-          productName: product ? product.name : 'Unknown Product',
-          ...data
-        };
-      })
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-  };
-
   const stats = calculateStats();
   const topClients = getTopClients();
-  const topProducts = getTopProducts();
 
+  // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    paddingTop: '70px'
+    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    paddingTop: '80px',
+    paddingBottom: '40px'
   };
 
   const contentStyle = {
-    padding: '30px',
     maxWidth: '1200px',
     margin: '0 auto'
   };
 
   const headerStyle = {
+    color: 'white',
     textAlign: 'center',
-    marginBottom: '40px',
-    color: 'white'
+    marginBottom: '40px'
   };
 
   const statsGridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '25px',
+    gap: '20px',
     marginBottom: '40px'
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
-    textAlign: 'center',
     backdropFilter: 'blur(15px)',
-    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -164,12 +121,12 @@ function Reports() {
   };
 
   const chartContainerStyle = {
-    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
     backdropFilter: 'blur(15px)',
-    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -178,16 +135,17 @@ function Reports() {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '15px 0',
-    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #f1f3f4',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0'
   };
 
   if (loading) {
     return (
       <div style={containerStyle}>
         <Navigation user={user} />
-        <div style={{ ...contentStyle, textAlign: 'center', paddingTop: '100px' }}>
-          <h2 style={{ color: 'white' }}>Loading reports...</h2>
+        <div style={contentStyle}>
+          <div style={headerStyle}>
+            <h1 style={{ fontSize: '2.5rem', margin: 0 }}>📊 Loading Reports...</h1>
+          </div>
         </div>
       </div>
     );
@@ -198,48 +156,63 @@ function Reports() {
       <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '3rem', margin: '0 0 15px 0', fontWeight: '300' }}>
-            📈 Business Reports
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            📊 Business Reports
           </h1>
-          <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-            Insights and analytics for your business performance
+          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
+            Track your business performance and growth
           </p>
         </div>
 
         {/* Statistics Cards */}
         <div style={statsGridStyle}>
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.2rem' }}>
+              💰 Total Revenue
+            </h3>
+            <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>
               £{stats.totalRevenue}
             </p>
           </div>
+
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Invoices</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
-              {stats.totalInvoices}
-            </p>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#28a745', fontSize: '1.1rem' }}>Paid</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#28a745', fontSize: '1.2rem' }}>
+              ✅ Paid Invoices
+            </h3>
+            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
               £{stats.paidAmount}
             </p>
-            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
+            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
               {stats.paidCount} invoices
             </p>
           </div>
+
           <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#ffc107', fontSize: '1.1rem' }}>Unpaid</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffc107', fontSize: '1.2rem' }}>
+              ⏳ Unpaid Invoices
+            </h3>
+            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
               £{stats.unpaidAmount}
             </p>
-            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
+            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
               {stats.unpaidCount} invoices
+            </p>
+          </div>
+
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#dc3545', fontSize: '1.2rem' }}>
+              🚨 Overdue Invoices
+            </h3>
+            <p style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>
+              £{stats.overdueAmount}
+            </p>
+            <p style={{ fontSize: '1rem', opacity: '0.7', margin: 0 }}>
+              {stats.overdueCount} invoices
             </p>
           </div>
         </div>
 
+        {/* Charts */}
         <div style={chartsGridStyle}>
           {/* Top Clients */}
           <div style={chartContainerStyle}>
@@ -264,32 +237,31 @@ function Reports() {
             )}
           </div>
 
-          {/* Top Products */}
+          {/* Monthly Overview */}
           <div style={chartContainerStyle}>
             <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
-              📦 Top Products
+              📈 Invoice Status Overview
             </h2>
-            {topProducts.length === 0 ? (
-              <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
-                No product data available yet. Create some products and invoices to see your top products.
-              </p>
-            ) : (
-              <div>
-                {topProducts.map((product, index) => (
-                  <div key={index} style={listItemStyle}>
-                    <div>
-                      <div style={{ fontWeight: '500' }}>{product.productName}</div>
-                      <div style={{ fontSize: '0.9rem', color: isDarkMode ? '#9ca3af' : '#666' }}>
-                        {product.salesCount} sales
-                      </div>
-                    </div>
-                    <span style={{ fontWeight: 'bold', color: '#667eea' }}>
-                      £{product.revenue.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+            <div style={{ padding: '20px 0' }}>
+              <div style={listItemStyle}>
+                <span style={{ fontWeight: '500' }}>✅ Paid</span>
+                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                  {stats.paidCount} (£{stats.paidAmount})
+                </span>
               </div>
-            )}
+              <div style={listItemStyle}>
+                <span style={{ fontWeight: '500' }}>⏳ Unpaid</span>
+                <span style={{ fontWeight: 'bold', color: '#ffc107' }}>
+                  {stats.unpaidCount} (£{stats.unpaidAmount})
+                </span>
+              </div>
+              <div style={listItemStyle}>
+                <span style={{ fontWeight: '500' }}>🚨 Overdue</span>
+                <span style={{ fontWeight: 'bold', color: '#dc3545' }}>
+                  {stats.overdueCount} (£{stats.overdueAmount})
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
