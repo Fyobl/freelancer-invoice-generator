@@ -8,6 +8,7 @@ import Dashboard from './Dashboard.js';
 import Products from './Products.js';
 import Clients from './Clients.js';
 import Reports from './Reports.js';
+import CompanySettings from './CompanySettings.js';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -46,6 +47,10 @@ function App() {
         <Route
           path="/reports"
           element={user ? <Reports user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/company-settings"
+          element={<CompanySettings />}
         />
       </Routes>
     </Router>

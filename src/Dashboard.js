@@ -31,6 +31,7 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
+  const [companySettings, setCompanySettings] = useState({});
 
   const user = auth.currentUser;
 
@@ -64,6 +65,14 @@ function Dashboard() {
     const clientsSnapshot = await getDocs(clientsQuery);
     const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setClients(clientsData);
+
+    // Fetch company settings
+    const companyQuery = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+    const companySnapshot = await getDocs(companyQuery);
+    if (!companySnapshot.empty) {
+      const companyData = companySnapshot.docs[0].data();
+      setCompanySettings(companyData);
+    }
   };
 
   const handleAddInvoice = async () => {
@@ -141,39 +150,109 @@ function Dashboard() {
   const exportPDF = (invoice) => {
     const doc = new jsPDF();
     
+    let currentY = 20;
+
+    // Add company logo if available
+    if (companySettings.logo) {
+      try {
+        doc.addImage(companySettings.logo, 'JPEG', 20, currentY, 40, 20);
+        currentY += 25;
+      } catch (error) {
+        console.log('Error adding logo to PDF:', error);
+      }
+    }
+
+    // Company information header
+    if (companySettings.name) {
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(companySettings.name, 20, currentY);
+      currentY += 8;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    
+    if (companySettings.address) {
+      doc.text(companySettings.address, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.city) {
+      doc.text(`${companySettings.city}, ${companySettings.postcode || ''}`, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.country) {
+      doc.text(companySettings.country, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.email) {
+      doc.text(`Email: ${companySettings.email}`, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.phone) {
+      doc.text(`Phone: ${companySettings.phone}`, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.website) {
+      doc.text(`Website: ${companySettings.website}`, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.vatNumber) {
+      doc.text(`VAT: ${companySettings.vatNumber}`, 20, currentY);
+      currentY += 5;
+    }
+    if (companySettings.companyNumber) {
+      doc.text(`Company No: ${companySettings.companyNumber}`, 20, currentY);
+      currentY += 5;
+    }
+
+    currentY += 10;
+
     // Invoice template styling
     if (template === 'professional') {
       // Professional template
       doc.setFillColor(41, 128, 185);
-      doc.rect(0, 0, 210, 30, 'F');
+      doc.rect(0, currentY, 210, 15, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
-      doc.text('INVOICE', 20, 20);
+      doc.setFontSize(18);
+      doc.text('INVOICE', 20, currentY + 10);
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
+      currentY += 20;
     } else {
       // Standard template
-      doc.setFontSize(20);
-      doc.text('Invoice', 20, 20);
-      doc.setFontSize(12);
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.text('INVOICE', 20, currentY);
+      currentY += 10;
     }
 
-    const yPos = template === 'professional' ? 50 : 35;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
     
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 20, yPos);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPos + 10);
-    doc.text(`Due Date: ${invoice.dueDate}`, 20, yPos + 20);
+    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 20, currentY);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 10);
+    doc.text(`Due Date: ${invoice.dueDate}`, 20, currentY + 20);
     
-    doc.text(`Bill To:`, 20, yPos + 40);
-    doc.text(`${invoice.clientName}`, 20, yPos + 50);
+    currentY += 40;
+    doc.setFont(undefined, 'bold');
+    doc.text(`Bill To:`, 20, currentY);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${invoice.clientName}`, 20, currentY + 10);
     
-    doc.text(`Amount: £${Number(invoice.amount).toFixed(2)}`, 20, yPos + 70);
-    doc.text(`VAT (${invoice.vat}%): £${(Number(invoice.amount) * Number(invoice.vat) / 100).toFixed(2)}`, 20, yPos + 80);
-    doc.text(`Total: £${(Number(invoice.amount) + (Number(invoice.amount) * Number(invoice.vat) / 100)).toFixed(2)}`, 20, yPos + 90);
-    doc.text(`Status: ${invoice.status}`, 20, yPos + 110);
+    currentY += 30;
+    doc.text(`Amount: £${Number(invoice.amount).toFixed(2)}`, 20, currentY);
+    doc.text(`VAT (${invoice.vat}%): £${(Number(invoice.amount) * Number(invoice.vat) / 100).toFixed(2)}`, 20, currentY + 10);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Total: £${(Number(invoice.amount) + (Number(invoice.amount) * Number(invoice.vat) / 100)).toFixed(2)}`, 20, currentY + 20);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Status: ${invoice.status}`, 20, currentY + 30);
     
     if (invoice.notes) {
-      doc.text(`Notes: ${invoice.notes}`, 20, yPos + 130);
+      currentY += 50;
+      doc.setFont(undefined, 'bold');
+      doc.text(`Notes:`, 20, currentY);
+      doc.setFont(undefined, 'normal');
+      doc.text(`${invoice.notes}`, 20, currentY + 10);
     }
 
     doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
