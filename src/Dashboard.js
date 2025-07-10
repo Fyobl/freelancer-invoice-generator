@@ -545,7 +545,7 @@ function Dashboard() {
               <h3 style={{ fontSize: '1.5rem', margin: '0 0 15px 0', fontWeight: '300' }}>
                 📄 No invoices found
               </h3>
-              <p style={{ color: isDarkMode ? '#9ca3af' : '#999', fontSize: '1.1rem' }}>
+              <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0, color: isDarkMode ? '#9ca3af' : '#666' }}>
                 {searchTerm || filterStatus !== 'all' 
                   ? 'Try adjusting your search or filter criteria.' 
                   : 'Create your first invoice using the form above!'}
