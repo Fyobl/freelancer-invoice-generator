@@ -1,12 +1,10 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Navigation({ user }) {
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
@@ -19,23 +17,30 @@ function Navigation({ user }) {
   };
 
   const navStyle = {
-    background: isDarkMode ? 'rgba(15,15,35,0.95)' : 'rgba(255,255,255,0.95)',
-    backdropFilter: 'blur(20px)',
-    padding: '15px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: isDarkMode ? '1px solid #374151' : '1px solid rgba(255,255,255,0.2)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '15px 0',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
     position: 'sticky',
     top: 0,
     zIndex: 1000,
-    boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.1)'
+    backdropFilter: 'blur(10px)'
+  };
+
+  const containerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0 30px'
   };
 
   const logoStyle = {
-    fontSize: '1.5rem',
+    fontSize: '1.8rem',
     fontWeight: 'bold',
-    color: isDarkMode ? '#ffffff' : '#333',
+    color: 'white',
     textDecoration: 'none',
     display: 'flex',
     alignItems: 'center',
@@ -44,227 +49,182 @@ function Navigation({ user }) {
 
   const navLinksStyle = {
     display: 'flex',
-    gap: '25px',
-    alignItems: 'center',
     listStyle: 'none',
+    gap: '0',
     margin: 0,
-    padding: 0
+    padding: 0,
+    alignItems: 'center'
   };
 
   const linkStyle = {
-    color: isDarkMode ? '#e5e7eb' : '#555',
+    color: 'rgba(255,255,255,0.9)',
     textDecoration: 'none',
-    fontSize: '16px',
-    fontWeight: '500',
-    padding: '8px 16px',
+    padding: '12px 20px',
     borderRadius: '8px',
-    transition: 'all 0.3s ease'
+    transition: 'all 0.3s ease',
+    fontWeight: '500',
+    fontSize: '1rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   };
 
   const activeLinkStyle = {
     ...linkStyle,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    fontWeight: 'bold'
+  };
+
+  const userSectionStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
     color: 'white'
   };
 
-  const userMenuStyle = {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px'
+  const darkModeButtonStyle = {
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    color: 'white',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '1.2rem',
+    transition: 'all 0.3s ease'
   };
 
-  const darkModeToggleStyle = {
-    background: isDarkMode ? 'rgba(55,65,81,0.8)' : 'rgba(255,255,255,0.2)',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid rgba(255,255,255,0.3)',
-    borderRadius: '25px',
-    padding: '8px 16px',
-    color: isDarkMode ? '#ffffff' : '#333',
+  const logoutButtonStyle = {
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    color: 'white',
+    padding: '10px 20px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px'
+    fontWeight: '500',
+    transition: 'all 0.3s ease'
   };
 
   return (
     <nav style={navStyle}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={containerStyle}>
         <Link to="/" style={logoStyle}>
-          💼 Invoice Generator
+          💼 InvoiceApp
         </Link>
-      </div>
 
-      <ul style={navLinksStyle}>
-        <li>
-          <Link 
-            to="/" 
-            style={location.pathname === '/' ? activeLinkStyle : linkStyle}
-            onMouseOver={(e) => {
-              if (location.pathname !== '/') {
-                e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (location.pathname !== '/') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📊 Dashboard
-          </Link>
-        </li>
-        <li>
-          <Link 
-            to="/products" 
-            style={location.pathname === '/products' ? activeLinkStyle : linkStyle}
-            onMouseOver={(e) => {
-              if (location.pathname !== '/products') {
-                e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (location.pathname !== '/products') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📦 Products
-          </Link>
-        </li>
-        <li>
-          <Link 
-            to="/clients" 
-            style={location.pathname === '/clients' ? activeLinkStyle : linkStyle}
-            onMouseOver={(e) => {
-              if (location.pathname !== '/clients') {
-                e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (location.pathname !== '/clients') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            👥 Clients
-          </Link>
-        </li>
-        <li>
-          <Link 
-            to="/reports" 
-            style={location.pathname === '/reports' ? activeLinkStyle : linkStyle}
-            onMouseOver={(e) => {
-              if (location.pathname !== '/reports') {
-                e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (location.pathname !== '/reports') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📈 Reports
-          </Link>
-        </li>
-        <li>
-          <Link 
-            to="/settings" 
-            style={location.pathname === '/settings' ? activeLinkStyle : linkStyle}
-            onMouseOver={(e) => {
-              if (location.pathname !== '/settings') {
-                e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (location.pathname !== '/settings') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            ⚙️ Settings
-          </Link>
-        </li>
-      </ul>
+        <ul style={navLinksStyle}>
+          <li>
+            <Link 
+              to="/" 
+              style={location.pathname === '/' ? activeLinkStyle : linkStyle}
+              onMouseOver={(e) => {
+                if (location.pathname !== '/') {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== '/') {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              📊 Dashboard
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/products" 
+              style={location.pathname === '/products' ? activeLinkStyle : linkStyle}
+              onMouseOver={(e) => {
+                if (location.pathname !== '/products') {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== '/products') {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              📦 Products
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/clients" 
+              style={location.pathname === '/clients' ? activeLinkStyle : linkStyle}
+              onMouseOver={(e) => {
+                if (location.pathname !== '/clients') {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== '/clients') {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              👥 Clients
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/reports" 
+              style={location.pathname === '/reports' ? activeLinkStyle : linkStyle}
+              onMouseOver={(e) => {
+                if (location.pathname !== '/reports') {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== '/reports') {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              📈 Reports
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/company-settings" 
+              style={location.pathname === '/company-settings' ? activeLinkStyle : linkStyle}
+              onMouseOver={(e) => {
+                if (location.pathname !== '/company-settings') {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(102,126,234,0.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== '/company-settings') {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              ⚙️ Settings
+            </Link>
+          </li>
+        </ul>
 
-      <div style={userMenuStyle}>
-        <button 
-          onClick={toggleDarkMode}
-          style={darkModeToggleStyle}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'scale(1.05)';
-            e.target.style.background = isDarkMode ? 'rgba(75,85,99,0.8)' : 'rgba(255,255,255,0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.background = isDarkMode ? 'rgba(55,65,81,0.8)' : 'rgba(255,255,255,0.2)';
-          }}
-        >
-          {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-        </button>
-        
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '25px',
-              padding: '10px 20px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'transform 0.2s ease'
-            }}
-            onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-            onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+        <div style={userSectionStyle}>
+          <button 
+            onClick={toggleDarkMode}
+            style={darkModeButtonStyle}
+            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+            onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
           >
-            👤 {user?.email?.split('@')[0] || 'User'}
+            {isDarkMode ? '☀️' : '🌙'}
           </button>
-          
-          {showUserMenu && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: '10px',
-              background: isDarkMode ? 'rgba(31,41,55,0.95)' : 'white',
-              border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
-              borderRadius: '12px',
-              padding: '15px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-              backdropFilter: 'blur(20px)',
-              minWidth: '200px'
-            }}>
-              <div style={{ 
-                marginBottom: '10px', 
-                paddingBottom: '10px', 
-                borderBottom: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
-                color: isDarkMode ? '#ffffff' : '#333'
-              }}>
-                <strong>{user?.email}</strong>
-              </div>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  width: '100%'
-                }}
-              >
-                🚪 Logout
-              </button>
-            </div>
-          )}
+          <span style={{ fontSize: '0.9rem', opacity: '0.9' }}>
+            Welcome, {user?.email || 'User'}
+          </span>
+          <button 
+            onClick={handleLogout}
+            style={logoutButtonStyle}
+            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+            onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+          >
+            🚪 Logout
+          </button>
         </div>
       </div>
     </nav>

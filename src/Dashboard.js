@@ -104,13 +104,14 @@ function Dashboard() {
   const selectStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
+    color: isDarkMode ? '#ffffff' : '#333333',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
@@ -133,25 +134,26 @@ function Dashboard() {
   };
 
   const tableStyle = {
-    background: 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
     borderRadius: '20px',
     overflow: 'hidden',
     backdropFilter: 'blur(15px)',
-    boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-    border: '2px solid rgba(255,255,255,0.2)'
+    boxShadow: isDarkMode ? '0 25px 50px rgba(0,0,0,0.3)' : '0 25px 50px rgba(0,0,0,0.15)',
+    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)'
   };
 
   const searchFilterStyle = {
-    background: 'rgba(255,255,255,0.9)',
+    background: isDarkMode ? 'rgba(45,55,72,0.9)' : 'rgba(255,255,255,0.9)',
     padding: '25px',
     borderRadius: '16px',
     marginBottom: '30px',
     backdropFilter: 'blur(10px)',
-    boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
+    boxShadow: isDarkMode ? '0 15px 30px rgba(0,0,0,0.3)' : '0 15px 30px rgba(0,0,0,0.1)',
     display: 'flex',
     gap: '20px',
     alignItems: 'center',
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
   useEffect(() => {
@@ -709,7 +711,7 @@ function Dashboard() {
             <h3 style={{ color: '#666', fontSize: '1.4rem', marginBottom: '15px' }}>
               📄 No invoices found
             </h3>
-            <pstyle={{ color: '#999', fontSize: '1.1rem' }}>
+            <p style={{ color: isDarkMode ? '#9ca3af' : '#999', fontSize: '1.1rem' }}>
               {searchTerm || filterStatus !== 'all' 
                 ? 'Try adjusting your search or filters' 
                 : 'Create your first invoice to get started!'}

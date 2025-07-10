@@ -50,16 +50,21 @@ function Reports() {
 
   const calculateStats = () => {
     const totalRevenue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const totalInvoices = invoices.length;
     const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
     const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
     const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue');
 
+    const paidAmount = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const unpaidAmount = unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
     return {
       totalRevenue: totalRevenue.toFixed(2),
-      totalInvoices: invoices.length,
-      paidAmount: paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
-      unpaidAmount: unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
-      overdueAmount: overdueInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
+      totalInvoices,
+      paidAmount: paidAmount.toFixed(2),
+      unpaidAmount: unpaidAmount.toFixed(2),
+      overdueAmount: overdueAmount.toFixed(2),
       paidCount: paidInvoices.length,
       unpaidCount: unpaidInvoices.length,
       overdueCount: overdueInvoices.length
@@ -142,25 +147,29 @@ function Reports() {
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(15,15,35,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
     textAlign: 'center',
     backdropFilter: 'blur(15px)',
     boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '2px solid rgba(55,65,81,0.3)' : '2px solid rgba(255,255,255,0.2)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
+  const chartsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+    gap: '30px'
+  };
+
   const chartContainerStyle = {
-    background: isDarkMode ? 'rgba(15,15,35,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(45,55,72,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
-    marginBottom: '30px',
     backdropFilter: 'blur(15px)',
     boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '2px solid rgba(55,65,81,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    border: isDarkMode ? '2px solid rgba(74,85,104,0.3)' : '2px solid rgba(255,255,255,0.2)',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -168,8 +177,8 @@ function Reports() {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '15px',
-    borderBottom: isDarkMode ? '1px solid #374151' : '1px solid #e5e7eb',
+    padding: '15px 0',
+    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #f1f3f4',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -177,10 +186,8 @@ function Reports() {
     return (
       <div style={containerStyle}>
         <Navigation user={user} />
-        <div style={contentStyle}>
-          <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
-            <h2>Loading reports...</h2>
-          </div>
+        <div style={{ ...contentStyle, textAlign: 'center', paddingTop: '100px' }}>
+          <h2 style={{ color: 'white' }}>Loading reports...</h2>
         </div>
       </div>
     );
@@ -195,7 +202,7 @@ function Reports() {
             📈 Business Reports
           </h1>
           <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-            Analyze your business performance and track key metrics
+            Insights and analytics for your business performance
           </p>
         </div>
 
@@ -231,66 +238,59 @@ function Reports() {
               {stats.unpaidCount} invoices
             </p>
           </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#dc3545', fontSize: '1.1rem' }}>Overdue</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
-              £{stats.overdueAmount}
-            </p>
-            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
-              {stats.overdueCount} invoices
-            </p>
-          </div>
         </div>
 
-        {/* Top Clients */}
-        <div style={chartContainerStyle}>
-          <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
-            👥 Top Clients
-          </h2>
-          {topClients.length === 0 ? (
-            <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
-              No client data available yet. Create some invoices to see your top clients.
-            </p>
-          ) : (
-            <div>
-              {topClients.map((client, index) => (
-                <div key={index} style={listItemStyle}>
-                  <span style={{ fontWeight: '500' }}>{client.name}</span>
-                  <span style={{ fontWeight: 'bold', color: '#667eea' }}>
-                    £{client.total.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Top Products */}
-        <div style={chartContainerStyle}>
-          <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
-            📦 Top Products
-          </h2>
-          {topProducts.length === 0 ? (
-            <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
-              No product data available yet. Create some products and invoices to see your top products.
-            </p>
-          ) : (
-            <div>
-              {topProducts.map((product, index) => (
-                <div key={index} style={listItemStyle}>
-                  <div>
-                    <div style={{ fontWeight: '500' }}>{product.productName}</div>
-                    <div style={{ fontSize: '0.9rem', color: isDarkMode ? '#9ca3af' : '#666' }}>
-                      {product.salesCount} sales
-                    </div>
+        <div style={chartsGridStyle}>
+          {/* Top Clients */}
+          <div style={chartContainerStyle}>
+            <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
+              👥 Top Clients
+            </h2>
+            {topClients.length === 0 ? (
+              <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
+                No client data available yet. Create some invoices to see your top clients.
+              </p>
+            ) : (
+              <div>
+                {topClients.map((client, index) => (
+                  <div key={index} style={listItemStyle}>
+                    <span style={{ fontWeight: '500' }}>{client.name}</span>
+                    <span style={{ fontWeight: 'bold', color: '#667eea' }}>
+                      £{client.total.toFixed(2)}
+                    </span>
                   </div>
-                  <span style={{ fontWeight: 'bold', color: '#667eea' }}>
-                    £{product.revenue.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Top Products */}
+          <div style={chartContainerStyle}>
+            <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
+              📦 Top Products
+            </h2>
+            {topProducts.length === 0 ? (
+              <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
+                No product data available yet. Create some products and invoices to see your top products.
+              </p>
+            ) : (
+              <div>
+                {topProducts.map((product, index) => (
+                  <div key={index} style={listItemStyle}>
+                    <div>
+                      <div style={{ fontWeight: '500' }}>{product.productName}</div>
+                      <div style={{ fontSize: '0.9rem', color: isDarkMode ? '#9ca3af' : '#666' }}>
+                        {product.salesCount} sales
+                      </div>
+                    </div>
+                    <span style={{ fontWeight: 'bold', color: '#667eea' }}>
+                      £{product.revenue.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
