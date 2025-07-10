@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase';
+import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'firebase/auth';
 
-import Login from './Login';
-import Dashboard from './Dashboard';
-import Products from './Products'; // ✅ Add Products screen
+import Login from './Login.js';
+import Dashboard from './Dashboard.js';
+import Products from './Products.js'; // ✅ Add Products screen
 
 function App() {
   const [user, setUser] = useState(null);
