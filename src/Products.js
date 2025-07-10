@@ -246,36 +246,206 @@ function Products({ user }) {
       <div style={containerStyle}>
         <div style={formStyle}>
           <h2>Products</h2>
+          {/* Search and Filter */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px', marginBottom: '20px' }}>
+            <input
+              style={inputStyle}
+              placeholder="🔍 Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <select
+              style={selectStyle}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="name">Sort by Name</option>
+              <option value="price">Sort by Price</option>
+              <option value="vat">Sort by VAT</option>
+            </select>
+          </div>
+
           {/* Product Form */}
-          <input
-            style={inputStyle}
-            placeholder="Product Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            style={inputStyle}
-            placeholder="Description"
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+            <input
+              style={inputStyle}
+              placeholder="Product Name *"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
+              style={inputStyle}
+              placeholder="Price £ *"
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+            <input
+              style={inputStyle}
+              placeholder="VAT % (optional)"
+              type="number"
+              step="0.01"
+              value={vat}
+              onChange={(e) => setVat(e.target.value)}
+            />
+          </div>
+          <textarea
+            style={{...inputStyle, height: '80px', resize: 'vertical'}}
+            placeholder="Product Description (optional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <input
-            style={inputStyle}
-            placeholder="Price"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-          <button onClick={addProduct}>Add Product</button>
+          
+          <div style={{ marginTop: '20px' }}>
+            {editingProduct ? (
+              <div>
+                <button
+                  onClick={updateProduct}
+                  style={{...buttonStyle, background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'}}
+                >
+                  ✅ Update Product
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  style={{...buttonStyle, background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'}}
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={addProduct}
+                style={buttonStyle}
+              >
+                ➕ Add Product
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Product Statistics */}
+        <div style={statsStyle}>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>📦 Total Products</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? 'white' : '#333' }}>
+              {products.length}
+            </p>
+          </div>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>💰 Avg Price</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? 'white' : '#333' }}>
+              £{products.length > 0 ? (products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(2) : '0.00'}
+            </p>
+          </div>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#dc3545' }}>📈 Highest Price</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? 'white' : '#333' }}>
+              £{products.length > 0 ? Math.max(...products.map(p => p.price)).toFixed(2) : '0.00'}
+            </p>
+          </div>
+        </div>
+
         {/* Product List */}
-        <div>
-          {products.map(product => (
-            <div key={product.id}>
-              <h3>{product.name}</h3>
-              <p>{product.description}</p>
-              <p>{product.price}</p>
+        <div style={{
+          background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
+          padding: '30px',
+          borderRadius: '16px',
+          backdropFilter: 'blur(15px)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+        }}>
+          <h2 style={{ margin: '0 0 25px 0', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+            📋 Product Catalog
+          </h2>
+          
+          {filteredAndSortedProducts.length > 0 ? (
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {filteredAndSortedProducts.map(product => (
+                <div
+                  key={product.id}
+                  style={productCardStyle}
+                  onMouseOver={(e) => {
+                    Object.assign(e.currentTarget.style, productCardHoverStyle);
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.borderColor = isDarkMode ? '#4a5568' : '#f8f9fa';
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 10px 0', color: isDarkMode ? '#e2e8f0' : '#333', fontSize: '1.2rem' }}>
+                        📦 {product.name}
+                      </h3>
+                      {product.description && (
+                        <p style={{ margin: '0 0 15px 0', color: isDarkMode ? '#a0aec0' : '#666', lineHeight: '1.5' }}>
+                          {product.description}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                        <span style={{ 
+                          background: '#28a745', 
+                          color: 'white', 
+                          padding: '4px 12px', 
+                          borderRadius: '20px', 
+                          fontSize: '14px',
+                          fontWeight: 'bold'
+                        }}>
+                          💰 £{product.price.toFixed(2)}
+                        </span>
+                        {product.vat > 0 && (
+                          <span style={{ 
+                            background: '#ffc107', 
+                            color: '#212529', 
+                            padding: '4px 12px', 
+                            borderRadius: '20px', 
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                          }}>
+                            📊 {product.vat}% VAT
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        onClick={() => editProduct(product)}
+                        style={{
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                          padding: '8px 16px',
+                          fontSize: '12px',
+                          marginRight: '0'
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => deleteProduct(product.id)}
+                        style={{
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                          padding: '8px 16px',
+                          fontSize: '12px',
+                          marginRight: '0'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px', color: isDarkMode ? '#a0aec0' : '#666' }}>
+              <p style={{ fontSize: '18px', margin: 0 }}>📦 No products found</p>
+              <p style={{ margin: '10px 0 0 0' }}>
+                {searchTerm ? 'Try adjusting your search terms' : 'Add your first product to get started'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
