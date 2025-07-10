@@ -9,27 +9,38 @@ function Reports() {
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
   const [clients, setClients] = useState([]);
+  const [dateRange, setDateRange] = useState('all');
   const [loading, setLoading] = useState(true);
-  const user = auth.currentUser;
   const { isDarkMode } = useDarkMode();
 
+  const user = auth.currentUser;
+
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
-    try {
-      const [invoicesSnapshot, productsSnapshot, clientsSnapshot] = await Promise.all([
-        getDocs(query(collection(db, 'invoices'), where('userId', '==', user.uid))),
-        getDocs(query(collection(db, 'products'), where('userId', '==', user.uid))),
-        getDocs(query(collection(db, 'clients'), where('userId', '==', user.uid)))
-      ]);
+    if (!user) return;
 
-      setInvoices(invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setClients(clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      // Fetch invoices
+      const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+      const invoicesSnapshot = await getDocs(invoicesQuery);
+      const invoicesData = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setInvoices(invoicesData);
+
+      // Fetch products
+      const productsQuery = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const productsSnapshot = await getDocs(productsQuery);
+      const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(productsData);
+
+      // Fetch clients
+      const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const clientsSnapshot = await getDocs(clientsQuery);
+      const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClients(clientsData);
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -38,48 +49,43 @@ function Reports() {
   };
 
   const calculateStats = () => {
-    const totalRevenue = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0);
-    const paidInvoices = invoices.filter(invoice => invoice.status === 'Paid');
-    const unpaidInvoices = invoices.filter(invoice => invoice.status === 'Unpaid');
+    const totalRevenue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
+    const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
+    const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue');
 
     return {
-      totalRevenue,
+      totalRevenue: totalRevenue.toFixed(2),
       totalInvoices: invoices.length,
-      paidInvoices: paidInvoices.length,
-      unpaidInvoices: unpaidInvoices.length,
-      paidRevenue: paidInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0),
-      unpaidRevenue: unpaidInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
+      paidAmount: paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
+      unpaidAmount: unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
+      overdueAmount: overdueInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0).toFixed(2),
+      paidCount: paidInvoices.length,
+      unpaidCount: unpaidInvoices.length,
+      overdueCount: overdueInvoices.length
     };
   };
 
   const getTopClients = () => {
-    const clientRevenue = {};
-
+    const clientTotals = {};
+    
     invoices.forEach(invoice => {
-      const clientId = invoice.selectedClientId || invoice.clientName;
-      if (!clientRevenue[clientId]) {
-        clientRevenue[clientId] = { revenue: 0, invoiceCount: 0 };
+      const clientName = invoice.clientName;
+      if (!clientTotals[clientName]) {
+        clientTotals[clientName] = 0;
       }
-      clientRevenue[clientId].revenue += parseFloat(invoice.amount || 0);
-      clientRevenue[clientId].invoiceCount += 1;
+      clientTotals[clientName] += parseFloat(invoice.amount) || 0;
     });
 
-    return Object.entries(clientRevenue)
-      .map(([clientId, data]) => {
-        const client = clients.find(c => c.id === clientId);
-        return {
-          clientId,
-          clientName: client ? client.name : clientId,
-          ...data
-        };
-      })
-      .sort((a, b) => b.revenue - a.revenue)
+    return Object.entries(clientTotals)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
       .slice(0, 5);
   };
 
   const getTopProducts = () => {
     const productSales = {};
-
+    
     invoices.forEach(invoice => {
       const productId = invoice.selectedProductId;
       if (productId && productId !== '') {
@@ -128,29 +134,42 @@ function Reports() {
     color: 'white'
   };
 
-  const cardStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+  const statsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '25px',
+    marginBottom: '40px'
+  };
+
+  const statCardStyle = {
+    background: isDarkMode ? 'rgba(15,15,35,0.95)' : 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    borderRadius: '16px',
+    textAlign: 'center',
+    backdropFilter: 'blur(15px)',
+    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '2px solid rgba(55,65,81,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    color: isDarkMode ? '#ffffff' : '#333333'
+  };
+
+  const chartContainerStyle = {
+    background: isDarkMode ? 'rgba(15,15,35,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     borderRadius: '16px',
     marginBottom: '30px',
     backdropFilter: 'blur(15px)',
-    border: '2px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+    boxShadow: isDarkMode ? '0 20px 40px rgba(0,0,0,0.3)' : '0 20px 40px rgba(0,0,0,0.1)',
+    border: isDarkMode ? '2px solid rgba(55,65,81,0.3)' : '2px solid rgba(255,255,255,0.2)',
+    color: isDarkMode ? '#ffffff' : '#333333'
   };
 
-  const statsGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  };
-
-  const statCardStyle = {
-    background: isDarkMode ? 'rgba(40,44,52,0.8)' : 'rgba(255,255,255,0.9)',
-    padding: '20px',
-    borderRadius: '12px',
-    textAlign: 'center',
-    border: '2px solid rgba(102, 126, 234, 0.1)',
+  const listItemStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px',
+    borderBottom: isDarkMode ? '1px solid #374151' : '1px solid #e5e7eb',
     color: isDarkMode ? '#ffffff' : '#333333'
   };
 
@@ -159,9 +178,8 @@ function Reports() {
       <div style={containerStyle}>
         <Navigation user={user} />
         <div style={contentStyle}>
-          <div style={headerStyle}>
-            <h1>📈 Reports</h1>
-            <p>Loading your business analytics...</p>
+          <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
+            <h2>Loading reports...</h2>
           </div>
         </div>
       </div>
@@ -173,108 +191,105 @@ function Reports() {
       <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
-            📈 Reports & Analytics
+          <h1 style={{ fontSize: '3rem', margin: '0 0 15px 0', fontWeight: '300' }}>
+            📈 Business Reports
           </h1>
-          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Track your business performance and insights
+          <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
+            Analyze your business performance and track key metrics
           </p>
         </div>
 
+        {/* Statistics Cards */}
         <div style={statsGridStyle}>
           <div style={statCardStyle}>
-            <h3 style={{ color: '#667eea', margin: '0 0 10px 0' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.totalRevenue.toFixed(2)}
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+              £{stats.totalRevenue}
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ color: '#667eea', margin: '0 0 10px 0' }}>Total Invoices</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#667eea', fontSize: '1.1rem' }}>Total Invoices</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
               {stats.totalInvoices}
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ color: '#28a745', margin: '0 0 10px 0' }}>Paid Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.paidRevenue.toFixed(2)}
+            <h3 style={{ margin: '0 0 15px 0', color: '#28a745', fontSize: '1.1rem' }}>Paid</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+              £{stats.paidAmount}
+            </p>
+            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
+              {stats.paidCount} invoices
             </p>
           </div>
           <div style={statCardStyle}>
-            <h3 style={{ color: '#dc3545', margin: '0 0 10px 0' }}>Unpaid Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.unpaidRevenue.toFixed(2)}
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffc107', fontSize: '1.1rem' }}>Unpaid</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+              £{stats.unpaidAmount}
+            </p>
+            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
+              {stats.unpaidCount} invoices
+            </p>
+          </div>
+          <div style={statCardStyle}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#dc3545', fontSize: '1.1rem' }}>Overdue</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: isDarkMode ? '#ffffff' : '#333' }}>
+              £{stats.overdueAmount}
+            </p>
+            <p style={{ fontSize: '1rem', color: '#666', margin: '5px 0 0 0' }}>
+              {stats.overdueCount} invoices
             </p>
           </div>
         </div>
 
-        <div style={cardStyle}>
-          <h2 style={{ color: isDarkMode ? '#ffffff' : '#333333', marginBottom: '20px' }}>
+        {/* Top Clients */}
+        <div style={chartContainerStyle}>
+          <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
             👥 Top Clients
           </h2>
-          {topClients.length > 0 ? (
+          {topClients.length === 0 ? (
+            <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
+              No client data available yet. Create some invoices to see your top clients.
+            </p>
+          ) : (
             <div>
               {topClients.map((client, index) => (
-                <div key={client.clientId} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '15px 0',
-                  borderBottom: index < topClients.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none'
-                }}>
-                  <div>
-                    <h4 style={{ margin: 0, color: isDarkMode ? '#ffffff' : '#333333' }}>
-                      {client.clientName}
-                    </h4>
-                    <p style={{ margin: 0, color: isDarkMode ? '#cccccc' : '#666666' }}>
-                      {client.invoiceCount} invoices
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
-                      £{client.revenue.toFixed(2)}
-                    </p>
-                  </div>
+                <div key={index} style={listItemStyle}>
+                  <span style={{ fontWeight: '500' }}>{client.name}</span>
+                  <span style={{ fontWeight: 'bold', color: '#667eea' }}>
+                    £{client.total.toFixed(2)}
+                  </span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ color: isDarkMode ? '#cccccc' : '#666666' }}>No client data available</p>
           )}
         </div>
 
-        <div style={cardStyle}>
-          <h2 style={{ color: isDarkMode ? '#ffffff' : '#333333', marginBottom: '20px' }}>
+        {/* Top Products */}
+        <div style={chartContainerStyle}>
+          <h2 style={{ marginTop: 0, color: isDarkMode ? '#ffffff' : '#333', fontSize: '1.8rem' }}>
             📦 Top Products
           </h2>
-          {topProducts.length > 0 ? (
+          {topProducts.length === 0 ? (
+            <p style={{ color: isDarkMode ? '#9ca3af' : '#666', fontSize: '1.1rem' }}>
+              No product data available yet. Create some products and invoices to see your top products.
+            </p>
+          ) : (
             <div>
               {topProducts.map((product, index) => (
-                <div key={product.productId} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '15px 0',
-                  borderBottom: index < topProducts.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none'
-                }}>
+                <div key={index} style={listItemStyle}>
                   <div>
-                    <h4 style={{ margin: 0, color: isDarkMode ? '#ffffff' : '#333333' }}>
-                      {product.productName}
-                    </h4>
-                    <p style={{ margin: 0, color: isDarkMode ? '#cccccc' : '#666666' }}>
+                    <div style={{ fontWeight: '500' }}>{product.productName}</div>
+                    <div style={{ fontSize: '0.9rem', color: isDarkMode ? '#9ca3af' : '#666' }}>
                       {product.salesCount} sales
-                    </p>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
-                      £{product.revenue.toFixed(2)}
-                    </p>
-                  </div>
+                  <span style={{ fontWeight: 'bold', color: '#667eea' }}>
+                    £{product.revenue.toFixed(2)}
+                  </span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ color: isDarkMode ? '#cccccc' : '#666666' }}>No product data available</p>
           )}
         </div>
       </div>

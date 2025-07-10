@@ -531,7 +531,7 @@ function Dashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Select Client
               </label>
               <select
@@ -549,7 +549,7 @@ function Dashboard() {
                 ))}
               </select>
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Client Name *
               </label>
               <input
@@ -561,7 +561,7 @@ function Dashboard() {
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Select Product (Optional)
               </label>
               <select
@@ -579,7 +579,7 @@ function Dashboard() {
                 ))}
               </select>
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Amount (£) *
               </label>
               <input
@@ -594,7 +594,7 @@ function Dashboard() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 VAT (%)
               </label>
               <input
@@ -607,7 +607,7 @@ function Dashboard() {
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Due Date
               </label>
               <input
@@ -619,7 +619,7 @@ function Dashboard() {
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Status
               </label>
               <select 
@@ -634,7 +634,7 @@ function Dashboard() {
                 <option value="Overdue">Overdue</option>
               </select>
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
                 Invoice Template
               </label>
               <select
@@ -650,7 +650,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', marginTop: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555', marginTop: '20px' }}>
             Notes
           </label>
           <textarea
@@ -709,7 +709,7 @@ function Dashboard() {
             <h3 style={{ color: '#666', fontSize: '1.4rem', marginBottom: '15px' }}>
               📄 No invoices found
             </h3>
-            <p style={{ color: '#999', fontSize: '1.1rem' }}>
+            <pstyle={{ color: '#999', fontSize: '1.1rem' }}>
               {searchTerm || filterStatus !== 'all' 
                 ? 'Try adjusting your search or filters' 
                 : 'Create your first invoice to get started!'}
