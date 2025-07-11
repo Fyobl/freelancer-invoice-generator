@@ -12,23 +12,31 @@ import {
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
-import Navigation from './Navigation.js';
-import { useDarkMode } from './DarkModeContext.js';
 
-function Dashboard({ user }) {
-  const { isDarkMode } = useDarkMode();
+const Dashboard = () => {
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [newInvoice, setNewInvoice] = useState({
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [formData, setFormData] = useState({
     clientId: '',
-    items: [{ productId: '', quantity: 1 }],
-    dueDate: '',
-    status: 'Draft'
+    amount: '',
+    description: '',
+    status: 'Pending',
+    dueDate: ''
   });
+
+  useEffect(() => {
+    fetchInvoices();
+    fetchClients();
+  }, []);
 
   const fetchInvoices = async () => {
     try {
+      const user = auth.currentUser;
+      if (!user) return;
+
       const q = query(
         collection(db, 'invoices'),
         where('userId', '==', user.uid),
@@ -42,369 +50,318 @@ function Dashboard({ user }) {
       setInvoices(invoiceList);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchClients = async () => {
     try {
+      const user = auth.currentUser;
+      if (!user) return;
+
       const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
       const querySnapshot = await getDocs(q);
-      const clientList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const clientList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       setClients(clientList);
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
   };
 
-  const fetchProducts = async () => {
-    try {
-      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
-      const querySnapshot = await getDocs(q);
-      const productList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(productList);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchInvoices();
-    fetchClients();
-    fetchProducts();
-  }, [user]);
-
-  const addInvoice = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'invoices'), {
-        ...newInvoice,
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const invoiceData = {
+        ...formData,
         userId: user.uid,
-        createdAt: serverTimestamp()
-      });
-      setNewInvoice({
-        clientId: '',
-        items: [{ productId: '', quantity: 1 }],
-        dueDate: '',
-        status: 'Draft'
-      });
-      fetchInvoices();
-    } catch (error) {
-      console.error('Error adding invoice:', error);
-    }
-  };
+        amount: parseFloat(formData.amount),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
 
-  const deleteInvoice = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'invoices', id));
-      fetchInvoices();
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-    }
-  };
-
-  const updateInvoiceStatus = async (id, status) => {
-    try {
-      await updateDoc(doc(db, 'invoices', id), { status });
-      fetchInvoices();
-    } catch (error) {
-      console.error('Error updating invoice:', error);
-    }
-  };
-
-  const calculateInvoiceTotal = (items) => {
-    return items.reduce((total, item) => {
-      const product = products.find(p => p.id === item.productId);
-      if (product) {
-        const subtotal = product.price * item.quantity;
-        const vatAmount = subtotal * (product.vat / 100);
-        return total + subtotal + vatAmount;
+      if (editingInvoice) {
+        await updateDoc(doc(db, 'invoices', editingInvoice.id), {
+          ...invoiceData,
+          createdAt: editingInvoice.createdAt
+        });
+      } else {
+        await addDoc(collection(db, 'invoices'), invoiceData);
       }
-      return total;
-    }, 0);
+
+      setFormData({
+        clientId: '',
+        amount: '',
+        description: '',
+        status: 'Pending',
+        dueDate: ''
+      });
+      setEditingInvoice(null);
+      setShowForm(false);
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+    }
   };
 
+  const handleEdit = (invoice) => {
+    setEditingInvoice(invoice);
+    setFormData({
+      clientId: invoice.clientId,
+      amount: invoice.amount.toString(),
+      description: invoice.description,
+      status: invoice.status,
+      dueDate: invoice.dueDate
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      try {
+        await deleteDoc(doc(db, 'invoices', id));
+        fetchInvoices();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
+    }
+  };
+
+  const getClientName = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'Unknown Client';
+  };
+
+  const getStatusBadge = (status) => {
+    const statusClasses = {
+      'Paid': 'badge-success',
+      'Pending': 'badge-warning',
+      'Overdue': 'badge-error'
+    };
+    return `badge ${statusClasses[status] || 'badge-warning'}`;
+  };
+
+  // Calculate statistics
+  const totalInvoices = invoices.length;
+  const paidInvoices = invoices.filter(inv => inv.status === 'Paid').length;
+  const pendingInvoices = invoices.filter(inv => inv.status === 'Pending').length;
   const totalRevenue = invoices
-    .filter(invoice => invoice.status === 'Paid')
-    .reduce((sum, invoice) => sum + calculateInvoiceTotal(invoice.items || []), 0);
+    .filter(inv => inv.status === 'Paid')
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
-  const pendingAmount = invoices
-    .filter(invoice => invoice.status !== 'Paid')
-    .reduce((sum, invoice) => sum + calculateInvoiceTotal(invoice.items || []), 0);
-
-  // Styles
-  const containerStyle = {
-    minHeight: '100vh',
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #0f1419 0%, #1a202c 100%)' 
-      : 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    paddingLeft: '20px',
-    paddingRight: '20px',
-    paddingTop: '100px',
-    paddingBottom: '60px',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748'
-  };
-
-  const contentStyle = {
-    maxWidth: '1400px',
-    margin: '0 auto'
-  };
-
-  const headerStyle = {
-    textAlign: 'center',
-    marginBottom: '50px',
-    color: isDarkMode ? '#ffffff' : '#1a202c'
-  };
-
-  const statsGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '30px',
-    marginBottom: '50px'
-  };
-
-  const statCardStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
-      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
-    padding: '40px 30px',
-    borderRadius: '20px',
-    textAlign: 'center',
-    boxShadow: isDarkMode 
-      ? '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' 
-      : '0 20px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
-    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    cursor: 'pointer'
-  };
-
-  const formContainerStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
-      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
-    padding: '50px',
-    borderRadius: '24px',
-    marginBottom: '50px',
-    boxShadow: isDarkMode 
-      ? '0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)' 
-      : '0 25px 50px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)',
-    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '16px 20px',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0',
-    borderRadius: '12px',
-    fontSize: '16px',
-    marginBottom: '20px',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748',
-    boxSizing: 'border-box',
-    outline: 'none'
-  };
-
-  const selectStyle = {
-    ...inputStyle,
-    appearance: 'none',
-    backgroundImage: isDarkMode 
-      ? 'url("data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%23e2e8f0\' viewBox=\'0 0 20 20\'><path d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\'/></svg>")' 
-      : 'url("data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%232d3748\' viewBox=\'0 0 20 20\'><path d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\'/></svg>")',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 16px center',
-    backgroundSize: '20px'
-  };
-
-  const buttonStyle = {
-    background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
-    color: '#ffffff',
-    border: 'none',
-    padding: '16px 32px',
-    borderRadius: '12px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    marginRight: '15px',
-    boxShadow: '0 10px 20px rgba(66, 153, 225, 0.3)'
-  };
-
-  const invoiceGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-    gap: '30px'
-  };
-
-  const invoiceCardStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
-      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
-    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
-    borderRadius: '20px',
-    padding: '30px',
-    transition: 'all 0.3s ease',
-    boxShadow: isDarkMode 
-      ? '0 15px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' 
-      : '0 15px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748'
-  };
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="loading">Loading dashboard...</div>
+      </div>
+    );
+  }
 
   return (
-    <div style={containerStyle}>
-      <Navigation user={user} />
-      <div style={contentStyle}>
-        <div style={headerStyle}>
-          <h1 style={{ fontSize: '3.5rem', margin: '0 0 15px 0', fontWeight: '800', letterSpacing: '-0.05em' }}>
-            Dashboard
-          </h1>
-          <p style={{ fontSize: '1.25rem', opacity: '0.8', margin: 0, fontWeight: '400' }}>
-            Welcome back, {user?.email}. Here's what's happening with your business.
-          </p>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">Dashboard</h1>
+        <p className="page-subtitle">Overview of your invoicing business</p>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Invoices</div>
+          <div className="stat-value">{totalInvoices}</div>
+          <div className="stat-change">All time</div>
         </div>
-
-        <div style={statsGridStyle}>
-          <div style={{...statCardStyle, borderLeft: '5px solid #4299e1'}}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📊</div>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Total Invoices</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#4299e1' }}>{invoices.length}</p>
-          </div>
-
-          <div style={{...statCardStyle, borderLeft: '5px solid #48bb78'}}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>💰</div>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#48bb78' }}>
-              £{totalRevenue.toFixed(2)}
-            </p>
-          </div>
-
-          <div style={{...statCardStyle, borderLeft: '5px solid #ed8936'}}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>⏳</div>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Pending Amount</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#ed8936' }}>
-              £{pendingAmount.toFixed(2)}
-            </p>
-          </div>
-
-          <div style={{...statCardStyle, borderLeft: '5px solid #9f7aea'}}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>👥</div>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Active Clients</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#9f7aea' }}>{clients.length}</p>
-          </div>
+        <div className="stat-card">
+          <div className="stat-label">Paid Invoices</div>
+          <div className="stat-value">{paidInvoices}</div>
+          <div className="stat-change">{totalInvoices > 0 ? Math.round((paidInvoices / totalInvoices) * 100) : 0}% of total</div>
         </div>
+        <div className="stat-card">
+          <div className="stat-label">Pending Invoices</div>
+          <div className="stat-value">{pendingInvoices}</div>
+          <div className="stat-change">{totalInvoices > 0 ? Math.round((pendingInvoices / totalInvoices) * 100) : 0}% of total</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total Revenue</div>
+          <div className="stat-value">${totalRevenue.toFixed(2)}</div>
+          <div className="stat-change">From paid invoices</div>
+        </div>
+      </div>
 
-        <div style={formContainerStyle}>
-          <h2 style={{ fontSize: '2rem', marginBottom: '30px', fontWeight: '700' }}>Create New Invoice</h2>
-          <form onSubmit={addInvoice}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Client</label>
-                <select
-                  value={newInvoice.clientId}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, clientId: e.target.value })}
-                  style={selectStyle}
-                  required
-                >
-                  <option value="">Select a client</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name}</option>
-                  ))}
-                </select>
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title">Recent Invoices</h2>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              setEditingInvoice(null);
+              setFormData({
+                clientId: '',
+                amount: '',
+                description: '',
+                status: 'Pending',
+                dueDate: ''
+              });
+            }}
+          >
+            + Create Invoice
+          </button>
+        </div>
+        <div className="card-content">
+          {showForm && (
+            <div className="card" style={{ marginBottom: '2rem' }}>
+              <div className="card-header">
+                <h3 className="card-title">
+                  {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+                </h3>
               </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Due Date</label>
-                <input
-                  type="date"
-                  value={newInvoice.dueDate}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" style={buttonStyle}>
-              Create Invoice
-            </button>
-          </form>
-        </div>
-
-        <div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '30px', fontWeight: '700' }}>Recent Invoices</h2>
-          <div style={invoiceGridStyle}>
-            {invoices.map(invoice => {
-              const client = clients.find(c => c.id === invoice.clientId);
-              const total = calculateInvoiceTotal(invoice.items || []);
-
-              return (
-                <div key={invoice.id} style={invoiceCardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
-                      {client ? client.name : 'Unknown Client'}
-                    </h3>
-                    <span style={{
-                      padding: '6px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      backgroundColor: invoice.status === 'Paid' ? '#48bb78' : 
-                                     invoice.status === 'Sent' ? '#4299e1' : '#ed8936',
-                      color: '#ffffff'
-                    }}>
-                      {invoice.status}
-                    </span>
-                  </div>
-
-                  <div style={{ marginBottom: '20px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: '0.8' }}>Due Date</p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>{invoice.dueDate}</p>
-                  </div>
-
-                  <div style={{ marginBottom: '25px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: '0.8' }}>Total Amount</p>
-                    <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#4299e1' }}>
-                      £{total.toFixed(2)}
-                    </p>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    {invoice.status !== 'Paid' && (
-                      <button
-                        onClick={() => updateInvoiceStatus(invoice.id, 'Paid')}
-                        style={{
-                          ...buttonStyle,
-                          background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
-                          padding: '10px 20px',
-                          fontSize: '14px'
-                        }}
+              <div className="card-content">
+                <form onSubmit={handleSubmit}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Client</label>
+                      <select
+                        className="form-select"
+                        value={formData.clientId}
+                        onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                        required
                       >
-                        Mark Paid
-                      </button>
-                    )}
+                        <option value="">Select a client</option>
+                        {clients.map(client => (
+                          <option key={client.id} value={client.id}>
+                            {client.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Amount</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="form-input"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Status</label>
+                      <select
+                        className="form-select"
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Due Date</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={formData.dueDate}
+                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-textarea"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Invoice description or services provided"
+                      required
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button type="submit" className="btn btn-primary">
+                      {editingInvoice ? 'Update Invoice' : 'Create Invoice'}
+                    </button>
                     <button
-                      onClick={() => deleteInvoice(invoice.id)}
-                      style={{
-                        ...buttonStyle,
-                        background: 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)',
-                        padding: '10px 20px',
-                        fontSize: '14px'
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowForm(false);
+                        setEditingInvoice(null);
                       }}
                     >
-                      Delete
+                      Cancel
                     </button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {invoices.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+              <p>No invoices found. Create your first invoice to get started!</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map(invoice => (
+                    <tr key={invoice.id}>
+                      <td>{getClientName(invoice.clientId)}</td>
+                      <td>${invoice.amount?.toFixed(2)}</td>
+                      <td>
+                        <span className={getStatusBadge(invoice.status)}>
+                          {invoice.status}
+                        </span>
+                      </td>
+                      <td>{invoice.dueDate}</td>
+                      <td>{invoice.description}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => handleEdit(invoice)}
+                            style={{ padding: '0.5rem' }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(invoice.id)}
+                            style={{ padding: '0.5rem' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;

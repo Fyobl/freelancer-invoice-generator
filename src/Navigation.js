@@ -1,263 +1,190 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { auth } from './firebase.js';
 import { useDarkMode } from './DarkModeContext.js';
 
-function Navigation({ user }) {
+const Navigation = () => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+  const menuItems = [
+    { path: '/dashboard', name: 'Dashboard', icon: '📊' },
+    { path: '/products', name: 'Products', icon: '📦' },
+    { path: '/clients', name: 'Clients', icon: '👥' },
+    { path: '/reports', name: 'Reports', icon: '📈' },
+    { path: '/company-settings', name: 'Settings', icon: '⚙️' }
+  ];
 
   const sidebarStyle = {
     position: 'fixed',
     top: 0,
-    left: isOpen ? '0' : '-300px',
-    width: '300px',
+    left: isSidebarOpen ? 0 : '-280px',
+    width: '280px',
     height: '100vh',
-    background: isDarkMode 
-      ? 'linear-gradient(180deg, #1a202c 0%, #2d3748 100%)' 
-      : 'linear-gradient(180deg, #ffffff 0%, #f7fafc 100%)',
-    borderRight: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0',
+    backgroundColor: 'var(--bg-primary)',
+    borderRight: '1px solid var(--border-color)',
+    transition: 'all 0.3s ease',
     zIndex: 1000,
-    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
     display: 'flex',
     flexDirection: 'column',
-    backdropFilter: 'blur(20px)'
+    boxShadow: 'var(--shadow-lg)'
   };
 
-  const overlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 999,
-    display: isOpen ? 'block' : 'none',
-    transition: 'opacity 0.3s ease'
+  const headerStyle = {
+    padding: '2rem 1.5rem',
+    borderBottom: '1px solid var(--border-color)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  };
+
+  const logoStyle = {
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: 'var(--text-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  };
+
+  const navStyle = {
+    flex: 1,
+    padding: '1rem 0',
+    overflowY: 'auto'
+  };
+
+  const menuItemStyle = (isActive) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '0.875rem 1.5rem',
+    color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+    textDecoration: 'none',
+    transition: 'all 0.3s ease',
+    borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
+    backgroundColor: isActive ? 'rgb(59 130 246 / 0.05)' : 'transparent',
+    fontWeight: isActive ? '600' : '500'
+  });
+
+  const footerStyle = {
+    padding: '1.5rem',
+    borderTop: '1px solid var(--border-color)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem'
   };
 
   const toggleButtonStyle = {
     position: 'fixed',
-    top: '24px',
-    left: '24px',
-    background: isDarkMode 
-      ? 'rgba(26, 32, 44, 0.9)' 
-      : 'rgba(255, 255, 255, 0.9)',
-    border: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0',
-    borderRadius: '12px',
-    padding: '14px',
-    cursor: 'pointer',
+    top: '1rem',
+    left: isSidebarOpen ? '290px' : '1rem',
     zIndex: 1001,
-    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-    color: isDarkMode ? '#e2e8f0' : '#2d3748',
-    fontSize: '20px',
-    transition: 'all 0.3s ease',
-    backdropFilter: 'blur(20px)',
+    backgroundColor: 'var(--accent-primary)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '50%',
     width: '48px',
     height: '48px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
-  };
-
-  const logoStyle = {
-    padding: '40px 30px',
-    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0',
-    textAlign: 'center'
-  };
-
-  const logoTextStyle = {
-    fontSize: '1.75rem',
-    fontWeight: '700',
-    color: isDarkMode ? '#ffffff' : '#1a202c',
-    textDecoration: 'none',
-    display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: '12px',
-    letterSpacing: '-0.025em'
-  };
-
-  const navLinksStyle = {
-    flex: 1,
-    padding: '30px 0',
-    listStyle: 'none',
-    margin: 0
-  };
-
-  const linkItemStyle = {
-    margin: '4px 0'
-  };
-
-  const linkStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    color: isDarkMode ? '#cbd5e0' : '#4a5568',
-    textDecoration: 'none',
-    padding: '16px 30px',
-    transition: 'all 0.3s ease',
-    borderRadius: '0',
-    margin: '0',
-    fontSize: '16px',
-    fontWeight: '500',
-    position: 'relative'
-  };
-
-  const activeLinkStyle = {
-    ...linkStyle,
-    background: isDarkMode 
-      ? 'linear-gradient(90deg, #3182ce 0%, #2b6cb0 100%)' 
-      : 'linear-gradient(90deg, #4299e1 0%, #3182ce 100%)',
-    color: '#ffffff',
-    fontWeight: '600'
-  };
-
-  const footerStyle = {
-    padding: '30px',
-    borderTop: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  };
-
-  const buttonStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(90deg, #718096 0%, #4a5568 100%)' 
-      : 'linear-gradient(90deg, #a0aec0 0%, #718096 100%)',
-    color: '#ffffff',
-    border: 'none',
-    padding: '14px 20px',
-    borderRadius: '10px',
     cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
+    boxShadow: 'var(--shadow-lg)',
     transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px'
+    fontSize: '1.25rem'
   };
 
-  const darkModeButtonStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(90deg, #f6ad55 0%, #ed8936 100%)' 
-      : 'linear-gradient(90deg, #4a5568 0%, #2d3748 100%)',
-    color: '#ffffff',
-    border: 'none',
-    padding: '14px 20px',
-    borderRadius: '10px',
+  const themeToggleStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0.75rem 1rem',
+    backgroundColor: 'var(--bg-secondary)',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)',
     cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px'
+    transition: 'all 0.3s ease'
   };
-
-  const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      <div style={overlayStyle} onClick={toggleSidebar}></div>
-
-      <button onClick={toggleSidebar} style={toggleButtonStyle}>
-        ☰
+      <button
+        style={toggleButtonStyle}
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
+        onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+      >
+        {isSidebarOpen ? '✕' : '☰'}
       </button>
 
-      <nav style={sidebarStyle}>
-        <div style={logoStyle}>
-          <Link to="/dashboard" style={logoTextStyle} onClick={() => setIsOpen(false)}>
-            <span style={{fontSize: '2rem'}}>💼</span>
+      <div style={sidebarStyle}>
+        <div style={headerStyle}>
+          <div style={logoStyle}>
+            <span>💼</span>
             <span>InvoicePro</span>
-          </Link>
+          </div>
         </div>
 
-        <ul style={navLinksStyle}>
-          <li style={linkItemStyle}>
-            <Link 
-              to="/dashboard" 
-              style={isActive('/dashboard') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsOpen(false)}
+        <nav style={navStyle}>
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              style={menuItemStyle(location.pathname === item.path)}
+              onMouseOver={(e) => {
+                if (location.pathname !== item.path) {
+                  e.target.style.backgroundColor = 'var(--bg-secondary)';
+                  e.target.style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== item.path) {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = 'var(--text-secondary)';
+                }
+              }}
             >
-              <span style={{fontSize: '18px'}}>📊</span>
-              <span>Dashboard</span>
+              <span style={{ fontSize: '1.25rem' }}>{item.icon}</span>
+              <span>{item.name}</span>
             </Link>
-          </li>
-          <li style={linkItemStyle}>
-            <Link 
-              to="/clients" 
-              style={isActive('/clients') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsOpen(false)}
-            >
-              <span style={{fontSize: '18px'}}>👥</span>
-              <span>Clients</span>
-            </Link>
-          </li>
-          <li style={linkItemStyle}>
-            <Link 
-              to="/products" 
-              style={isActive('/products') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsOpen(false)}
-            >
-              <span style={{fontSize: '18px'}}>📦</span>
-              <span>Products</span>
-            </Link>
-          </li>
-          <li style={linkItemStyle}>
-            <Link 
-              to="/reports" 
-              style={isActive('/reports') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsOpen(false)}
-            >
-              <span style={{fontSize: '18px'}}>📈</span>
-              <span>Reports</span>
-            </Link>
-          </li>
-          <li style={linkItemStyle}>
-            <Link 
-              to="/settings" 
-              style={isActive('/settings') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsOpen(false)}
-            >
-              <span style={{fontSize: '18px'}}>⚙️</span>
-              <span>Settings</span>
-            </Link>
-          </li>
-        </ul>
+          ))}
+        </nav>
 
         <div style={footerStyle}>
-          <button onClick={toggleDarkMode} style={darkModeButtonStyle}>
-            <span>{isDarkMode ? '☀️' : '🌙'}</span>
-            <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-
-          <button onClick={handleLogout} style={buttonStyle}>
-            <span>🚪</span>
-            <span>Sign Out</span>
-          </button>
+          <div
+            style={themeToggleStyle}
+            onClick={toggleDarkMode}
+            onMouseOver={(e) => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
+            onMouseOut={(e) => e.target.style.backgroundColor = 'var(--bg-secondary)'}
+          >
+            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+              {isDarkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            </span>
+            <div style={{
+              width: '48px',
+              height: '24px',
+              backgroundColor: isDarkMode ? 'var(--accent-primary)' : 'var(--border-color)',
+              borderRadius: '12px',
+              position: 'relative',
+              transition: 'all 0.3s ease'
+            }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                position: 'absolute',
+                top: '2px',
+                left: isDarkMode ? '26px' : '2px',
+                transition: 'all 0.3s ease',
+                boxShadow: 'var(--shadow-sm)'
+              }} />
+            </div>
+          </div>
         </div>
-      </nav>
+      </div>
     </>
   );
-}
+};
 
 export default Navigation;
