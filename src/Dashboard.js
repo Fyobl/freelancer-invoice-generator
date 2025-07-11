@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase.js';
 import {
@@ -37,28 +36,29 @@ function Dashboard() {
 
   const user = auth.currentUser;
 
-  // Styling objects
-  const containerStyle = {
+  // Styles
+  const pageStyle = {
     minHeight: '100vh',
     background: isDarkMode 
-      ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
+      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     paddingLeft: '20px',
     paddingRight: '20px',
     paddingTop: '80px',
-    paddingBottom: '40px'
+    paddingBottom: '40px',
+    color: isDarkMode ? '#f8fafc' : '#1e293b'
   };
 
-  const contentStyle = {
-    maxWidth: '1400px',
+  const containerStyle = {
+    maxWidth: '1200px',
     margin: '0 auto'
   };
 
   const headerStyle = {
     textAlign: 'center',
     marginBottom: '40px',
-    color: 'white',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
     padding: '20px 0'
   };
 
@@ -70,38 +70,45 @@ function Dashboard() {
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '25px',
     borderRadius: '16px',
     textAlign: 'center',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    boxShadow: isDarkMode 
+      ? '0 10px 25px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3)' 
+      : '0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
   };
 
   const formStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '40px',
     borderRadius: '20px',
     marginBottom: '40px',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-    border: '2px solid rgba(255,255,255,0.2)',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
+      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
   };
 
   const inputStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #475569' : '2px solid #cbd5e1',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
-    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    transition: 'all 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
-    color: isDarkMode ? '#ffffff' : '#333333',
+    backgroundColor: isDarkMode ? '#334155' : '#ffffff',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px'
@@ -356,9 +363,9 @@ function Dashboard() {
   }
 
   return (
-    <div style={containerStyle}>
+    <div style={pageStyle}>
       <Navigation user={user} />
-      <div style={contentStyle}>
+      <div style={containerStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             📋 Invoice Dashboard

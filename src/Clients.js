@@ -123,12 +123,15 @@ function Clients() {
   // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
+      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     paddingLeft: '20px',
     paddingRight: '20px',
     paddingTop: '80px',
-    paddingBottom: '40px'
+    paddingBottom: '40px',
+    color: isDarkMode ? '#f8fafc' : '#1e293b'
   };
 
   const contentStyle = {
@@ -137,7 +140,7 @@ function Clients() {
   };
 
   const headerStyle = {
-    color: 'white',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
     textAlign: 'center',
     marginBottom: '40px'
   };
@@ -150,37 +153,45 @@ function Clients() {
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.9)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '20px',
     borderRadius: '12px',
     textAlign: 'center',
-    backdropFilter: 'blur(10px)',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : 'none'
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    boxShadow: isDarkMode 
+      ? '0 8px 20px rgba(0,0,0,0.3)' 
+      : '0 8px 20px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
   };
 
   const formStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '30px',
     borderRadius: '16px',
     marginBottom: '30px',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : 'none'
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
+      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0'
   };
 
   const inputStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #475569' : '2px solid #cbd5e1',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
-    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    transition: 'all 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
-    color: isDarkMode ? '#ffffff' : '#333333',
+    backgroundColor: isDarkMode ? '#334155' : '#ffffff',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
@@ -196,7 +207,9 @@ function Clients() {
   };
 
   const buttonStyle = {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
     padding: '12px 25px',
@@ -204,24 +217,34 @@ function Clients() {
     fontSize: '14px',
     fontWeight: 'bold',
     cursor: 'pointer',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    marginRight: '10px'
+    transition: 'all 0.3s ease',
+    marginRight: '10px',
+    boxShadow: isDarkMode 
+      ? '0 4px 12px rgba(59, 130, 246, 0.4)' 
+      : '0 4px 12px rgba(102, 126, 234, 0.4)'
   };
 
   const cancelButtonStyle = {
     ...buttonStyle,
-    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)' 
+      : 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
   };
 
   const clientListItemStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #f8f9fa',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
     borderRadius: '12px',
     marginBottom: '15px',
     transition: 'all 0.3s ease',
     cursor: 'pointer',
-    color: isDarkMode ? '#ffffff' : '#333333',
-    overflow: 'hidden'
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    overflow: 'hidden',
+    boxShadow: isDarkMode 
+      ? '0 4px 12px rgba(0,0,0,0.3)' 
+      : '0 4px 12px rgba(0,0,0,0.1)'
   };
 
   const clientHeaderStyle = {

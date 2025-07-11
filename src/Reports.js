@@ -35,8 +35,7 @@ function Reports() {
     const totalRevenue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const totalInvoices = invoices.length;
     const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
-    const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
-    const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue');
+    const unpaidInvoices = invoices.filter(inv => inv.status === 'Overdue');
 
     const paidAmount = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const unpaidAmount = unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
@@ -73,17 +72,17 @@ function Reports() {
   const stats = calculateStats();
   const topClients = getTopClients();
 
-  // Styles
   const containerStyle = {
     minHeight: '100vh',
     background: isDarkMode 
-      ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
+      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     paddingLeft: '20px',
     paddingRight: '20px',
     paddingTop: '80px',
-    paddingBottom: '40px'
+    paddingBottom: '40px',
+    color: isDarkMode ? '#f8fafc' : '#1e293b'
   };
 
   const contentStyle = {
@@ -92,9 +91,9 @@ function Reports() {
   };
 
   const headerStyle = {
-    color: 'white',
     textAlign: 'center',
-    marginBottom: '40px'
+    marginBottom: '40px',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
   };
 
   const statsGridStyle = {
@@ -105,13 +104,16 @@ function Reports() {
   };
 
   const statCardStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '30px',
     borderRadius: '16px',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
+      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
   };
 
   const chartsGridStyle = {
@@ -121,13 +123,16 @@ function Reports() {
   };
 
   const chartContainerStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     padding: '30px',
     borderRadius: '16px',
-    backdropFilter: 'blur(15px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
-    color: isDarkMode ? '#ffffff' : '#333333'
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
+      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
   };
 
   const listItemStyle = {
@@ -135,7 +140,7 @@ function Reports() {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '15px 0',
-    borderBottom: isDarkMode ? '1px solid #4a5568' : '1px solid #e2e8f0'
+    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #cbd5e1'
   };
 
   if (loading) {
