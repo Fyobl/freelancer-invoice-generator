@@ -64,10 +64,25 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
     // Create mailto URL
     const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // Open user's email client
-    window.open(mailtoUrl, '_blank');
+    // Try to open user's email client
+    try {
+      // First try using window.location.href for better compatibility
+      window.location.href = mailtoUrl;
 
-    return { success: true, message: 'Email client opened successfully' };
+      return { success: true, message: 'Email client opened successfully' };
+    } catch (error) {
+      // Fallback to window.open
+      try {
+        window.open(mailtoUrl, '_blank');
+        return { success: true, message: 'Email client opened successfully' };
+      } catch (fallbackError) {
+        console.error('Failed to open email client:', fallbackError);
+        return { 
+          success: false, 
+          error: 'Unable to open email client. Please copy the email details manually or check your browser settings.' 
+        };
+      }
+    }
   } catch (error) {
     console.error('Error creating quote email:', error);
     return { success: false, error: 'Failed to open email client' };
@@ -115,10 +130,25 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
     // Create mailto URL
     const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // Open user's email client
-    window.open(mailtoUrl, '_blank');
+    // Try to open user's email client
+    try {
+      // First try using window.location.href for better compatibility
+      window.location.href = mailtoUrl;
 
-    return { success: true, message: 'Email client opened successfully' };
+      return { success: true, message: 'Email client opened successfully' };
+    } catch (error) {
+      // Fallback to window.open
+      try {
+        window.open(mailtoUrl, '_blank');
+        return { success: true, message: 'Email client opened successfully' };
+      } catch (fallbackError) {
+        console.error('Failed to open email client:', fallbackError);
+        return { 
+          success: false, 
+          error: 'Unable to open email client. Please copy the email details manually or check your browser settings.' 
+        };
+      }
+    }
   } catch (error) {
     console.error('Error creating invoice email:', error);
     return { success: false, error: 'Failed to open email client' };

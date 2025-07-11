@@ -1,132 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase.js';
-import { onAuthStateChanged, deleteUser, updatePassword } from 'firebase/auth';
-import { getAuth, updateProfile } from "firebase/auth";
-
 import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';
 import Dashboard from './Dashboard.js';
-import Products from './Products.js';
-import Clients from './Clients.js';
-import Reports from './Reports.js';
-import CompanySettings from './CompanySettings.js';
 import Quotes from './Quotes.js';
-import AccountSettings from './AccountSettings.js';
+import Clients from './Clients.js';
+import Products from './Products.js';
+import Reports from './Reports.js';
 import EmailConfig from './EmailConfig.js';
+import CompanySettings from './CompanySettings.js';
+import AccountSettings from './AccountSettings.js';
 import Navigation from './Navigation.js';
-
+import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setAuthChecked(true);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  if (!authChecked) return <p>Checking authentication...</p>;
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '24px'
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <Router>
-      <main style={{ minHeight: '100vh' }}>
+      <div className="App">
+        {user && <Navigation user={user} />}
         <Routes>
-          <Route
-            path="/"
-            element={user ? <Navigate to="/dashboard" /> : <Home />}
-          />
-          <Route
-            path="/dashboard"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <Dashboard user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/login"
-            element={!user ? <Login /> : <Navigate to="/" />}
-          />
-          <Route
-            path="/register"
-            element={!user ? <Register onRegister={setUser} /> : <Navigate to="/" />}
-          />
-          <Route
-            path="/products"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <Products user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/clients"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <Clients user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/reports"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <Reports user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/quotes"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <Quotes user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/account-settings"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <AccountSettings user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/company-settings"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <CompanySettings user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/email-config"
-            element={user ? (
-              <>
-                <Navigation user={user} />
-                <EmailConfig user={user} />
-              </>
-            ) : <Navigate to="/login" />}
-          />
-          <Route
-            path="/settings"
-            element={user ? <Navigate to="/account-settings" /> : <Navigate to="/login" />}
-          />
+          <Route path="/" element={!user ? <Home /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+          {user && (
+            <>
+              <Route path="/dashboard" element={<Dashboard user={user} />} />
+              <Route path="/quotes" element={<Quotes user={user} />} />
+              <Route path="/clients" element={<Clients user={user} />} />
+              <Route path="/products" element={<Products user={user} />} />
+              <Route path="/reports" element={<Reports user={user} />} />
+              <Route path="/email-setup" element={<EmailConfig user={user} />} />
+              <Route path="/company-settings" element={<CompanySettings user={user} />} />
+              <Route path="/account-settings" element={<AccountSettings user={user} />} />
+              <Route path="/settings" element={<Navigate to="/company-settings" />} />
+            </>
+          )}
+          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>
-      </main>
+      </div>
     </Router>
   );
 }
