@@ -1,13 +1,13 @@
-
 import jsPDF from 'jspdf';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase.js';
+import { auth } from './firebase.js';
 
 console.log('jsPDF import check:', typeof jsPDF);
 
 export const generateInvoicePDF = async (invoice, companySettings) => {
   console.log('PDF generation started');
-  
+
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
@@ -18,11 +18,11 @@ export const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text(companySettings.companyName || 'Your Company', margin, yPosition);
-    
+
     yPosition += 10;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    
+
     if (companySettings.address) {
       doc.text(companySettings.address, margin, yPosition);
       yPosition += 5;
@@ -41,15 +41,15 @@ export const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('INVOICE', pageWidth - margin - 30, yPosition, { align: 'right' });
-    
+
     yPosition += 8;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Invoice #: ${invoice.invoiceNumber}`, pageWidth - margin - 50, yPosition, { align: 'right' });
-    
+
     yPosition += 6;
     doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-    
+
     if (invoice.dueDate) {
       yPosition += 6;
       doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - margin - 45, yPosition, { align: 'right' });
@@ -59,7 +59,7 @@ export const generateInvoicePDF = async (invoice, companySettings) => {
     yPosition += 20;
     doc.setFont('helvetica', 'bold');
     doc.text('Bill To:', margin, yPosition);
-    
+
     yPosition += 8;
     doc.setFont('helvetica', 'normal');
     doc.text(invoice.clientName, margin, yPosition);
@@ -69,7 +69,7 @@ export const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont('helvetica', 'bold');
     doc.text('Description', margin, yPosition);
     doc.text('Amount', pageWidth - margin - 40, yPosition, { align: 'right' });
-    
+
     // Line under header
     yPosition += 3;
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
@@ -127,9 +127,9 @@ export const sendInvoicePDFViaEmail = async (invoice, companySettings, recipient
 
     // Generate PDF
     const doc = await generateInvoicePDF(invoice, companySettings);
-    
+
     // Get email template
-    const user = require('./firebase.js').auth.currentUser;
+    const user = auth.currentUser;
     let emailTemplate = {
       subject: 'Invoice {invoiceNumber} from {companyName}',
       body: `Dear {clientName},
@@ -165,12 +165,12 @@ Best regards,
         where('isConnected', '==', true)
       );
       const cloudStorageSnapshot = await getDocs(cloudStorageQuery);
-      
+
       if (!cloudStorageSnapshot.empty) {
         // Upload to cloud storage and get link
         const cloudData = cloudStorageSnapshot.docs[0].data();
         const uploadResult = await uploadToCloudStorage(doc, invoice, cloudData, 'invoice');
-        
+
         if (uploadResult.success) {
           // Replace template variables
           const subject = replaceTemplateVariables(emailTemplate.subject, {
@@ -203,10 +203,10 @@ Best regards,
     // Fallback to PDF attachment (original method)
     const pdfBlob = doc.output('blob');
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
       const base64 = e.target.result.split(',')[1];
-      
+
       const subject = replaceTemplateVariables(emailTemplate.subject, {
         invoiceNumber: invoice.invoiceNumber,
         clientName: invoice.clientName,
@@ -229,12 +229,12 @@ Best regards,
 
       const filename = `invoice_${invoice.invoiceNumber}.pdf`;
       const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
-      
+
       window.open(mailtoLink, '_blank');
     };
-    
+
     reader.readAsDataURL(pdfBlob);
-    
+
   } catch (error) {
     console.error('Error sending invoice email:', error);
     throw error;
@@ -245,9 +245,9 @@ export const sendQuotePDFViaEmail = async (quote, companySettings, recipientEmai
   try {
     // Generate quote PDF
     const doc = await generateQuotePDF(quote, companySettings);
-    
+
     // Get email template
-    const user = require('./firebase.js').auth.currentUser;
+    const user = auth.currentUser;
     let emailTemplate = {
       subject: 'Quote {quoteNumber} from {companyName}',
       body: `Dear {clientName},
@@ -283,12 +283,12 @@ Best regards,
         where('isConnected', '==', true)
       );
       const cloudStorageSnapshot = await getDocs(cloudStorageQuery);
-      
+
       if (!cloudStorageSnapshot.empty) {
         // Upload to cloud storage and get link
         const cloudData = cloudStorageSnapshot.docs[0].data();
         const uploadResult = await uploadToCloudStorage(doc, quote, cloudData, 'quote');
-        
+
         if (uploadResult.success) {
           // Replace template variables
           const subject = replaceTemplateVariables(emailTemplate.subject, {
@@ -317,14 +317,14 @@ Best regards,
         }
       }
     }
-    
+
     // Fallback to PDF attachment
     const pdfBlob = doc.output('blob');
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
       const base64 = e.target.result.split(',')[1];
-      
+
       const subject = replaceTemplateVariables(emailTemplate.subject, {
         quoteNumber: quote.quoteNumber || quote.id,
         clientName: quote.clientName,
@@ -347,12 +347,12 @@ Best regards,
 
       const filename = `quote_${quote.quoteNumber || quote.id}.pdf`;
       const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
-      
+
       window.open(mailtoLink, '_blank');
     };
-    
+
     reader.readAsDataURL(pdfBlob);
-    
+
   } catch (error) {
     console.error('Error sending quote email:', error);
     throw error;
@@ -369,11 +369,11 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text(companySettings.companyName || 'Your Company', margin, yPosition);
-  
+
   yPosition += 10;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  
+
   if (companySettings.address) {
     doc.text(companySettings.address, margin, yPosition);
     yPosition += 5;
@@ -392,15 +392,15 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('QUOTE', pageWidth - margin - 30, yPosition, { align: 'right' });
-  
+
   yPosition += 8;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
   doc.text(`Quote #: ${quote.quoteNumber || quote.id}`, pageWidth - margin - 50, yPosition, { align: 'right' });
-  
+
   yPosition += 6;
   doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-  
+
   if (quote.validUntil) {
     yPosition += 6;
     doc.text(`Valid Until: ${quote.validUntil}`, pageWidth - margin - 45, yPosition, { align: 'right' });
@@ -410,7 +410,7 @@ const generateQuotePDF = async (quote, companySettings) => {
   yPosition += 20;
   doc.setFont('helvetica', 'bold');
   doc.text('Quote For:', margin, yPosition);
-  
+
   yPosition += 8;
   doc.setFont('helvetica', 'normal');
   doc.text(quote.clientName, margin, yPosition);
@@ -420,7 +420,7 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setFont('helvetica', 'bold');
   doc.text('Description', margin, yPosition);
   doc.text('Amount', pageWidth - margin - 40, yPosition, { align: 'right' });
-  
+
   yPosition += 3;
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
@@ -455,17 +455,17 @@ const uploadToCloudStorage = async (doc, item, cloudData, type) => {
   // 1. Convert PDF to blob/buffer
   // 2. Use the cloud provider's API to upload
   // 3. Return the shareable URL
-  
+
   console.log('Note: In production, expired file cleanup should be handled by Cloud Functions');
-  
+
   // Simulate upload delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   // Generate filename based on type
   const filename = type === 'invoice' ? 
     `${item.invoiceNumber}.pdf` : 
     `${item.quoteNumber || item.id}.pdf`;
-  
+
   // For testing with OneDrive, you can use your test link here
   // In production, this would be the actual cloud storage URL
   return {
