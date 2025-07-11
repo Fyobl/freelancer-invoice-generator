@@ -27,16 +27,19 @@ function Navigation({ user }) {
     top: 0,
     left: 0,
     right: 0,
+    width: '100%',
     background: isDarkMode 
       ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
       : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     backdropFilter: 'blur(20px)',
     borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
     zIndex: 1000,
-    padding: '10px 20px',
+    padding: '15px 20px',
     boxShadow: isDarkMode 
       ? '0 4px 20px rgba(0,0,0,0.3)' 
-      : '0 4px 20px rgba(0,0,0,0.1)'
+      : '0 4px 20px rgba(0,0,0,0.1)',
+    height: '70px',
+    boxSizing: 'border-box'
   };
 
   const containerStyle = {

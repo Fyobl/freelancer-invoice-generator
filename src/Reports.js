@@ -36,7 +36,12 @@ function Reports() {
     const totalInvoices = invoices.length;
     const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
     const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
-    const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue');
+    
+    const overdueInvoices = invoices.filter(invoice => {
+      const dueDate = new Date(invoice.dueDate);
+      const today = new Date();
+      return dueDate < today && invoice.status !== 'Paid';
+    });
 
     const paidAmount = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const unpaidAmount = unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
