@@ -1,45 +1,6 @@
 import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase.js';
-
-function Register({ onRegister }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const register = async (e) => {
-    e.preventDefault();
-    try {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      onRegister(userCred.user);
-    } catch (err) {
-      alert('Registration failed: ' + err.message);
-    }
-  };
-
-  return (
-    <form onSubmit={register} style={{ padding: 30 }}>
-      <h2>Register</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      /><br /><br />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-      /><br /><br />
-      <button type="submit">Sign Up</button>
-    </form>
-  );
-}
-
-export default Register;
-import React, { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase.js';
 import { Link } from 'react-router-dom';
 
 function Register() {
@@ -50,7 +11,7 @@ function Register() {
 
   const register = async (e) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -82,7 +43,7 @@ function Register() {
         <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
           Create Account
         </h2>
-        
+
         {error && (
           <div style={{ 
             color: '#dc3545', 
@@ -94,7 +55,7 @@ function Register() {
             {error}
           </div>
         )}
-        
+
         <form onSubmit={register}>
           <input
             type="email"
@@ -111,7 +72,7 @@ function Register() {
             }}
             required
           />
-          
+
           <input
             type="password"
             placeholder="Password"
@@ -127,7 +88,7 @@ function Register() {
             }}
             required
           />
-          
+
           <input
             type="password"
             placeholder="Confirm Password"
@@ -143,7 +104,7 @@ function Register() {
             }}
             required
           />
-          
+
           <button 
             type="submit"
             style={{
@@ -161,7 +122,7 @@ function Register() {
             Register
           </button>
         </form>
-        
+
         <p style={{ textAlign: 'center', marginTop: '20px' }}>
           Already have an account?{' '}
           <Link to="/login" style={{ color: '#667eea', textDecoration: 'none' }}>
