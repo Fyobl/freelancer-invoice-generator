@@ -10,7 +10,6 @@ import Quotes from './Quotes.js';
 import Clients from './Clients.js';
 import Products from './Products.js';
 import Reports from './Reports.js';
-import EmailConfig from './EmailConfig.js';
 import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
 import Navigation from './Navigation.js';
@@ -60,7 +59,6 @@ function App() {
               <Route path="/clients" element={<Clients user={user} />} />
               <Route path="/products" element={<Products user={user} />} />
               <Route path="/reports" element={<Reports user={user} />} />
-              <Route path="/email-setup" element={<EmailConfig user={user} />} />
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
               <Route path="/settings" element={<Navigate to="/company-settings" />} />

@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { sendInvoiceEmail, generateInvoicePDF, sendInvoiceEmailWithDataURL } from './emailService.js';
+import { generateInvoicePDF } from './emailService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -36,11 +36,6 @@ function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [recipientEmail, setRecipientEmail] = useState('');
-  const [emailSending, setEmailSending] = useState(false);
-  const [emailConfirmation, setEmailConfirmation] = useState(null);
 
   const user = auth.currentUser;
 
@@ -391,117 +386,7 @@ function Dashboard() {
     }
   };
 
-  const handleEmailInvoice = async (invoice) => {
-    // Try to get client email from the selected client
-    const client = clients.find(c => c.id === invoice.clientId);
-    let recipientEmail = client?.email || '';
-
-    // If no client email found, prompt user to enter one
-    if (!recipientEmail.trim()) {
-      recipientEmail = prompt('No email address found for this client. Please enter the recipient email address:');
-      if (!recipientEmail || !recipientEmail.trim()) {
-        setEmailConfirmation('❌ Email cancelled - no recipient email provided.');
-        setTimeout(() => setEmailConfirmation(null), 5000);
-        return;
-      }
-    }
-
-    setEmailSending(true);
-    setEmailConfirmation(null); // Clear any previous confirmation
-
-    try {
-      const companyName = userData?.companyName || companySettings?.companyName || 'Your Company';
-      const senderName = userData?.firstName || user?.email?.split('@')[0];
-
-      console.log('Calling sendInvoiceEmail with:', {
-        invoiceNumber: invoice.invoiceNumber,
-        recipientEmail: recipientEmail.trim(),
-        senderName,
-        companyName
-      });
-
-      const result = await sendInvoiceEmail(invoice, recipientEmail.trim(), senderName, companyName, companySettings);
-
-      console.log('sendInvoiceEmail result:', result);
-
-      setEmailSending(false);
-
-      if (result.success) {
-        const successMsg = `✅ ${result.message}`;
-        console.log(successMsg);
-        setEmailConfirmation(successMsg);
-      } else {
-        const errorMsg = `❌ ${result.error}`;
-        console.log(errorMsg);
-        setEmailConfirmation(errorMsg);
-      }
-
-      setTimeout(() => setEmailConfirmation(null), 8000);
-    } catch (error) {
-      setEmailSending(false);
-      console.error('Error sending email:', error);
-      const errorMsg = `❌ Error sending email: ${error.message}`;
-      console.log(errorMsg);
-      setEmailConfirmation(errorMsg);
-      setTimeout(() => setEmailConfirmation(null), 8000);
-    }
-  };
-
-  const handleEmailInvoiceWithDownload = async (invoice) => {
-    // Try to get client email from the selected client
-    const client = clients.find(c => c.id === invoice.clientId);
-    let recipientEmail = client?.email || '';
-
-    // If no client email found, prompt user to enter one
-    if (!recipientEmail.trim()) {
-      recipientEmail = prompt('No email address found for this client. Please enter the recipient email address:');
-      if (!recipientEmail || !recipientEmail.trim()) {
-        setEmailConfirmation('❌ Email cancelled - no recipient email provided.');
-        setTimeout(() => setEmailConfirmation(null), 5000);
-        return;
-      }
-    }
-
-    setEmailSending(true);
-    setEmailConfirmation(null); // Clear any previous confirmation
-
-    try {
-      const companyName = userData?.companyName || companySettings?.companyName || 'Your Company';
-      const senderName = userData?.firstName || user?.email?.split('@')[0];
-
-      console.log('Calling sendInvoiceEmailWithDataURL with:', {
-        invoiceNumber: invoice.invoiceNumber,
-        recipientEmail: recipientEmail.trim(),
-        senderName,
-        companyName
-      });
-
-      const result = await sendInvoiceEmailWithDataURL(invoice, recipientEmail.trim(), senderName, companyName, companySettings);
-
-      console.log('sendInvoiceEmailWithDataURL result:', result);
-
-      setEmailSending(false);
-
-      if (result.success) {
-        const successMsg = `✅ ${result.message}`;
-        console.log(successMsg);
-        setEmailConfirmation(successMsg);
-      } else {
-        const errorMsg = `❌ ${result.error}`;
-        console.log(errorMsg);
-        setEmailConfirmation(errorMsg);
-      }
-
-      setTimeout(() => setEmailConfirmation(null), 8000);
-    } catch (error) {
-      setEmailSending(false);
-      console.error('Error sending email with download:', error);
-      const errorMsg = `❌ Error sending email with download: ${error.message}`;
-      console.log(errorMsg);
-      setEmailConfirmation(errorMsg);
-      setTimeout(() => setEmailConfirmation(null), 8000);
-    }
-  };
+  
 
   // Filter invoices based on search and status
   const filteredInvoices = invoices.filter(invoice => {
@@ -739,19 +624,7 @@ function Dashboard() {
           </select>
         </div>
 
-        {/* Email Confirmation */}
-        {emailConfirmation && (
-          <div style={{
-            ...cardStyle,
-            background: emailConfirmation.includes('✅') ? '#d4edda' : '#f8d7da',
-            border: `2px solid ${emailConfirmation.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
-            color: emailConfirmation.includes('✅') ? '#155724' : '#721c24',
-            textAlign: 'center',
-            fontWeight: 'bold'
-          }}>
-            {emailConfirmation}
-          </div>
-        )}
+        
 
         {/* Invoice Table */}
         {filteredInvoices.length === 0 ? (
@@ -827,43 +700,6 @@ function Dashboard() {
                             }}
                           >
                             📄 PDF
-                          </button>
-                          <button
-                            onClick={() => handleEmailInvoice(inv)}
-                            disabled={emailSending}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: emailSending 
-                                ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                                : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              marginRight: '4px'
-                            }}
-                          >
-                            {emailSending ? '📧 Opening...' : '📧 Link'}
-                          </button>
-                          <button
-                            onClick={() => handleEmailInvoiceWithDownload(inv)}
-                            disabled={emailSending}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: emailSending 
-                                ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                                : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {emailSending ? '📧 Opening...' : '📧 + 📎'}
                           </button>
                           <button
                             onClick={() => handleDelete(inv.id)}

@@ -42,7 +42,6 @@ function Navigation({ user }) {
     { path: '/reports', label: 'Reports', icon: '📈' },
     { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/company-settings', label: 'Company Settings', icon: '⚙️' },
-    { path: '/email-setup', label: 'Email Templates', icon: '📧' },
     { path: '/account-settings', label: 'Account Settings', icon: '👤' }
   ];
 

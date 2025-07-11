@@ -13,7 +13,6 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { sendQuoteEmail } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
@@ -31,8 +30,6 @@ function Quotes({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1);
-  const [emailConfirmation, setEmailConfirmation] = useState('');
-  const [emailSending, setEmailSending] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -245,42 +242,6 @@ function Quotes({ user }) {
       }
     }
   };
-
-  const handleEmailQuote = async (quote) => {
-    // Try to get client email from the selected client
-    const client = clients.find(c => c.id === quote.clientId);
-    const recipientEmail = client?.email || '';
-
-    if (!recipientEmail) {
-      setEmailConfirmation('❌ No email address found for this client. Please add an email address to the client profile.');
-      setTimeout(() => setEmailConfirmation(''), 5000);
-      return;
-    }
-
-    setEmailSending(true);
-    setEmailConfirmation('');
-
-    try {
-      const companyName = userData?.companyName || 'Your Company';
-      const senderName = userData?.firstName || user?.email?.split('@')[0];
-
-      const result = await sendQuoteEmail(quote, recipientEmail, senderName, companyName);
-
-      if (result.success) {
-        setEmailConfirmation(`✅ Email client opened for quote ${quote.quoteNumber} to ${recipientEmail}!`);
-      } else {
-        setEmailConfirmation('❌ Failed to open email client. Please check your email templates configuration.');
-      }
-    } catch (error) {
-      console.error('Error opening email client:', error);
-      setEmailConfirmation('❌ Error opening email client. Please try again.');
-    } finally {
-      setEmailSending(false);
-      setTimeout(() => setEmailConfirmation(''), 5000);
-    }
-  };
-
-
 
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -572,20 +533,6 @@ function Quotes({ user }) {
           </div>
         </div>
 
-        {/* Email Confirmation */}
-        {emailConfirmation && (
-          <div style={{
-            ...cardStyle,
-            background: emailConfirmation.includes('✅') ? '#d4edda' : '#f8d7da',
-            border: `2px solid ${emailConfirmation.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
-            color: emailConfirmation.includes('✅') ? '#155724' : '#721c24',
-            textAlign: 'center',
-            fontWeight: 'bold'
-          }}>
-            {emailConfirmation}
-          </div>
-        )}
-
         {/* Quotes List */}
         <div style={cardStyle}>
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
@@ -707,22 +654,6 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
-                    <button
-                      onClick={() => handleEmailQuote(quote)}
-                      disabled={emailSending}
-                      style={{
-                        ...buttonStyle,
-                        background: emailSending 
-                          ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                          : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px',
-                        cursor: emailSending ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      {emailSending ? '📧 Sending...' : '📧 Email Quote'}
-                    </button>
                     <button
                       onClick={() => deleteQuote(quote.id)}
                       style={{
