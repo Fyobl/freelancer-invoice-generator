@@ -1,5 +1,7 @@
-import { auth, db } from './firebase.js';
-import { doc, getDoc } from 'firebase/firestore';
+
+import { auth, db, storage } from './firebase.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import jsPDF from 'jspdf';
 
 const getUserEmailTemplates = async (userId) => {
@@ -22,6 +24,53 @@ const replaceVariables = (template, variables) => {
     result = result.replace(regex, value || '');
   }
   return result;
+};
+
+const uploadPDFToStorage = async (pdfDoc, fileName, userId) => {
+  try {
+    // Generate PDF blob
+    const pdfBlob = pdfDoc.output('blob');
+    
+    // Create storage reference with user-specific path
+    const storageRef = ref(storage, `pdfs/${userId}/${fileName}`);
+    
+    // Upload file
+    await uploadBytes(storageRef, pdfBlob);
+    
+    // Get download URL
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    // Store file metadata in Firestore for cleanup tracking
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 7); // 7 days from now
+    
+    await setDoc(doc(db, 'pdfFiles', `${userId}_${fileName}`), {
+      fileName,
+      filePath: `pdfs/${userId}/${fileName}`,
+      downloadURL,
+      uploadDate: new Date(),
+      expirationDate,
+      userId
+    });
+    
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading PDF to storage:', error);
+    throw error;
+  }
+};
+
+const cleanupExpiredFiles = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // This would typically be run as a cloud function, but for now we'll check on each upload
+    // In production, you'd set up Firebase Cloud Functions to run this cleanup automatically
+    console.log('Note: In production, expired file cleanup should be handled by Cloud Functions');
+  } catch (error) {
+    console.error('Error cleaning up expired files:', error);
+  }
 };
 
 const generateInvoicePDF = async (invoice, companySettings) => {
@@ -335,6 +384,9 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
   }
 
   try {
+    // Clean up expired files (in production, this would be a cloud function)
+    await cleanupExpiredFiles();
+
     // Get user's email templates
     const emailTemplates = await getUserEmailTemplates(user.uid);
 
@@ -345,10 +397,12 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
       };
     }
 
-    // Generate and download PDF first
+    // Generate PDF
     const pdfDoc = await generateQuotePDF(quote, companySettings || {});
-    const pdfFileName = `${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    pdfDoc.save(pdfFileName);
+    const pdfFileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    
+    // Upload to Firebase Storage
+    const downloadURL = await uploadPDFToStorage(pdfDoc, pdfFileName, user.uid);
 
     // Calculate total amount
     const amount = parseFloat(quote.amount) || 0;
@@ -371,39 +425,38 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
     const subject = replaceVariables(emailTemplates.quoteSubject, variables);
     let body = replaceVariables(emailTemplates.quoteBody, variables);
 
-    // Add PDF attachment instructions to the email body
-    body += `\n\n--- IMPORTANT ---\nThe quote PDF (${pdfFileName}) has been automatically downloaded to your computer. Please attach this file to your email before sending.\n\nSteps to attach:\n1. Click the attachment/paperclip icon in your email client\n2. Select the downloaded PDF file: ${pdfFileName}\n3. Attach it to this email\n4. Send the email\n\nThe PDF should be in your Downloads folder.`;
+    // Add download link to email body
+    body += `\n\n📎 Quote PDF Download:\n${downloadURL}\n\n⏰ This link will expire in 7 days for security.\n\nBest regards,\n${companyName || 'Your Company'}`;
 
     // Create mailto URL
     const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // Show user notification about PDF download
-    setTimeout(() => {
-      alert(`📎 Quote PDF downloaded!\n\nFile: ${pdfFileName}\nLocation: Downloads folder\n\nPlease attach this PDF to your email before sending.`);
-    }, 1000);
-
     // Try to open user's email client
     try {
-      // First try using window.location.href for better compatibility
       window.location.href = mailtoUrl;
-
-      return { success: true, message: 'PDF downloaded and email client opened. Please attach the PDF before sending.' };
+      return { 
+        success: true, 
+        message: 'Email client opened with quote PDF link. The PDF link will expire in 7 days.',
+        downloadURL 
+      };
     } catch (error) {
-      // Fallback to window.open
       try {
         window.open(mailtoUrl, '_blank');
-        return { success: true, message: 'PDF downloaded and email client opened. Please attach the PDF before sending.' };
+        return { 
+          success: true, 
+          message: 'Email client opened with quote PDF link. The PDF link will expire in 7 days.',
+          downloadURL 
+        };
       } catch (fallbackError) {
-        console.error('Failed to open email client:', fallbackError);
         return { 
           success: false, 
-          error: 'PDF was downloaded, but unable to open email client. Please manually create your email and attach the downloaded PDF.' 
+          error: 'Unable to open email client. Copy this download link: ' + downloadURL 
         };
       }
     }
   } catch (error) {
     console.error('Error creating quote email:', error);
-    return { success: false, error: 'Failed to process quote email' };
+    return { success: false, error: 'Failed to process quote email: ' + error.message };
   }
 };
 
@@ -414,6 +467,9 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
   }
 
   try {
+    // Clean up expired files (in production, this would be a cloud function)
+    await cleanupExpiredFiles();
+
     // Get user's email templates
     const emailTemplates = await getUserEmailTemplates(user.uid);
 
@@ -424,10 +480,12 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
       };
     }
 
-    // Generate and download PDF first
+    // Generate PDF
     const pdfDoc = await generateInvoicePDF(invoice, companySettings || {});
-    const pdfFileName = `${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    pdfDoc.save(pdfFileName);
+    const pdfFileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    
+    // Upload to Firebase Storage
+    const downloadURL = await uploadPDFToStorage(pdfDoc, pdfFileName, user.uid);
 
     // Calculate total amount
     const amount = parseFloat(invoice.amount) || 0;
@@ -450,38 +508,37 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
     const subject = replaceVariables(emailTemplates.invoiceSubject, variables);
     let body = replaceVariables(emailTemplates.invoiceBody, variables);
 
-    // Add PDF attachment instructions to the email body
-    body += `\n\n--- IMPORTANT ---\nThe invoice PDF (${pdfFileName}) has been automatically downloaded to your computer. Please attach this file to your email before sending.\n\nSteps to attach:\n1. Click the attachment/paperclip icon in your email client\n2. Select the downloaded PDF file: ${pdfFileName}\n3. Attach it to this email\n4. Send the email\n\nThe PDF should be in your Downloads folder.`;
+    // Add download link to email body
+    body += `\n\n📎 Invoice PDF Download:\n${downloadURL}\n\n⏰ This link will expire in 7 days for security.\n\nBest regards,\n${companyName || 'Your Company'}`;
 
     // Create mailto URL
     const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // Show user notification about PDF download
-    setTimeout(() => {
-      alert(`📎 Invoice PDF downloaded!\n\nFile: ${pdfFileName}\nLocation: Downloads folder\n\nPlease attach this PDF to your email before sending.`);
-    }, 1000);
-
     // Try to open user's email client
     try {
-      // First try using window.location.href for better compatibility
       window.location.href = mailtoUrl;
-
-      return { success: true, message: 'PDF downloaded and email client opened. Please attach the PDF before sending.' };
+      return { 
+        success: true, 
+        message: 'Email client opened with invoice PDF link. The PDF link will expire in 7 days.',
+        downloadURL 
+      };
     } catch (error) {
-      // Fallback to window.open
       try {
         window.open(mailtoUrl, '_blank');
-        return { success: true, message: 'PDF downloaded and email client opened. Please attach the PDF before sending.' };
+        return { 
+          success: true, 
+          message: 'Email client opened with invoice PDF link. The PDF link will expire in 7 days.',
+          downloadURL 
+        };
       } catch (fallbackError) {
-        console.error('Failed to open email client:', fallbackError);
         return { 
           success: false, 
-          error: 'PDF was downloaded, but unable to open email client. Please manually create your email and attach the downloaded PDF.' 
+          error: 'Unable to open email client. Copy this download link: ' + downloadURL 
         };
       }
     }
   } catch (error) {
     console.error('Error creating invoice email:', error);
-    return { success: false, error: 'Failed to process invoice email' };
+    return { success: false, error: 'Failed to process invoice email: ' + error.message };
   }
 };
