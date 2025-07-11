@@ -1,190 +1,183 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useDarkMode } from './DarkModeContext.js';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase.js';
 
-const Navigation = ({ user }) => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+function Navigation({ user }) {
   const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const menuItems = [
-    { path: '/dashboard', name: 'Dashboard', icon: '📊' },
-    { path: '/products', name: 'Products', icon: '📦' },
-    { path: '/clients', name: 'Clients', icon: '👥' },
-    { path: '/reports', name: 'Reports', icon: '📈' },
-    { path: '/company-settings', name: 'Settings', icon: '⚙️' }
-  ];
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
-  const sidebarStyle = {
+  const navigationStyle = {
     position: 'fixed',
+    left: 0,
     top: 0,
-    left: isSidebarOpen ? 0 : '-280px',
-    width: '280px',
     height: '100vh',
-    backgroundColor: 'var(--bg-primary)',
-    borderRight: '1px solid var(--border-color)',
-    transition: 'all 0.3s ease',
+    width: isCollapsed ? '80px' : '280px',
+    background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    padding: '20px',
+    boxShadow: '4px 0 20px rgba(0,0,0,0.1)',
+    transition: 'width 0.3s ease',
     zIndex: 1000,
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: 'var(--shadow-lg)'
-  };
-
-  const headerStyle = {
-    padding: '2rem 1.5rem',
-    borderBottom: '1px solid var(--border-color)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  };
-
-  const logoStyle = {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: 'var(--text-primary)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  };
-
-  const navStyle = {
-    flex: 1,
-    padding: '1rem 0',
     overflowY: 'auto'
   };
 
-  const menuItemStyle = (isActive) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    padding: '0.875rem 1.5rem',
-    color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-    textDecoration: 'none',
-    transition: 'all 0.3s ease',
-    borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-    backgroundColor: isActive ? 'rgb(59 130 246 / 0.05)' : 'transparent',
-    fontWeight: isActive ? '600' : '500'
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '40px',
+    paddingBottom: '20px',
+    borderBottom: '1px solid rgba(255,255,255,0.2)'
+  };
+
+  const navListStyle = {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0
+  };
+
+  const navItemStyle = (isActive) => ({
+    marginBottom: '8px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    background: isActive ? 'rgba(255,255,255,0.2)' : 'transparent',
+    transition: 'all 0.3s ease'
   });
 
-  const footerStyle = {
-    padding: '1.5rem',
-    borderTop: '1px solid var(--border-color)',
+  const navLinkStyle = {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem'
-  };
-
-  const toggleButtonStyle = {
-    position: 'fixed',
-    top: '1rem',
-    left: isSidebarOpen ? '290px' : '1rem',
-    zIndex: 1001,
-    backgroundColor: 'var(--accent-primary)',
+    alignItems: 'center',
+    padding: '15px 20px',
     color: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    width: '48px',
-    height: '48px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: 'var(--shadow-lg)',
-    transition: 'all 0.3s ease',
-    fontSize: '1.25rem'
-  };
-
-  const themeToggleStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0.75rem 1rem',
-    backgroundColor: 'var(--bg-secondary)',
-    borderRadius: '8px',
-    border: '1px solid var(--border-color)',
-    cursor: 'pointer',
+    textDecoration: 'none',
+    fontSize: '16px',
+    fontWeight: '500',
     transition: 'all 0.3s ease'
   };
 
+  const footerStyle = {
+    position: 'absolute',
+    bottom: '20px',
+    left: '20px',
+    right: '20px'
+  };
+
+  const userInfoStyle = {
+    padding: '15px',
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: '12px',
+    marginBottom: '20px',
+    textAlign: 'center'
+  };
+
+  const signOutButtonStyle = {
+    width: '100%',
+    padding: '12px',
+    background: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.3s ease'
+  };
+
+  const collapseButtonStyle = {
+    position: 'absolute',
+    top: '20px',
+    right: '20px',
+    background: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '8px',
+    cursor: 'pointer',
+    fontSize: '18px'
+  };
+
+  const menuItems = [
+    { path: '/dashboard', label: '📊 Dashboard', icon: '📊' },
+    { path: '/products', label: '📦 Products', icon: '📦' },
+    { path: '/clients', label: '👥 Clients', icon: '👥' },
+    { path: '/reports', label: '📈 Reports', icon: '📈' },
+    { path: '/company-settings', label: '⚙️ Settings', icon: '⚙️' }
+  ];
+
   return (
     <>
-      <button
-        style={toggleButtonStyle}
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
-        onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-      >
-        {isSidebarOpen ? '✕' : '☰'}
-      </button>
+      <div style={navigationStyle}>
+        <button
+          style={collapseButtonStyle}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? '→' : '←'}
+        </button>
 
-      <div style={sidebarStyle}>
         <div style={headerStyle}>
-          <div style={logoStyle}>
-            <span>💼</span>
-            <span>InvoicePro</span>
-          </div>
+          {!isCollapsed && (
+            <>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>
+                Invoice Pro
+              </h2>
+              <p style={{ margin: '5px 0 0 0', opacity: 0.8, fontSize: '14px' }}>
+                Professional Invoicing
+              </p>
+            </>
+          )}
         </div>
 
-        <nav style={navStyle}>
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              style={menuItemStyle(location.pathname === item.path)}
-              onMouseOver={(e) => {
-                if (location.pathname !== item.path) {
-                  e.target.style.backgroundColor = 'var(--bg-secondary)';
-                  e.target.style.color = 'var(--text-primary)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (location.pathname !== item.path) {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = 'var(--text-secondary)';
-                }
-              }}
-            >
-              <span style={{ fontSize: '1.25rem' }}>{item.icon}</span>
-              <span>{item.name}</span>
-            </Link>
-          ))}
+        <nav>
+          <ul style={navListStyle}>
+            {menuItems.map((item) => (
+              <li key={item.path} style={navItemStyle(location.pathname === item.path)}>
+                <Link
+                  to={item.path}
+                  style={navLinkStyle}
+                  onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  <span style={{ marginRight: isCollapsed ? '0' : '12px', fontSize: '20px' }}>
+                    {item.icon}
+                  </span>
+                  {!isCollapsed && <span>{item.label.split(' ').slice(1).join(' ')}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
 
         <div style={footerStyle}>
-          <div
-            style={themeToggleStyle}
-            onClick={toggleDarkMode}
-            onMouseOver={(e) => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'var(--bg-secondary)'}
-          >
-            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
-              {isDarkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
-            </span>
-            <div style={{
-              width: '48px',
-              height: '24px',
-              backgroundColor: isDarkMode ? 'var(--accent-primary)' : 'var(--border-color)',
-              borderRadius: '12px',
-              position: 'relative',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                backgroundColor: 'white',
-                borderRadius: '50%',
-                position: 'absolute',
-                top: '2px',
-                left: isDarkMode ? '26px' : '2px',
-                transition: 'all 0.3s ease',
-                boxShadow: 'var(--shadow-sm)'
-              }} />
+          {!isCollapsed && (
+            <div style={userInfoStyle}>
+              <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                Logged in as:
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: '600', marginTop: '5px' }}>
+                {user?.email}
+              </div>
             </div>
-          </div>
+          )}
+          <button
+            style={signOutButtonStyle}
+            onClick={handleSignOut}
+            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+            onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+          >
+            {isCollapsed ? '🚪' : '🚪 Sign Out'}
+          </button>
         </div>
       </div>
     </>
   );
-};
+}
 
 export default Navigation;
