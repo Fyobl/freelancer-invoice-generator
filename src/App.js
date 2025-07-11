@@ -35,6 +35,10 @@ function App() {
           element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
         />
         <Route
+          path="/dashboard"
+          element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/login"
           element={!user ? <Login /> : <Navigate to="/" />}
         />
@@ -51,8 +55,8 @@ function App() {
           element={user ? <Reports user={user} /> : <Navigate to="/login" />}
         />
         <Route
-          path="/company-settings"
-          element={<CompanySettings />}
+          path="/settings"
+          element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

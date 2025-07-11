@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -7,7 +6,7 @@ import { useDarkMode } from './DarkModeContext.js';
 
 function Navigation({ user }) {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   const handleLogout = async () => {
@@ -18,65 +17,97 @@ function Navigation({ user }) {
     }
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
   };
 
-  const navStyle = {
+  const sidebarStyle = {
     position: 'fixed',
     top: 0,
-    left: 0,
-    right: 0,
-    width: '100%',
+    left: isOpen ? '0' : '-280px',
+    width: '280px',
+    height: '100vh',
     background: isDarkMode 
       ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
       : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    backdropFilter: 'blur(20px)',
-    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    borderRight: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
     zIndex: 1000,
-    padding: '15px 20px',
-    boxShadow: isDarkMode 
-      ? '0 4px 20px rgba(0,0,0,0.3)' 
-      : '0 4px 20px rgba(0,0,0,0.1)',
-    height: '70px',
-    boxSizing: 'border-box'
+    transition: 'left 0.3s ease',
+    boxShadow: '4px 0 20px rgba(0,0,0,0.1)',
+    display: 'flex',
+    flexDirection: 'column'
   };
 
-  const containerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    maxWidth: '1200px',
-    margin: '0 auto'
+  const overlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 999,
+    display: isOpen ? 'block' : 'none',
+    transition: 'opacity 0.3s ease'
+  };
+
+  const toggleButtonStyle = {
+    position: 'fixed',
+    top: '20px',
+    left: '20px',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    borderRadius: '8px',
+    padding: '12px',
+    cursor: 'pointer',
+    zIndex: 1001,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    fontSize: '20px',
+    transition: 'all 0.3s ease'
   };
 
   const logoStyle = {
+    padding: '30px 20px',
+    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    textAlign: 'center'
+  };
+
+  const logoTextStyle = {
     fontSize: '1.5rem',
     fontWeight: 'bold',
     color: isDarkMode ? '#f1f5f9' : '#1e293b',
     textDecoration: 'none',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '10px'
   };
 
   const navLinksStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '30px',
+    flex: 1,
+    padding: '20px 0',
     listStyle: 'none',
-    margin: 0,
-    padding: 0
+    margin: 0
+  };
+
+  const linkItemStyle = {
+    margin: '5px 0'
   };
 
   const linkStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
     color: isDarkMode ? '#e2e8f0' : '#475569',
     textDecoration: 'none',
-    fontWeight: '500',
-    padding: '8px 16px',
-    borderRadius: '8px',
+    padding: '15px 25px',
     transition: 'all 0.3s ease',
-    position: 'relative'
+    borderRadius: '0 25px 25px 0',
+    margin: '2px 0',
+    fontSize: '16px',
+    fontWeight: '500'
   };
 
   const activeLinkStyle = {
@@ -88,212 +119,138 @@ function Navigation({ user }) {
     boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
   };
 
+  const footerStyle = {
+    padding: '20px',
+    borderTop: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  };
+
   const buttonStyle = {
     background: isDarkMode 
       ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)' 
       : 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
     color: 'white',
     border: 'none',
-    padding: '8px 16px',
-    borderRadius: '6px',
+    padding: '12px 20px',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'all 0.3s ease',
-    marginLeft: '20px'
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px'
   };
 
-  const toggleButtonStyle = {
+  const darkModeButtonStyle = {
     background: isDarkMode ? '#fbbf24' : '#1f2937',
     color: isDarkMode ? '#111827' : '#f9fafb',
     border: 'none',
-    padding: '8px 12px',
-    borderRadius: '6px',
+    padding: '12px 20px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '16px',
+    fontSize: '14px',
+    fontWeight: '500',
     transition: 'all 0.3s ease',
-    marginLeft: '10px'
-  };
-
-  const mobileMenuStyle = {
-    display: isMenuOpen ? 'block' : 'none',
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
-    padding: '20px',
-    boxShadow: isDarkMode 
-      ? '0 4px 20px rgba(0,0,0,0.3)' 
-      : '0 4px 20px rgba(0,0,0,0.1)'
-  };
-
-  const mobileNavLinksStyle = {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-    listStyle: 'none',
-    margin: 0,
-    padding: 0
-  };
-
-  const hamburgerStyle = {
-    display: 'none',
-    flexDirection: 'column',
-    cursor: 'pointer',
-    padding: '5px',
-    gap: '3px'
-  };
-
-  const hamburgerLineStyle = {
-    width: '25px',
-    height: '3px',
-    background: isDarkMode ? '#f1f5f9' : '#1e293b',
-    borderRadius: '2px',
-    transition: 'all 0.3s ease'
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px'
   };
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav style={navStyle}>
-      <style>
-        {`
-          @media (max-width: 768px) {
-            .desktop-nav { display: none !important; }
-            .mobile-hamburger { display: flex !important; }
-          }
-          @media (min-width: 769px) {
-            .mobile-menu { display: none !important; }
-          }
-        `}
-      </style>
-      <div style={containerStyle}>
-        <Link to="/dashboard" style={logoStyle}>
-          <span>📋</span>
-          <span>InvoiceGen</span>
-        </Link>
+    <>
+      {/* Overlay */}
+      <div style={overlayStyle} onClick={toggleSidebar}></div>
 
-        {/* Desktop Navigation */}
-        <ul className="desktop-nav" style={navLinksStyle}>
-          <li>
-            <Link 
-              to="/dashboard" 
-              style={isActive('/dashboard') ? activeLinkStyle : linkStyle}
-            >
-              📊 Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link 
-              to="/clients" 
-              style={isActive('/clients') ? activeLinkStyle : linkStyle}
-            >
-              👥 Clients
-            </Link>
-          </li>
-          <li>
-            <Link 
-              to="/products" 
-              style={isActive('/products') ? activeLinkStyle : linkStyle}
-            >
-              📦 Products
-            </Link>
-          </li>
-          <li>
-            <Link 
-              to="/reports" 
-              style={isActive('/reports') ? activeLinkStyle : linkStyle}
-            >
-              📈 Reports
-            </Link>
-          </li>
-          <li>
-            <Link 
-              to="/settings" 
-              style={isActive('/settings') ? activeLinkStyle : linkStyle}
-            >
-              ⚙️ Settings
-            </Link>
-          </li>
-        </ul>
+      {/* Toggle Button */}
+      <button onClick={toggleSidebar} style={toggleButtonStyle}>
+        ☰
+      </button>
 
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button onClick={toggleDarkMode} style={toggleButtonStyle}>
-            {isDarkMode ? '🌞' : '🌙'}
-          </button>
-          
-          <button onClick={handleLogout} style={buttonStyle}>
-            🚪 Logout
-          </button>
-
-          {/* Mobile Hamburger */}
-          <div 
-            className="mobile-hamburger" 
-            style={hamburgerStyle}
-            onClick={toggleMenu}
-          >
-            <div style={hamburgerLineStyle}></div>
-            <div style={hamburgerLineStyle}></div>
-            <div style={hamburgerLineStyle}></div>
-          </div>
+      {/* Sidebar */}
+      <nav style={sidebarStyle}>
+        {/* Logo */}
+        <div style={logoStyle}>
+          <Link to="/dashboard" style={logoTextStyle} onClick={() => setIsOpen(false)}>
+            <span>📋</span>
+            <span>InvoiceGen</span>
+          </Link>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      <div className="mobile-menu" style={mobileMenuStyle}>
-        <ul style={mobileNavLinksStyle}>
-          <li>
+        {/* Navigation Links */}
+        <ul style={navLinksStyle}>
+          <li style={linkItemStyle}>
             <Link 
               to="/dashboard" 
               style={isActive('/dashboard') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
-              📊 Dashboard
+              <span>📊</span>
+              <span>Dashboard</span>
             </Link>
           </li>
-          <li>
+          <li style={linkItemStyle}>
             <Link 
               to="/clients" 
               style={isActive('/clients') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
-              👥 Clients
+              <span>👥</span>
+              <span>Clients</span>
             </Link>
           </li>
-          <li>
+          <li style={linkItemStyle}>
             <Link 
               to="/products" 
               style={isActive('/products') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
-              📦 Products
+              <span>📦</span>
+              <span>Products</span>
             </Link>
           </li>
-          <li>
+          <li style={linkItemStyle}>
             <Link 
               to="/reports" 
               style={isActive('/reports') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
-              📈 Reports
+              <span>📈</span>
+              <span>Reports</span>
             </Link>
           </li>
-          <li>
+          <li style={linkItemStyle}>
             <Link 
               to="/settings" 
               style={isActive('/settings') ? activeLinkStyle : linkStyle}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
-              ⚙️ Settings
+              <span>⚙️</span>
+              <span>Settings</span>
             </Link>
           </li>
         </ul>
-      </div>
-    </nav>
+
+        {/* Footer with Dark Mode Toggle and Logout */}
+        <div style={footerStyle}>
+          <button onClick={toggleDarkMode} style={darkModeButtonStyle}>
+            <span>{isDarkMode ? '🌞' : '🌙'}</span>
+            <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
+          <button onClick={handleLogout} style={buttonStyle}>
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
 
