@@ -224,14 +224,6 @@ function Reports() {
     fontSize: '14px'
   };
 
-  const totalInvoices = invoices.length;
-  const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-  const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
-  const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
-  const paidAmount = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  const unpaidAmount = unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-
   return (
     <div style={containerStyle}>
       <Navigation user={user} />

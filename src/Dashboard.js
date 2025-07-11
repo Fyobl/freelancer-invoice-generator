@@ -186,6 +186,50 @@ function Dashboard() {
     }
   };
 
+  const fetchProducts = async () => {
+    if (!user) return;
+    try {
+      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const productList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(productList);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    if (!user) return;
+    try {
+      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const clientList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClients(clientList);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const fetchCompanySettings = async () => {
+    if (!user) return;
+    try {
+      const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const companyData = snapshot.docs[0].data();
+        setCompanySettings(companyData);
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchInvoices();
@@ -199,6 +243,7 @@ function Dashboard() {
   const fetchInvoices = async () => {
     if (!user) return;
 
+    console.log('Fetching invoices for user:', user.uid);
     try {
       const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);

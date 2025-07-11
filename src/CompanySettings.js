@@ -7,7 +7,8 @@ import {
   getDocs,
   updateDoc,
   doc,
-  setDoc
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';

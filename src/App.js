@@ -34,6 +34,10 @@ function App() {
           element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
         />
         <Route
+          path="/dashboard"
+          element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/login"
           element={!user ? <Login /> : <Navigate to="/" />}
         />
