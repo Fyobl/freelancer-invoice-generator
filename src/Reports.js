@@ -4,18 +4,21 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
-function Reports() {
+function Reports({ user }) {
   const { isDarkMode } = useDarkMode();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const user = auth.currentUser;
-
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [user]);
 
   const fetchInvoices = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
