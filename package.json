@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "emailjs-com": "^3.2.0",
     "firebase": "^10.0.0",
     "jspdf": "^2.5.1",
     "react": "^18.2.0",

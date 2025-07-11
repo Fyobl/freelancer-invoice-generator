@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from './firebase.js';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  updateDoc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 import jsPDF from 'jspdf';
+import { sendInvoiceEmail, initEmailJS } from './emailService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -24,6 +37,10 @@ function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
 
   const user = auth.currentUser;
 
@@ -237,6 +254,7 @@ function Dashboard() {
       fetchClients();
       fetchCompanySettings();
       fetchUserData();
+      initEmailJS();
     }
   }, [user]);
 
@@ -543,6 +561,43 @@ function Dashboard() {
     doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
 
     doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
+  };
+
+  const handleEmailInvoice = (invoice) => {
+    setSelectedInvoice(invoice);
+    // Try to get client email from the selected client
+    const client = clients.find(c => c.id === invoice.clientId);
+    setRecipientEmail(client?.email || '');
+    setEmailModalOpen(true);
+  };
+
+  const sendEmail = async () => {
+    if (!recipientEmail.trim()) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      const companyName = userData?.companyName || 'Your Company';
+      const senderName = userData?.firstName || user?.email?.split('@')[0];
+
+      const result = await sendInvoiceEmail(selectedInvoice, recipientEmail, senderName, companyName);
+
+      if (result.success) {
+        alert('Invoice sent successfully!');
+        setEmailModalOpen(false);
+        setRecipientEmail('');
+        setSelectedInvoice(null);
+      } else {
+        alert('Failed to send email. Please check your EmailJS configuration.');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Error sending email. Please try again.');
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   // Filter invoices based on search and status
@@ -857,6 +912,21 @@ function Dashboard() {
                             📄 PDF
                           </button>
                           <button
+                            onClick={() => handleEmailInvoice(inv)}
+                            style={{ 
+                              padding: '8px 15px', 
+                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📧
+                          </button>
+                          <button
                             onClick={() => handleDelete(inv.id)}
                             style={{ 
                               padding: '8px 15px', 
@@ -876,6 +946,105 @@ function Dashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Email Modal */}
+        {emailModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              width: '90%',
+              maxWidth: '500px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+            }}>
+              <h3 style={{ marginTop: 0, color: '#333', textAlign: 'center' }}>
+                📧 Email Invoice {selectedInvoice?.invoiceNumber}
+              </h3>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                  Client Name
+                </label>
+                <input
+                  style={{
+                    ...inputStyle,
+                    backgroundColor: '#f8f9fa',
+                    color: '#6c757d'
+                  }}
+                  value={selectedInvoice?.clientName || ''}
+                  disabled
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                  Recipient Email *
+                </label>
+                <input
+                  style={inputStyle}
+                  type="email"
+                  placeholder="Enter client email address"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Invoice Preview</h4>
+                <p style={{ margin: '5px 0', color: '#666' }}>
+                  <strong>Amount:</strong> £{parseFloat(selectedInvoice?.amount || 0).toFixed(2)}
+                </p>
+                <p style={{ margin: '5px 0', color: '#666' }}>
+                  <strong>Due Date:</strong> {selectedInvoice?.dueDate}
+                </p>
+                <p style={{ margin: '5px 0', color: '#666' }}>
+                  <strong>Status:</strong> {selectedInvoice?.status}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setEmailModalOpen(false);
+                    setRecipientEmail('');
+                    setSelectedInvoice(null);
+                  }}
+                  style={{
+                    ...buttonStyle,
+                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={sendEmail}
+                  disabled={emailSending}
+                  style={{
+                    ...buttonStyle,
+                    background: emailSending 
+                      ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+                      : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                    cursor: emailSending ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {emailSending ? '📧 Sending...' : '📧 Send Email'}
+                </button>
               </div>
             </div>
           </div>
