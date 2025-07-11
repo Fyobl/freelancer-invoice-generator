@@ -15,7 +15,7 @@ import {
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 import jsPDF from 'jspdf';
-import { sendInvoiceEmail, initEmailJS } from './emailService.js';
+import { sendInvoiceEmail } from './emailService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -264,7 +264,6 @@ function Dashboard() {
       fetchClients();
       fetchCompanySettings();
       fetchUserData();
-      initEmailJS();
     }
   }, [user]);
 

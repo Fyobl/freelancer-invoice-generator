@@ -1,9 +1,7 @@
 
 # Email Setup Instructions
 
-You now have two options for sending emails:
-
-## Option 1: Use Your Own Email (Recommended)
+## Use Your Own Email
 
 1. Go to "📧 Email Setup" in the navigation menu
 2. Choose your email provider (Gmail, Outlook, Yahoo, or Custom)
@@ -28,16 +26,6 @@ You now have two options for sending emails:
 2. Generate app password
 3. Use the generated password
 
-## Option 2: Use EmailJS (Fallback)
-
-If you don't configure your own email, the system will fall back to EmailJS.
-
-### EmailJS Setup:
-1. Go to https://www.emailjs.com/
-2. Create account and email service
-3. Create template with variables like {{to_email}}, {{invoice_number}}, etc.
-4. Update emailService.js with your credentials
-
 ## Backend Implementation Note
 
 To fully implement user SMTP email sending, you would need a backend service that:
@@ -50,4 +38,4 @@ Example backend technologies:
 - Python with smtplib
 - PHP with PHPMailer
 
-The frontend is ready to work with such a backend service.
+The frontend is ready to work with such a backend service.ce.
