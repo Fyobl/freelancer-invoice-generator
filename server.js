@@ -36,7 +36,7 @@ app.post('/api/send-email', async (req, res) => {
     }
 
     // Create transporter with user's SMTP settings
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: smtpConfig.host,
       port: smtpConfig.port,
       secure: smtpConfig.secure, // true for 465, false for other ports
@@ -105,7 +105,7 @@ app.post('/api/test-email-config', async (req, res) => {
       });
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: smtpConfig.host,
       port: smtpConfig.port,
       secure: smtpConfig.secure,
