@@ -41,7 +41,7 @@ function Navigation({ user }) {
     { path: '/products', label: 'Products', icon: '📦' },
     { path: '/reports', label: 'Reports', icon: '📈' },
     { path: '/quotes', label: 'Quotes', icon: '💰' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/company-settings', label: 'Settings', icon: '⚙️' },
     { path: '/account-settings', label: 'Account Settings', icon: '👤' }
   ];
 
