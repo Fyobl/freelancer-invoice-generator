@@ -15,6 +15,7 @@ import CompanySettings from './CompanySettings.js';
 import Quotes from './Quotes.js';
 import AccountSettings from './AccountSettings.js';
 import EmailConfig from './EmailConfig.js';
+import Navigation from './Navigation.js';
 
 
 function App() {
@@ -42,7 +43,12 @@ function App() {
           />
           <Route
             path="/dashboard"
-            element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <Dashboard user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/login"
@@ -54,31 +60,66 @@ function App() {
           />
           <Route
             path="/products"
-            element={user ? <Products user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <Products user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/clients"
-            element={user ? <Clients user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <Clients user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/reports"
-            element={user ? <Reports user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <Reports user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/quotes"
-            element={user ? <Quotes user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <Quotes user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/account-settings"
-            element={user ? <AccountSettings user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <AccountSettings user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/company-settings"
-            element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <CompanySettings user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/email-config"
-            element={user ? <EmailConfig user={user} /> : <Navigate to="/login" />}
+            element={user ? (
+              <>
+                <Navigation user={user} />
+                <EmailConfig user={user} />
+              </>
+            ) : <Navigate to="/login" />}
           />
           <Route
             path="/settings"
