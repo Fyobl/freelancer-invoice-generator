@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth } from './firebase.js';
 import { DarkModeProvider, useDarkMode } from './DarkModeContext.js';
 import Navigation from './Navigation.js';
 import Dashboard from './Dashboard.js';
