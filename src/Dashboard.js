@@ -14,8 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { generateInvoicePDF } from './emailService.js';
-import { sendInvoiceEmail } from './emailService.js';
+import { generateInvoicePDF, sendInvoicePDFViaEmail } from './emailService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -387,6 +386,23 @@ function Dashboard() {
     }
   };
 
+  const sendInvoiceEmail = async (invoice) => {
+    try {
+      // Get client email from the clients array
+      const client = clients.find(c => c.id === invoice.clientId);
+      const recipientEmail = client?.email || prompt('Enter client email address:');
+
+      if (!recipientEmail) {
+        alert('Email address is required to send invoice');
+        return;
+      }
+
+      await sendInvoicePDFViaEmail(invoice, companySettings, recipientEmail);
+    } catch (error) {
+      console.error('Error sending invoice email:', error);
+      alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
 
 
   // Filter invoices based on search and status
