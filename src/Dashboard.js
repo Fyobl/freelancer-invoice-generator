@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { sendInvoiceEmail } from './emailService.js';
 
 function Dashboard() {

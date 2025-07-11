@@ -2,7 +2,7 @@
 import { auth, db, storage } from './firebase.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 const getUserEmailTemplates = async (userId) => {
   try {
