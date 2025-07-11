@@ -215,8 +215,6 @@ function Quotes({ user }) {
 
       // Update quote status
       await updateQuoteStatus(quote.id, 'Converted');
-      
-      alert(`Quote ${quote.quoteNumber} converted to invoice ${invoiceNumber}`);
     } catch (error) {
       console.error('Error converting quote to invoice:', error);
       alert('Error converting quote to invoice. Please try again.');
