@@ -372,18 +372,158 @@ function Dashboard() {
 
   const downloadPDF = async (invoice) => {
     try {
-      const companyName = userData?.companyName || 'Your Company';
-      const senderName = userData?.firstName || user?.email?.split('@')[0];
+      // Generate PDF directly without uploading to Firebase
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let currentY = 20;
 
-      // Use the email service to generate PDF and get download link
-      const result = await sendInvoiceEmail(invoice, 'temp@example.com', senderName, companyName, companySettings);
+      // Professional header
+      doc.setFillColor(41, 128, 185);
+      doc.rect(0, 0, pageWidth, 40, 'F');
 
-      if (result.success && result.downloadURL) {
-        // Open the PDF download link in a new tab
-        window.open(result.downloadURL, '_blank');
-      } else {
-        alert('Failed to generate PDF. Please check your email template configuration.');
+      // Company logo
+      if (companySettings.logo) {
+        try {
+          doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+        } catch (error) {
+          console.log('Error adding logo to PDF:', error);
+        }
       }
+
+      // Company name in header
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont(undefined, 'bold');
+      doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+
+      // Company details in header
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      if (companySettings.address) {
+        doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+      }
+      if (companySettings.email) {
+        doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
+      }
+
+      currentY = 60;
+      doc.setTextColor(0, 0, 0);
+
+      // Invoice title
+      doc.setFontSize(24);
+      doc.setFont(undefined, 'bold');
+      doc.text('INVOICE', 20, currentY);
+
+      // Invoice details
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 20, currentY + 15);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 25);
+      doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - 120, currentY + 25);
+      doc.text(`Status: ${invoice.status}`, pageWidth - 120, currentY + 35);
+
+      currentY += 60;
+
+      // Bill To section
+      doc.setFillColor(248, 249, 250);
+      doc.rect(20, currentY, pageWidth - 40, 25, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(20, currentY, pageWidth - 40, 25);
+
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Bill To:', 25, currentY + 12);
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(10);
+      doc.text(invoice.clientName, 25, currentY + 20);
+
+      currentY += 45;
+
+      // Items table header
+      doc.setFillColor(41, 128, 185);
+      doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text('Description', 25, currentY + 10);
+      doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
+
+      currentY += 15;
+      doc.setTextColor(0, 0, 0);
+
+      // Service line
+      doc.setFillColor(255, 255, 255);
+      doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(20, currentY, pageWidth - 40, 15);
+
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(invoice.productName || 'Service', 25, currentY + 10);
+      doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
+
+      currentY += 35;
+
+      // Totals section
+      const amount = parseFloat(invoice.amount) || 0;
+      const vatRate = parseFloat(invoice.vat) || 0;
+      const vatAmount = amount * (vatRate / 100);
+      const total = amount + vatAmount;
+
+      doc.setFillColor(248, 249, 250);
+      doc.rect(pageWidth - 120, currentY, 100, 45, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(pageWidth - 120, currentY, 100, 45);
+
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text('Subtotal:', pageWidth - 115, currentY + 10);
+      doc.text(`£${amount.toFixed(2)}`, pageWidth - 25, currentY + 10, { align: 'right' });
+
+      doc.text(`VAT (${vatRate}%):`, pageWidth - 115, currentY + 20);
+      doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 25, currentY + 20, { align: 'right' });
+
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(12);
+      doc.text('Total:', pageWidth - 115, currentY + 35);
+      doc.text(`£${total.toFixed(2)}`, pageWidth - 25, currentY + 35, { align: 'right' });
+
+      // Notes section
+      if (invoice.notes) {
+        currentY += 70;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Notes:', 20, currentY);
+        doc.setFont(undefined, 'normal');
+        doc.text(invoice.notes, 20, currentY + 10);
+      }
+
+      // Footer
+      const footerY = 250;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(128, 128, 128);
+
+      let footerText = [];
+      if (companySettings.companyNumber) {
+        footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+      }
+      if (companySettings.vatNumber) {
+        footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+      }
+
+      if (footerText.length > 0) {
+        doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
+      }
+
+      doc.setTextColor(41, 128, 185);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'italic');
+      doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
+
+      // Download the PDF
+      const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      doc.save(fileName);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Error generating PDF. Please try again.');
@@ -393,29 +533,33 @@ function Dashboard() {
   const handleEmailInvoice = async (invoice) => {
     // Try to get client email from the selected client
     const client = clients.find(c => c.id === invoice.clientId);
-    const recipientEmail = client?.email || '';
+    let recipientEmail = client?.email || '';
 
+    // If no client email found, prompt user to enter one
     if (!recipientEmail.trim()) {
-      setEmailConfirmation('❌ No email address found for this client. Please add an email address to the client profile.');
-      setTimeout(() => setEmailConfirmation(null), 5000);
-      return;
+      recipientEmail = prompt('No email address found for this client. Please enter the recipient email address:');
+      if (!recipientEmail || !recipientEmail.trim()) {
+        setEmailConfirmation('❌ Email cancelled - no recipient email provided.');
+        setTimeout(() => setEmailConfirmation(null), 5000);
+        return;
+      }
     }
 
     setEmailSending(true);
     setEmailConfirmation(null); // Clear any previous confirmation
 
     try {
-      const companyName = userData?.companyName || 'Your Company';
+      const companyName = userData?.companyName || companySettings?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
 
       console.log('Calling sendInvoiceEmail with:', {
         invoiceNumber: invoice.invoiceNumber,
-        recipientEmail,
+        recipientEmail: recipientEmail.trim(),
         senderName,
         companyName
       });
 
-      const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName, companySettings);
+      const result = await sendInvoiceEmail(invoice, recipientEmail.trim(), senderName, companyName, companySettings);
 
       console.log('sendInvoiceEmail result:', result);
 
@@ -431,14 +575,14 @@ function Dashboard() {
         setEmailConfirmation(errorMsg);
       }
 
-      setTimeout(() => setEmailConfirmation(null), 5000);
+      setTimeout(() => setEmailConfirmation(null), 8000);
     } catch (error) {
       setEmailSending(false);
       console.error('Error sending email:', error);
       const errorMsg = `❌ Error sending email: ${error.message}`;
       console.log(errorMsg);
       setEmailConfirmation(errorMsg);
-      setTimeout(() => setEmailConfirmation(null), 5000);
+      setTimeout(() => setEmailConfirmation(null), 8000);
     }
   };
 
