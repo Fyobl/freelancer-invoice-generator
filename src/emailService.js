@@ -1,4 +1,7 @@
+
 import { jsPDF } from 'jspdf';
+import { getDoc, doc } from 'firebase/firestore';
+import { db, auth } from './firebase.js';
 
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
@@ -325,4 +328,212 @@ const generateQuotePDF = async (quote, companySettings) => {
   }
 };
 
-export { generateInvoicePDF, generateQuotePDF };
+// Get email settings from Firestore
+const getEmailSettings = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) return null;
+    
+    const settingsDoc = await getDoc(doc(db, 'emailSettings', user.uid));
+    return settingsDoc.exists() ? settingsDoc.data() : null;
+  } catch (error) {
+    console.error('Error fetching email settings:', error);
+    return null;
+  }
+};
+
+// Replace template variables
+const replaceTemplateVariables = (template, data) => {
+  return template
+    .replace(/{invoiceNumber}/g, data.invoiceNumber || '')
+    .replace(/{quoteNumber}/g, data.quoteNumber || '')
+    .replace(/{clientName}/g, data.clientName || '')
+    .replace(/{totalAmount}/g, data.totalAmount || '')
+    .replace(/{dueDate}/g, data.dueDate || '')
+    .replace(/{validUntil}/g, data.validUntil || '')
+    .replace(/{senderName}/g, data.senderName || '')
+    .replace(/{companyName}/g, data.companyName || '');
+};
+
+// Show popup with manual attachment instructions
+const showEmailInstructions = (type, documentNumber) => {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  `;
+
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+  `;
+
+  popup.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 20px;">📧</div>
+    <h2 style="color: #333; margin-bottom: 15px;">Email Instructions</h2>
+    <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
+      Your email client will open with a pre-filled message. You'll need to manually attach the ${type} PDF (${documentNumber}) to the email before sending.
+    </p>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+      <h4 style="margin: 0 0 10px 0; color: #555;">Steps:</h4>
+      <ol style="margin: 0; padding-left: 20px; color: #666;">
+        <li>Download the PDF first using the "📄 PDF" button</li>
+        <li>Click "📧 Email" to open your email client</li>
+        <li>Attach the downloaded PDF to the email</li>
+        <li>Send the email</li>
+      </ol>
+    </div>
+    <button onclick="this.parentElement.parentElement.remove()" style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    ">Got it!</button>
+  `;
+
+  modal.appendChild(popup);
+  document.body.appendChild(modal);
+
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+};
+
+// Send invoice via email (mailto)
+const sendInvoiceViaEmail = async (invoice, companySettings, recipientEmail) => {
+  try {
+    // Get email settings
+    const emailSettings = await getEmailSettings();
+    
+    // Calculate total amount
+    const amount = parseFloat(invoice.amount) || 0;
+    const vatRate = parseFloat(invoice.vat) || 0;
+    const vatAmount = amount * (vatRate / 100);
+    const totalAmount = amount + vatAmount;
+
+    // Prepare template data
+    const templateData = {
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName,
+      totalAmount: totalAmount.toFixed(2),
+      dueDate: invoice.dueDate,
+      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
+      companyName: companySettings?.companyName || 'Your Company'
+    };
+
+    // Get templates
+    const subject = emailSettings?.invoiceSubject || 'Invoice {invoiceNumber} from {companyName}';
+    const body = emailSettings?.invoiceTemplate || `Dear {clientName},
+
+Please find attached invoice {invoiceNumber} for the amount of £{totalAmount}.
+
+Payment is due by {dueDate}.
+
+Thank you for your business!
+
+Best regards,
+{senderName}
+{companyName}`;
+
+    // Replace variables
+    const finalSubject = replaceTemplateVariables(subject, templateData);
+    const finalBody = replaceTemplateVariables(body, templateData);
+
+    // Show instructions popup
+    showEmailInstructions('invoice', invoice.invoiceNumber);
+
+    // Create mailto link
+    const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+
+  } catch (error) {
+    console.error('Error creating email:', error);
+    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
+  }
+};
+
+// Send quote via email (mailto)
+const sendQuoteViaEmail = async (quote, companySettings, recipientEmail) => {
+  try {
+    // Get email settings
+    const emailSettings = await getEmailSettings();
+    
+    // Calculate total amount
+    const amount = parseFloat(quote.amount) || 0;
+    const vatRate = parseFloat(quote.vat) || 0;
+    const vatAmount = amount * (vatRate / 100);
+    const totalAmount = amount + vatAmount;
+
+    // Prepare template data
+    const templateData = {
+      quoteNumber: quote.quoteNumber,
+      clientName: quote.clientName,
+      totalAmount: totalAmount.toFixed(2),
+      validUntil: quote.validUntil,
+      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
+      companyName: companySettings?.companyName || 'Your Company'
+    };
+
+    // Get templates
+    const subject = emailSettings?.quoteSubject || 'Quote {quoteNumber} from {companyName}';
+    const body = emailSettings?.quoteTemplate || `Dear {clientName},
+
+Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
+
+This quote is valid until {validUntil}.
+
+We look forward to working with you!
+
+Best regards,
+{senderName}
+{companyName}`;
+
+    // Replace variables
+    const finalSubject = replaceTemplateVariables(subject, templateData);
+    const finalBody = replaceTemplateVariables(body, templateData);
+
+    // Show instructions popup
+    showEmailInstructions('quote', quote.quoteNumber);
+
+    // Create mailto link
+    const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+
+  } catch (error) {
+    console.error('Error creating email:', error);
+    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
+  }
+};
+
+export { 
+  generateInvoicePDF, 
+  generateQuotePDF, 
+  sendInvoiceViaEmail, 
+  sendQuoteViaEmail 
+};

@@ -60,6 +60,7 @@ function App() {
               <Route path="/products" element={<Products user={user} />} />
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
+              <Route path="/email-settings" element={<EmailSettings />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
               <Route path="/settings" element={<Navigate to="/company-settings" />} />
             </>

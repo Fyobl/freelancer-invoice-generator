@@ -250,6 +250,24 @@ function Quotes({ user }) {
     return matchesSearch && matchesStatus;
   });
 
+  const sendQuoteEmail = async (quote) => {
+    try {
+      // Get client email from the clients array
+      const client = clients.find(c => c.id === quote.clientId);
+      const recipientEmail = client?.email || prompt('Enter client email address:');
+
+      if (!recipientEmail) {
+        alert('Email address is required to send quote');
+        return;
+      }
+
+      await sendQuoteViaEmail(quote, companySettings, recipientEmail);
+    } catch (error) {
+      console.error('Error sending quote email:', error);
+      alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
+
   // Styles
   const containerStyle = {
     minHeight: '100vh',
