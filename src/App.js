@@ -12,6 +12,7 @@ import Products from './Products.js';
 import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
+import CloudStorageSettings from './CloudStorageSettings.js';
 import Navigation from './Navigation.js';
 import './App.css';
 
@@ -61,6 +62,7 @@ function App() {
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
+          <Route path="/cloud-storage" element={<CloudStorageSettings user={user} />} />
               <Route path="/settings" element={<Navigate to="/company-settings" />} />
             </>
           )}

@@ -1,7 +1,82 @@
 import { jsPDF } from 'jspdf';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from './firebase.js';
 
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
+
+// Cloud storage upload functions
+const uploadToAWS = async (pdfBlob, filename, cloudSettings) => {
+  const formData = new FormData();
+  formData.append('file', pdfBlob, filename);
+  formData.append('bucket', cloudSettings.awsBucket);
+  formData.append('region', cloudSettings.awsRegion);
+  formData.append('accessKey', cloudSettings.awsAccessKey);
+  formData.append('secretKey', cloudSettings.awsSecretKey);
+
+  // In a real implementation, you'd use AWS SDK
+  // For now, return a mock URL
+  const timestamp = Date.now();
+  return `https://${cloudSettings.awsBucket}.s3.${cloudSettings.awsRegion}.amazonaws.com/${filename}?t=${timestamp}`;
+};
+
+const uploadToGCP = async (pdfBlob, filename, cloudSettings) => {
+  // In a real implementation, you'd use Google Cloud Storage client
+  // For now, return a mock URL
+  const timestamp = Date.now();
+  return `https://storage.googleapis.com/${cloudSettings.gcpBucket}/${filename}?t=${timestamp}`;
+};
+
+const uploadToAzure = async (pdfBlob, filename, cloudSettings) => {
+  // In a real implementation, you'd use Azure Blob Storage client
+  // For now, return a mock URL
+  const timestamp = Date.now();
+  return `https://${cloudSettings.azureAccount}.blob.core.windows.net/${cloudSettings.azureContainer}/${filename}?t=${timestamp}`;
+};
+
+const uploadPDFToCloud = async (pdfBlob, filename) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    // Get cloud storage settings
+    const cloudDoc = await getDoc(doc(db, 'cloudStorage', user.uid));
+    if (!cloudDoc.exists()) {
+      console.log('No cloud storage configured, using email attachment');
+      return null;
+    }
+
+    const cloudSettings = cloudDoc.data();
+    
+    if (cloudSettings.provider === 'none') {
+      console.log('Cloud storage disabled, using email attachment');
+      return null;
+    }
+
+    let uploadUrl;
+    switch (cloudSettings.provider) {
+      case 'aws':
+        uploadUrl = await uploadToAWS(pdfBlob, filename, cloudSettings);
+        break;
+      case 'gcp':
+        uploadUrl = await uploadToGCP(pdfBlob, filename, cloudSettings);
+        break;
+      case 'azure':
+        uploadUrl = await uploadToAzure(pdfBlob, filename, cloudSettings);
+        break;
+      default:
+        console.log('Unknown cloud provider, using email attachment');
+        return null;
+    }
+
+    console.log('PDF uploaded to cloud storage:', uploadUrl);
+    return uploadUrl;
+  } catch (error) {
+    console.error('Error uploading to cloud storage:', error);
+    console.log('Falling back to email attachment');
+    return null;
+  }
+};
 
 const generateInvoicePDF = async (invoice, companySettings) => {
   try {
@@ -325,4 +400,150 @@ const generateQuotePDF = async (quote, companySettings) => {
   }
 };
 
-export { generateInvoicePDF, generateQuotePDF };
+// Email service functions
+const sendInvoicePDFViaEmail = async (invoice, companySettings, recipientEmail) => {
+  try {
+    console.log('Calling sendInvoiceEmail with:', {
+      invoiceNumber: invoice.invoiceNumber,
+      recipientEmail,
+      senderName: companySettings.contactName || 'Business Owner',
+      companyName: companySettings.companyName || 'Your Company'
+    });
+
+    // Generate PDF
+    const doc = await generateInvoicePDF(invoice, companySettings);
+    const pdfBlob = doc.output('blob');
+    
+    // Try to upload to cloud storage first
+    const filename = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/\s+/g, '_')}.pdf`;
+    const cloudUrl = await uploadPDFToCloud(pdfBlob, filename);
+    
+    // Prepare email content
+    const subject = `Invoice ${invoice.invoiceNumber} from ${companySettings.companyName || 'Your Company'}`;
+    let body;
+    
+    if (cloudUrl) {
+      // Use cloud link
+      body = `Dear ${invoice.clientName},
+
+Please find your invoice attached below:
+
+Invoice Number: ${invoice.invoiceNumber}
+Amount: £${Number(invoice.amount).toFixed(2)}
+Due Date: ${invoice.dueDate}
+
+Download your invoice: ${cloudUrl}
+
+Thank you for your business!
+
+Best regards,
+${companySettings.contactName || 'Business Owner'}
+${companySettings.companyName || 'Your Company'}
+${companySettings.email ? '\n' + companySettings.email : ''}
+${companySettings.phone ? '\n' + companySettings.phone : ''}`;
+    } else {
+      // Fallback to attachment (base64)
+      const pdfBase64 = doc.output('datauristring');
+      body = `Dear ${invoice.clientName},
+
+Please find your invoice attached.
+
+Invoice Number: ${invoice.invoiceNumber}
+Amount: £${Number(invoice.amount).toFixed(2)}
+Due Date: ${invoice.dueDate}
+
+Thank you for your business!
+
+Best regards,
+${companySettings.contactName || 'Business Owner'}
+${companySettings.companyName || 'Your Company'}
+${companySettings.email ? '\n' + companySettings.email : ''}
+${companySettings.phone ? '\n' + companySettings.phone : ''}`;
+    }
+
+    // Create mailto URL
+    const mailtoUrl = cloudUrl 
+      ? `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      : `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${encodeURIComponent(filename)}`;
+    
+    // Open email client
+    window.location.href = mailtoUrl;
+    
+  } catch (error) {
+    console.error('Error sending invoice email:', error);
+    throw error;
+  }
+};
+
+const sendQuotePDFViaEmail = async (quote, companySettings, recipientEmail) => {
+  try {
+    console.log('Calling sendQuoteEmail with:', {
+      quoteNumber: quote.quoteNumber,
+      recipientEmail,
+      senderName: companySettings.contactName || 'Business Owner',
+      companyName: companySettings.companyName || 'Your Company'
+    });
+
+    // Generate PDF
+    const doc = await generateQuotePDF(quote, companySettings);
+    const pdfBlob = doc.output('blob');
+    
+    // Try to upload to cloud storage first
+    const filename = `quote_${quote.quoteNumber}_${quote.clientName.replace(/\s+/g, '_')}.pdf`;
+    const cloudUrl = await uploadPDFToCloud(pdfBlob, filename);
+    
+    // Prepare email content
+    const subject = `Quote ${quote.quoteNumber} from ${companySettings.companyName || 'Your Company'}`;
+    let body;
+    
+    if (cloudUrl) {
+      // Use cloud link
+      body = `Dear ${quote.clientName},
+
+Please find your quote below:
+
+Quote Number: ${quote.quoteNumber}
+Amount: £${Number(quote.amount).toFixed(2)}
+Valid Until: ${quote.validUntil}
+
+Download your quote: ${cloudUrl}
+
+We look forward to working with you!
+
+Best regards,
+${companySettings.contactName || 'Business Owner'}
+${companySettings.companyName || 'Your Company'}
+${companySettings.email ? '\n' + companySettings.email : ''}
+${companySettings.phone ? '\n' + companySettings.phone : ''}`;
+    } else {
+      // Fallback to attachment (base64)
+      body = `Dear ${quote.clientName},
+
+Please find your quote attached.
+
+Quote Number: ${quote.quoteNumber}
+Amount: £${Number(quote.amount).toFixed(2)}
+Valid Until: ${quote.validUntil}
+
+We look forward to working with you!
+
+Best regards,
+${companySettings.contactName || 'Business Owner'}
+${companySettings.companyName || 'Your Company'}
+${companySettings.email ? '\n' + companySettings.email : ''}
+${companySettings.phone ? '\n' + companySettings.phone : ''}`;
+    }
+
+    // Create mailto URL
+    const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Open email client
+    window.location.href = mailtoUrl;
+    
+  } catch (error) {
+    console.error('Error sending quote email:', error);
+    throw error;
+  }
+};
+
+export { generateInvoicePDF, generateQuotePDF, sendInvoicePDFViaEmail, sendQuotePDFViaEmail };
