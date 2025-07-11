@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase.js';
 import {
@@ -39,14 +38,9 @@ function Reports({ user }) {
     }
   };
 
-  const paidInvoices = invoices.filter(invoice => invoice.status === 'paid');
-  const unpaidInvoices = invoices.filter(invoice => invoice.status === 'unpaid');
-  const overdueInvoices = invoices.filter(invoice => {
-    if (invoice.status === 'paid') return false;
-    const dueDate = new Date(invoice.dueDate);
-    const today = new Date();
-    return dueDate < today;
-  });
+  const paidInvoices = invoices.filter(inv => inv.status === 'paid');
+  const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
+  const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
 
   const totalRevenue = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
   const unpaidAmount = unpaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);

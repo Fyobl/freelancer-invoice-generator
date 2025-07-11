@@ -12,10 +12,8 @@ import {
   where,
   serverTimestamp
 } from 'firebase/firestore';
-import { useDarkMode } from './DarkModeContext.js';
-
 function Products({ user }) {
-  const { isDarkMode } = useDarkMode();
+  const isDarkMode = false;
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

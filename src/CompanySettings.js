@@ -9,10 +9,8 @@ import {
   query,
   where
 } from 'firebase/firestore';
-import { useDarkMode } from './DarkModeContext.js';
-
 function CompanySettings({ user }) {
-  const { isDarkMode } = useDarkMode();
+  const isDarkMode = false;
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [companyData, setCompanyData] = useState({
