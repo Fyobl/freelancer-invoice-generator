@@ -1,60 +1,53 @@
 
 # Email Setup Instructions
 
-To enable email functionality for quotes and invoices, you need to set up EmailJS:
+You now have two options for sending emails:
 
-## Step 1: Create EmailJS Account
+## Option 1: Use Your Own Email (Recommended)
+
+1. Go to "📧 Email Setup" in the navigation menu
+2. Choose your email provider (Gmail, Outlook, Yahoo, or Custom)
+3. Enter your email address and app password
+4. Save and test your configuration
+
+### Getting App Passwords:
+
+**Gmail:**
+1. Go to Google Account settings
+2. Security > 2-Step Verification (enable if not already)
+3. App passwords > Generate new app password
+4. Use the generated password in the app
+
+**Outlook:**
+1. Go to Microsoft Account security
+2. Advanced security options
+3. App passwords > Create new app password
+
+**Yahoo:**
+1. Go to Yahoo Account Security
+2. Generate app password
+3. Use the generated password
+
+## Option 2: Use EmailJS (Fallback)
+
+If you don't configure your own email, the system will fall back to EmailJS.
+
+### EmailJS Setup:
 1. Go to https://www.emailjs.com/
-2. Create a free account
-3. Create a new email service (Gmail, Outlook, etc.)
+2. Create account and email service
+3. Create template with variables like {{to_email}}, {{invoice_number}}, etc.
+4. Update emailService.js with your credentials
 
-## Step 2: Create Email Template
-1. In EmailJS dashboard, go to "Email Templates"
-2. Create a new template with these variables:
-   - `{{to_email}}` - Recipient email
-   - `{{from_name}}` - Your company/name
-   - `{{quote_number}}` or `{{invoice_number}}` - Document number
-   - `{{client_name}}` - Client name
-   - `{{amount}}` - Amount
-   - `{{vat}}` - VAT percentage
-   - `{{total}}` - Total amount
-   - `{{valid_until}}` or `{{due_date}}` - Valid until/due date
-   - `{{notes}}` - Notes
-   - `{{status}}` - Status
-   - `{{created_date}}` - Creation date
-   - `{{message}}` - Custom message
+## Backend Implementation Note
 
-Example template:
-```
-Subject: {{quote_number}} - Quote from {{from_name}}
+To fully implement user SMTP email sending, you would need a backend service that:
+1. Receives email data from the frontend
+2. Uses the user's SMTP settings to send emails
+3. Returns success/failure status
 
-Dear {{client_name}},
+Example backend technologies:
+- Node.js with Nodemailer
+- Python with smtplib
+- PHP with PHPMailer
 
-{{message}}
-
-Quote Details:
-- Quote Number: {{quote_number}}
-- Amount: £{{amount}}
-- VAT: {{vat}}%
-- Total: £{{total}}
-- Valid Until: {{valid_until}}
-- Status: {{status}}
-
-Notes: {{notes}}
-
-Best regards,
-{{from_name}}
-```
-
-## Step 3: Update Configuration
-1. In `src/emailService.js`, replace:
-   - `your_service_id` with your EmailJS service ID
-   - `your_template_id` with your template ID
-   - `your_public_key` with your EmailJS public key
-
-## Step 4: Test
-1. Create a quote or invoice
-2. Click the "📧 Email" button
-3. Enter recipient email and send
-
-Note: EmailJS free plan allows 200 emails per month.
+The frontend is ready to work with such a backend service.

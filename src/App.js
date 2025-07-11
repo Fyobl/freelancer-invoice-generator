@@ -13,6 +13,7 @@ import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
 import Quotes from './Quotes.js';
 import AccountSettings from './AccountSettings.js';
+import EmailConfig from './EmailConfig.js';
 
 
 function App() {
@@ -73,6 +74,10 @@ function App() {
           <Route
             path="/company-settings"
             element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/email-config"
+            element={user ? <EmailConfig user={user} /> : <Navigate to="/login" />}
           />
         </Routes>
       </main>
