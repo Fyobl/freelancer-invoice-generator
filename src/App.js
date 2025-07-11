@@ -10,6 +10,7 @@ import Products from './Products.js';
 import Clients from './Clients.js';
 import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
+import Quotes from './Quotes.js';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,6 +57,10 @@ function App() {
         <Route
           path="/reports"
           element={user ? <Reports user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/quotes"
+          element={user ? <Quotes user={user} /> : <Navigate to="/login" />}
         />
         <Route
           path="/settings"

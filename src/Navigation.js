@@ -40,6 +40,7 @@ function Navigation({ user }) {
     { path: '/clients', label: 'Clients', icon: '👥' },
     { path: '/products', label: 'Products', icon: '📦' },
     { path: '/reports', label: 'Reports', icon: '📈' },
+    { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/settings', label: 'Settings', icon: '⚙️' }
   ];
 
