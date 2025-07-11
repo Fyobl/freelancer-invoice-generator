@@ -31,9 +31,7 @@ function Quotes({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
-  const [selectedQuote, setSelectedQuote] = useState(null);
-  const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailConfirmation, setEmailConfirmation] = useState('');
   const [emailSending, setEmailSending] = useState(false);
 
   useEffect(() => {
@@ -238,42 +236,41 @@ function Quotes({ user }) {
     }
   };
 
-  const handleEmailQuote = (quote) => {
-    setSelectedQuote(quote);
+  const handleEmailQuote = async (quote) => {
     // Try to get client email from the selected client
     const client = clients.find(c => c.id === quote.clientId);
-    setRecipientEmail(client?.email || '');
-    setEmailModalOpen(true);
-  };
-
-  const sendEmail = async () => {
-    if (!recipientEmail.trim()) {
-      alert('Please enter a valid email address');
+    const recipientEmail = client?.email || '';
+    
+    if (!recipientEmail) {
+      setEmailConfirmation('❌ No email address found for this client. Please add an email address to the client profile.');
+      setTimeout(() => setEmailConfirmation(''), 5000);
       return;
     }
 
     setEmailSending(true);
+    setEmailConfirmation('');
+    
     try {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
       
-      const result = await sendQuoteEmail(selectedQuote, recipientEmail, senderName, companyName);
+      const result = await sendQuoteEmail(quote, recipientEmail, senderName, companyName);
       
       if (result.success) {
-        alert('Quote sent successfully!');
-        setEmailModalOpen(false);
-        setRecipientEmail('');
-        setSelectedQuote(null);
+        setEmailConfirmation(`✅ Quote ${quote.quoteNumber} sent successfully to ${recipientEmail}!`);
       } else {
-        alert('Failed to send email. Please check your EmailJS configuration.');
+        setEmailConfirmation('❌ Failed to send email. Please check your email configuration.');
       }
     } catch (error) {
       console.error('Error sending email:', error);
-      alert('Error sending email. Please try again.');
+      setEmailConfirmation('❌ Error sending email. Please try again.');
     } finally {
       setEmailSending(false);
+      setTimeout(() => setEmailConfirmation(''), 5000);
     }
   };
+
+  
 
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -565,6 +562,20 @@ function Quotes({ user }) {
           </div>
         </div>
 
+        {/* Email Confirmation */}
+        {emailConfirmation && (
+          <div style={{
+            ...cardStyle,
+            background: emailConfirmation.includes('✅') ? '#d4edda' : '#f8d7da',
+            border: `2px solid ${emailConfirmation.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
+            color: emailConfirmation.includes('✅') ? '#155724' : '#721c24',
+            textAlign: 'center',
+            fontWeight: 'bold'
+          }}>
+            {emailConfirmation}
+          </div>
+        )}
+
         {/* Quotes List */}
         <div style={cardStyle}>
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
@@ -688,15 +699,19 @@ function Quotes({ user }) {
                     )}
                     <button
                       onClick={() => handleEmailQuote(quote)}
+                      disabled={emailSending}
                       style={{
                         ...buttonStyle,
-                        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                        background: emailSending 
+                          ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+                          : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
                         fontSize: '12px',
                         padding: '8px 16px',
-                        marginRight: '5px'
+                        marginRight: '5px',
+                        cursor: emailSending ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      📧 Email Quote
+                      {emailSending ? '📧 Sending...' : '📧 Email Quote'}
                     </button>
                     <button
                       onClick={() => deleteQuote(quote.id)}
@@ -717,104 +732,7 @@ function Quotes({ user }) {
           )}
         </div>
 
-        {/* Email Modal */}
-        {emailModalOpen && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '30px',
-              borderRadius: '15px',
-              width: '90%',
-              maxWidth: '500px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-            }}>
-              <h3 style={{ marginTop: 0, color: '#333', textAlign: 'center' }}>
-                📧 Email Quote {selectedQuote?.quoteNumber}
-              </h3>
-              
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                  Client Name
-                </label>
-                <input
-                  style={{
-                    ...inputStyle,
-                    backgroundColor: '#f8f9fa',
-                    color: '#6c757d'
-                  }}
-                  value={selectedQuote?.clientName || ''}
-                  disabled
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                  Recipient Email *
-                </label>
-                <input
-                  style={inputStyle}
-                  type="email"
-                  placeholder="Enter client email address"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Quote Preview</h4>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Amount:</strong> £{parseFloat(selectedQuote?.amount || 0).toFixed(2)}
-                </p>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Valid Until:</strong> {selectedQuote?.validUntil}
-                </p>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Status:</strong> {selectedQuote?.status}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => {
-                    setEmailModalOpen(false);
-                    setRecipientEmail('');
-                    setSelectedQuote(null);
-                  }}
-                  style={{
-                    ...buttonStyle,
-                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={sendEmail}
-                  disabled={emailSending}
-                  style={{
-                    ...buttonStyle,
-                    background: emailSending 
-                      ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                      : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                    cursor: emailSending ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {emailSending ? '📧 Sending...' : '📧 Send Email'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        
       </div>
     </div>
   );

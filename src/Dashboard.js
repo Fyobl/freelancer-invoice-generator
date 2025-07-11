@@ -41,6 +41,7 @@ function Dashboard() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [emailSending, setEmailSending] = useState(false);
+  const [emailConfirmation, setEmailConfirmation] = useState(null);
 
   const user = auth.currentUser;
 
@@ -161,6 +162,15 @@ function Dashboard() {
     gap: '20px',
     alignItems: 'center',
     flexWrap: 'wrap'
+  };
+
+  const cardStyle = {
+    background: 'rgba(255,255,255,0.95)',
+    padding: '20px',
+    borderRadius: '16px',
+    marginBottom: '30px',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
   };
 
   useEffect(() => {
@@ -563,38 +573,34 @@ function Dashboard() {
     doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
   };
 
-  const handleEmailInvoice = (invoice) => {
+  const handleEmailInvoice = async (invoice) => {
     setSelectedInvoice(invoice);
     // Try to get client email from the selected client
     const client = clients.find(c => c.id === invoice.clientId);
-    setRecipientEmail(client?.email || '');
-    setEmailModalOpen(true);
-  };
+    const recipientEmail = client?.email || '';
 
-  const sendEmail = async () => {
     if (!recipientEmail.trim()) {
-      alert('Please enter a valid email address');
+      alert('Please enter a valid email address for the client.');
       return;
     }
 
     setEmailSending(true);
+    setEmailConfirmation(null); // Clear any previous confirmation
+
     try {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
 
-      const result = await sendInvoiceEmail(selectedInvoice, recipientEmail, senderName, companyName);
+      const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName);
 
       if (result.success) {
-        alert('Invoice sent successfully!');
-        setEmailModalOpen(false);
-        setRecipientEmail('');
-        setSelectedInvoice(null);
+        setEmailConfirmation(`✅ Invoice ${invoice.invoiceNumber} sent successfully to ${recipientEmail}!`);
       } else {
-        alert('Failed to send email. Please check your EmailJS configuration.');
+        setEmailConfirmation(`❌ Failed to send invoice ${invoice.invoiceNumber}. Please check your EmailJS configuration.`);
       }
     } catch (error) {
       console.error('Error sending email:', error);
-      alert('Error sending email. Please try again.');
+      setEmailConfirmation(`❌ Error sending invoice ${invoice.invoiceNumber}. Please try again.`);
     } finally {
       setEmailSending(false);
     }
@@ -836,6 +842,20 @@ function Dashboard() {
           </select>
         </div>
 
+        {/* Email Confirmation */}
+        {emailConfirmation && (
+          <div style={{
+            ...cardStyle,
+            background: emailConfirmation.includes('✅') ? '#d4edda' : '#f8d7da',
+            border: `2px solid ${emailConfirmation.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
+            color: emailConfirmation.includes('✅') ? '#155724' : '#721c24',
+            textAlign: 'center',
+            fontWeight: 'bold'
+          }}>
+            {emailConfirmation}
+          </div>
+        )}
+
         {/* Invoice Table */}
         {filteredInvoices.length === 0 ? (
           <div style={{ ...formStyle, textAlign: 'center', padding: '60px' }}>
@@ -913,9 +933,12 @@ function Dashboard() {
                           </button>
                           <button
                             onClick={() => handleEmailInvoice(inv)}
+                            disabled={emailSending}
                             style={{ 
                               padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)', 
+                              background: emailSending 
+                                ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+                                : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)', 
                               color: 'white', 
                               border: 'none', 
                               borderRadius: '6px',
@@ -924,7 +947,7 @@ function Dashboard() {
                               cursor: 'pointer'
                             }}
                           >
-                            📧
+                            {emailSending ? '📧 Sending...' : '📧'}
                           </button>
                           <button
                             onClick={() => handleDelete(inv.id)}
