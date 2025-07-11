@@ -397,6 +397,8 @@ const generateQuotePDF = async (quote, companySettings) => {
   }
 };
 
+export { generateInvoicePDF, generateQuotePDF };
+
 export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyName, companySettings) => {
   const user = auth.currentUser;
   if (!user) {
@@ -559,6 +561,90 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
     }
   } catch (error) {
     console.error('Error creating invoice email:', error);
+    return { success: false, error: 'Failed to process invoice email: ' + error.message };
+  }
+};
+
+// Alternative email function that generates a data URL for the PDF
+export const sendInvoiceEmailWithDataURL = async (invoice, recipientEmail, senderName, companyName, companySettings) => {
+  const user = auth.currentUser;
+  if (!user) {
+    return { success: false, error: 'User not authenticated' };
+  }
+
+  try {
+    // Get user's email templates
+    const emailTemplates = await getUserEmailTemplates(user.uid);
+
+    if (!emailTemplates) {
+      return { 
+        success: false, 
+        error: 'No email templates found. Please configure your email templates in Email Setup.' 
+      };
+    }
+
+    // Generate PDF
+    const pdfDoc = await generateInvoicePDF(invoice, companySettings || {});
+    
+    // Generate base64 data URL for the PDF
+    const pdfDataUri = pdfDoc.output('datauristring');
+    
+    // Calculate total amount
+    const amount = parseFloat(invoice.amount) || 0;
+    const vat = parseFloat(invoice.vat) || 0;
+    const total = amount * (1 + vat / 100);
+
+    // Prepare variables for template replacement
+    const variables = {
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName,
+      companyName: companyName || 'Your Company',
+      amount: amount.toFixed(2),
+      vat: vat.toFixed(1),
+      total: total.toFixed(2),
+      dueDate: invoice.dueDate,
+      notes: invoice.notes || 'No additional notes'
+    };
+
+    // Replace variables in templates
+    const subject = replaceVariables(emailTemplates.invoiceSubject, variables);
+    let body = replaceVariables(emailTemplates.invoiceBody, variables);
+
+    // Add instructions for PDF
+    body += `\n\n📎 PDF has been generated. You can:\n1. Copy this email and paste into your email client\n2. Manually attach the downloaded PDF file\n3. Use the download link provided\n\nBest regards,\n${companyName || 'Your Company'}`;
+
+    // Create mailto URL
+    const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // Also trigger PDF download so user can manually attach it
+    const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    pdfDoc.save(fileName);
+
+    // Try to open user's email client
+    try {
+      window.location.href = mailtoUrl;
+      return { 
+        success: true, 
+        message: `✅ Email client opened and PDF "${fileName}" downloaded. You can manually attach the downloaded PDF to your email.`,
+        dataUri: pdfDataUri
+      };
+    } catch (error) {
+      try {
+        window.open(mailtoUrl, '_blank');
+        return { 
+          success: true, 
+          message: `✅ Email client opened and PDF "${fileName}" downloaded. You can manually attach the downloaded PDF to your email.`,
+          dataUri: pdfDataUri
+        };
+      } catch (fallbackError) {
+        return { 
+          success: false, 
+          error: `❌ Unable to open email client. However, PDF "${fileName}" was downloaded to your computer.`
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error creating invoice email with data URL:', error);
     return { success: false, error: 'Failed to process invoice email: ' + error.message };
   }
 };
