@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from './firebase.js';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from './firebase.js';
+import {
+  collection,
+  query,
+  where,
+  getDocs
+} from 'firebase/firestore';
 import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
@@ -18,7 +23,7 @@ function Reports({ user }) {
       setLoading(false);
       return;
     }
-    
+
     try {
       const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
@@ -39,7 +44,7 @@ function Reports({ user }) {
     const totalInvoices = invoices.length;
     const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
     const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
-    
+
     const overdueInvoices = invoices.filter(invoice => {
       const dueDate = new Date(invoice.dueDate);
       const today = new Date();

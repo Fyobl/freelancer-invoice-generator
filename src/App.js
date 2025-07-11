@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -49,7 +48,7 @@ const AppContent = () => {
 
   if (!user) {
     return (
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -60,22 +59,24 @@ const AppContent = () => {
   }
 
   return (
-    <Router>
-      <div className="app">
-        <Navigation user={user} />
-        <main className="content-area">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard user={user} />} />
-            <Route path="/products" element={<Products user={user} />} />
-            <Route path="/clients" element={<Clients user={user} />} />
-            <Route path="/reports" element={<Reports user={user} />} />
-            <Route path="/company-settings" element={<CompanySettings user={user} />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <div className="app">
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <div className="main-layout">
+          <Navigation user={user} />
+          <main className="content-area">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard user={user} />} />
+              <Route path="/products" element={<Products user={user} />} />
+              <Route path="/clients" element={<Clients user={user} />} />
+              <Route path="/reports" element={<Reports user={user} />} />
+              <Route path="/company-settings" element={<CompanySettings user={user} />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </div>
   );
 };
 

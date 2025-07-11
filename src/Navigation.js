@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useDarkMode } from './DarkModeContext.js';
 
-const Navigation = () => {
+const Navigation = ({ user }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
