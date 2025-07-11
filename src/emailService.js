@@ -128,9 +128,37 @@ export const sendInvoicePDFViaEmail = async (invoice, companySettings, recipient
     // Generate PDF
     const doc = await generateInvoicePDF(invoice, companySettings);
     
-    // Check if user has cloud storage configured
+    // Get email template
     const user = require('./firebase.js').auth.currentUser;
+    let emailTemplate = {
+      subject: 'Invoice {invoiceNumber} from {companyName}',
+      body: `Dear {clientName},
+
+Please find your invoice attached via the following link:
+{downloadLink}
+
+Invoice Details:
+- Invoice Number: {invoiceNumber}
+- Amount: £{amount}
+- Due Date: {dueDate}
+
+Thank you for your business!
+
+Best regards,
+{contactName}`
+    };
+
     if (user) {
+      try {
+        const emailDoc = await require('firebase/firestore').getDoc(require('firebase/firestore').doc(db, 'emailSettings', user.uid));
+        if (emailDoc.exists()) {
+          emailTemplate = emailDoc.data().templates.invoice;
+        }
+      } catch (error) {
+        console.log('Using default email template');
+      }
+
+      // Check if user has cloud storage configured
       const cloudStorageQuery = query(
         collection(db, 'cloudStorage'), 
         where('userId', '==', user.uid),
@@ -141,25 +169,29 @@ export const sendInvoicePDFViaEmail = async (invoice, companySettings, recipient
       if (!cloudStorageSnapshot.empty) {
         // Upload to cloud storage and get link
         const cloudData = cloudStorageSnapshot.docs[0].data();
-        const uploadResult = await uploadToCloudStorage(doc, invoice, cloudData);
+        const uploadResult = await uploadToCloudStorage(doc, invoice, cloudData, 'invoice');
         
         if (uploadResult.success) {
-          // Send email with cloud link
-          const subject = `Invoice ${invoice.invoiceNumber} from ${companySettings.companyName || 'Your Company'}`;
-          const body = `Dear ${invoice.clientName},
+          // Replace template variables
+          const subject = replaceTemplateVariables(emailTemplate.subject, {
+            invoiceNumber: invoice.invoiceNumber,
+            clientName: invoice.clientName,
+            amount: Number(invoice.amount).toFixed(2),
+            dueDate: invoice.dueDate || 'N/A',
+            downloadLink: uploadResult.url,
+            companyName: companySettings.companyName || 'Your Company',
+            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+          });
 
-Please find your invoice attached via the following link:
-${uploadResult.url}
-
-Invoice Details:
-- Invoice Number: ${invoice.invoiceNumber}
-- Amount: £${Number(invoice.amount).toFixed(2)}
-- Due Date: ${invoice.dueDate || 'N/A'}
-
-Thank you for your business!
-
-Best regards,
-${companySettings.contactName || companySettings.companyName || 'Your Company'}`;
+          const body = replaceTemplateVariables(emailTemplate.body, {
+            invoiceNumber: invoice.invoiceNumber,
+            clientName: invoice.clientName,
+            amount: Number(invoice.amount).toFixed(2),
+            dueDate: invoice.dueDate || 'N/A',
+            downloadLink: uploadResult.url,
+            companyName: companySettings.companyName || 'Your Company',
+            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+          });
 
           const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
           window.open(mailtoLink, '_blank');
@@ -175,20 +207,25 @@ ${companySettings.contactName || companySettings.companyName || 'Your Company'}`
     reader.onload = function(e) {
       const base64 = e.target.result.split(',')[1];
       
-      const subject = `Invoice ${invoice.invoiceNumber} from ${companySettings.companyName || 'Your Company'}`;
-      const body = `Dear ${invoice.clientName},
+      const subject = replaceTemplateVariables(emailTemplate.subject, {
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        amount: Number(invoice.amount).toFixed(2),
+        dueDate: invoice.dueDate || 'N/A',
+        downloadLink: 'PDF attached',
+        companyName: companySettings.companyName || 'Your Company',
+        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+      });
 
-Please find your invoice attached.
-
-Invoice Details:
-- Invoice Number: ${invoice.invoiceNumber}
-- Amount: £${Number(invoice.amount).toFixed(2)}
-- Due Date: ${invoice.dueDate || 'N/A'}
-
-Thank you for your business!
-
-Best regards,
-${companySettings.contactName || companySettings.companyName || 'Your Company'}`;
+      const body = replaceTemplateVariables(emailTemplate.body.replace('{downloadLink}', 'Please find your invoice attached.'), {
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        amount: Number(invoice.amount).toFixed(2),
+        dueDate: invoice.dueDate || 'N/A',
+        downloadLink: 'PDF attached',
+        companyName: companySettings.companyName || 'Your Company',
+        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+      });
 
       const filename = `invoice_${invoice.invoiceNumber}.pdf`;
       const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
@@ -206,29 +243,107 @@ ${companySettings.contactName || companySettings.companyName || 'Your Company'}`
 
 export const sendQuotePDFViaEmail = async (quote, companySettings, recipientEmail) => {
   try {
-    // Generate quote PDF (similar to invoice)
+    // Generate quote PDF
     const doc = await generateQuotePDF(quote, companySettings);
     
+    // Get email template
+    const user = require('./firebase.js').auth.currentUser;
+    let emailTemplate = {
+      subject: 'Quote {quoteNumber} from {companyName}',
+      body: `Dear {clientName},
+
+Please find your quote attached via the following link:
+{downloadLink}
+
+Quote Details:
+- Quote Number: {quoteNumber}
+- Amount: £{amount}
+- Valid Until: {validUntil}
+
+Thank you for considering our services!
+
+Best regards,
+{contactName}`
+    };
+
+    if (user) {
+      try {
+        const emailDoc = await require('firebase/firestore').getDoc(require('firebase/firestore').doc(db, 'emailSettings', user.uid));
+        if (emailDoc.exists()) {
+          emailTemplate = emailDoc.data().templates.quote;
+        }
+      } catch (error) {
+        console.log('Using default email template');
+      }
+
+      // Check if user has cloud storage configured
+      const cloudStorageQuery = query(
+        collection(db, 'cloudStorage'), 
+        where('userId', '==', user.uid),
+        where('isConnected', '==', true)
+      );
+      const cloudStorageSnapshot = await getDocs(cloudStorageQuery);
+      
+      if (!cloudStorageSnapshot.empty) {
+        // Upload to cloud storage and get link
+        const cloudData = cloudStorageSnapshot.docs[0].data();
+        const uploadResult = await uploadToCloudStorage(doc, quote, cloudData, 'quote');
+        
+        if (uploadResult.success) {
+          // Replace template variables
+          const subject = replaceTemplateVariables(emailTemplate.subject, {
+            quoteNumber: quote.quoteNumber || quote.id,
+            clientName: quote.clientName,
+            amount: Number(quote.amount).toFixed(2),
+            validUntil: quote.validUntil || 'N/A',
+            downloadLink: uploadResult.url,
+            companyName: companySettings.companyName || 'Your Company',
+            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+          });
+
+          const body = replaceTemplateVariables(emailTemplate.body, {
+            quoteNumber: quote.quoteNumber || quote.id,
+            clientName: quote.clientName,
+            amount: Number(quote.amount).toFixed(2),
+            validUntil: quote.validUntil || 'N/A',
+            downloadLink: uploadResult.url,
+            companyName: companySettings.companyName || 'Your Company',
+            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+          });
+
+          const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+          window.open(mailtoLink, '_blank');
+          return;
+        }
+      }
+    }
+    
+    // Fallback to PDF attachment
     const pdfBlob = doc.output('blob');
     const reader = new FileReader();
     
     reader.onload = function(e) {
       const base64 = e.target.result.split(',')[1];
       
-      const subject = `Quote ${quote.quoteNumber || quote.id} from ${companySettings.companyName || 'Your Company'}`;
-      const body = `Dear ${quote.clientName},
+      const subject = replaceTemplateVariables(emailTemplate.subject, {
+        quoteNumber: quote.quoteNumber || quote.id,
+        clientName: quote.clientName,
+        amount: Number(quote.amount).toFixed(2),
+        validUntil: quote.validUntil || 'N/A',
+        downloadLink: 'PDF attached',
+        companyName: companySettings.companyName || 'Your Company',
+        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+      });
 
-Please find your quote attached.
-
-Quote Details:
-- Quote Number: ${quote.quoteNumber || quote.id}
-- Amount: £${Number(quote.amount).toFixed(2)}
-- Valid Until: ${quote.validUntil || 'N/A'}
-
-Thank you for considering our services!
-
-Best regards,
-${companySettings.contactName || companySettings.companyName || 'Your Company'}`;
+      const body = replaceTemplateVariables(emailTemplate.body.replace('{downloadLink}', 'Please find your quote attached.'), {
+        quoteNumber: quote.quoteNumber || quote.id,
+        clientName: quote.clientName,
+        amount: Number(quote.amount).toFixed(2),
+        validUntil: quote.validUntil || 'N/A',
+        downloadLink: 'PDF attached',
+        companyName: companySettings.companyName || 'Your Company',
+        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
+      });
 
       const filename = `quote_${quote.quoteNumber || quote.id}.pdf`;
       const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
@@ -325,7 +440,16 @@ const generateQuotePDF = async (quote, companySettings) => {
   return doc;
 };
 
-const uploadToCloudStorage = async (doc, invoice, cloudData) => {
+const replaceTemplateVariables = (template, variables) => {
+  let result = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{${key}}`, 'g');
+    result = result.replace(regex, value);
+  }
+  return result;
+};
+
+const uploadToCloudStorage = async (doc, item, cloudData, type) => {
   // This is a placeholder for cloud storage upload
   // In a real implementation, you would:
   // 1. Convert PDF to blob/buffer
@@ -337,9 +461,15 @@ const uploadToCloudStorage = async (doc, invoice, cloudData) => {
   // Simulate upload delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Return mock URL - in production this would be the actual cloud storage URL
+  // Generate filename based on type
+  const filename = type === 'invoice' ? 
+    `${item.invoiceNumber}.pdf` : 
+    `${item.quoteNumber || item.id}.pdf`;
+  
+  // For testing with OneDrive, you can use your test link here
+  // In production, this would be the actual cloud storage URL
   return {
     success: true,
-    url: `https://your-cloud-storage.com/invoices/${invoice.invoiceNumber}.pdf`
+    url: `https://1drv.ms/b/c/your-onedrive-link/${filename}` // Replace with your actual OneDrive structure
   };
 };

@@ -43,7 +43,8 @@ function Navigation({ user }) {
     { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/company-settings', label: 'Company Settings', icon: '⚙️' },
     { path: '/account-settings', label: 'Account Settings', icon: '👤' },
-    { path: '/cloud-storage', label: 'Cloud Storage', icon: '☁️' }
+    { path: '/cloud-storage', label: 'Cloud Storage', icon: '☁️' },
+    { path: '/email-settings', label: 'Email Settings', icon: '📧' }
   ];
 
   return (

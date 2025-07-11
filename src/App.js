@@ -13,6 +13,7 @@ import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
 import CloudStorageSettings from './CloudStorageSettings.js';
+import EmailSettings from './EmailSettings.js';
 import Navigation from './Navigation.js';
 import './App.css';
 
@@ -58,11 +59,13 @@ function App() {
               <Route path="/dashboard" element={<Dashboard user={user} />} />
               <Route path="/quotes" element={<Quotes user={user} />} />
               <Route path="/clients" element={<Clients user={user} />} />
-              <Route path="/products" element={<Products user={user} />} />
+              <Route path="/products" element={<Products />} />
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
-          <Route path="/cloud-storage" element={<CloudStorageSettings user={user} />} />
+          <Route path="/cloud-storage" element={<CloudStorageSettings />} />
+            <Route path="/email-settings" element={<EmailSettings />} />
+            <Route path="/products" element={<Products />} />
               <Route path="/settings" element={<Navigate to="/company-settings" />} />
             </>
           )}
