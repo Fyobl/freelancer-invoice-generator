@@ -4,6 +4,12 @@ import { signOut, deleteUser, reauthenticateWithCredential, EmailAuthProvider } 
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
+
 function Navigation({ user }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
