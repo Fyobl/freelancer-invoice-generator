@@ -174,6 +174,15 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      fetchInvoices();
+      fetchProducts();
+      fetchClients();
+      fetchCompanySettings();
+    }
+  }, [user]);
+
   const fetchInvoices = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -184,14 +193,21 @@ function Dashboard() {
     try {
       const q = query(
         collection(db, 'invoices'),
-        where('userId', '==', currentUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', currentUser.uid)
       );
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Sort by createdAt on the client side instead
+      data.sort((a, b) => {
+        const aDate = a.createdAt?.toDate?.() || new Date(0);
+        const bDate = b.createdAt?.toDate?.() || new Date(0);
+        return bDate - aDate;
+      });
+      
       setInvoices(data);
 
       const invoiceNumbers = data.map(inv => parseInt(inv.invoiceNumber) || 0);

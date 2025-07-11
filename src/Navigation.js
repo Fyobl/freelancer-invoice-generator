@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -6,10 +7,10 @@ import { useDarkMode } from './DarkModeContext.js';
 
 function Navigation({ user }) {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     try {
       await signOut(auth);
     } catch (error) {
@@ -21,188 +22,275 @@ function Navigation({ user }) {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Styles
-  const overlayStyle = {
+  const navStyle = {
     position: 'fixed',
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 999,
-    display: isMenuOpen ? 'block' : 'none'
-  };
-
-  const sidebarStyle = {
-    position: 'fixed',
-    top: 0,
-    left: isMenuOpen ? 0 : '-300px',
-    width: '300px',
-    height: '100vh',
-    background: isDarkMode ? 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)',
-    transition: 'left 0.3s ease',
+    right: 0,
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    backdropFilter: 'blur(20px)',
+    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
     zIndex: 1000,
+    padding: '10px 20px',
+    boxShadow: isDarkMode 
+      ? '0 4px 20px rgba(0,0,0,0.3)' 
+      : '0 4px 20px rgba(0,0,0,0.1)'
+  };
+
+  const containerStyle = {
     display: 'flex',
-    flexDirection: 'column',
-    color: 'white'
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    maxWidth: '1200px',
+    margin: '0 auto'
   };
 
-  const menuToggleStyle = {
-    position: 'fixed',
-    top: '20px',
-    left: '20px',
-    background: isDarkMode ? 'rgba(26, 32, 44, 0.9)' : 'rgba(102, 126, 234, 0.9)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px',
-    fontSize: '18px',
-    cursor: 'pointer',
-    zIndex: 1001,
-    backdropFilter: 'blur(10px)',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-    transition: 'all 0.3s ease'
+  const logoStyle = {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    textDecoration: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
   };
 
-  const headerStyle = {
-    padding: '20px',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    textAlign: 'center'
-  };
-
-  const navListStyle = {
-    flex: 1,
+  const navLinksStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '30px',
     listStyle: 'none',
-    padding: 0,
-    margin: 0
-  };
-
-  const navItemStyle = {
-    margin: 0
+    margin: 0,
+    padding: 0
   };
 
   const linkStyle = {
-    display: 'block',
-    padding: '15px 20px',
-    color: 'white',
+    color: isDarkMode ? '#e2e8f0' : '#475569',
     textDecoration: 'none',
+    fontWeight: '500',
+    padding: '8px 16px',
+    borderRadius: '8px',
     transition: 'all 0.3s ease',
-    borderLeft: '4px solid transparent'
+    position: 'relative'
   };
 
   const activeLinkStyle = {
     ...linkStyle,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderLeft: '4px solid #fff'
-  };
-
-  const footerStyle = {
-    padding: '20px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
   };
 
   const buttonStyle = {
-    width: '100%',
-    padding: '10px',
-    margin: '5px 0',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)' 
+      : 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
     color: 'white',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    border: 'none',
+    padding: '8px 16px',
     borderRadius: '6px',
     cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.3s ease',
+    marginLeft: '20px'
+  };
+
+  const toggleButtonStyle = {
+    background: isDarkMode ? '#fbbf24' : '#1f2937',
+    color: isDarkMode ? '#111827' : '#f9fafb',
+    border: 'none',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    transition: 'all 0.3s ease',
+    marginLeft: '10px'
+  };
+
+  const mobileMenuStyle = {
+    display: isMenuOpen ? 'block' : 'none',
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    padding: '20px',
+    boxShadow: isDarkMode 
+      ? '0 4px 20px rgba(0,0,0,0.3)' 
+      : '0 4px 20px rgba(0,0,0,0.1)'
+  };
+
+  const mobileNavLinksStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px',
+    listStyle: 'none',
+    margin: 0,
+    padding: 0
+  };
+
+  const hamburgerStyle = {
+    display: 'none',
+    flexDirection: 'column',
+    cursor: 'pointer',
+    padding: '5px',
+    gap: '3px'
+  };
+
+  const hamburgerLineStyle = {
+    width: '25px',
+    height: '3px',
+    background: isDarkMode ? '#f1f5f9' : '#1e293b',
+    borderRadius: '2px',
     transition: 'all 0.3s ease'
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <>
-      <button 
-        style={menuToggleStyle} 
-        onClick={toggleMenu}
-        onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-        onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-      >
-        ☰
-      </button>
+    <nav style={navStyle}>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            .mobile-hamburger { display: flex !important; }
+          }
+          @media (min-width: 769px) {
+            .mobile-menu { display: none !important; }
+          }
+        `}
+      </style>
+      <div style={containerStyle}>
+        <Link to="/dashboard" style={logoStyle}>
+          <span>📋</span>
+          <span>InvoiceGen</span>
+        </Link>
 
-      {isMenuOpen && <div style={overlayStyle} onClick={toggleMenu}></div>}
-
-      <nav style={sidebarStyle}>
-        <div style={headerStyle}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Invoice App</h2>
-          <p style={{ margin: '5px 0 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
-            Welcome, {user?.email}
-          </p>
-        </div>
-
-        <ul style={navListStyle}>
-          <li style={navItemStyle}>
+        {/* Desktop Navigation */}
+        <ul className="desktop-nav" style={navLinksStyle}>
+          <li>
             <Link 
-              to="/" 
-              style={location.pathname === '/' ? activeLinkStyle : linkStyle}
-              onClick={toggleMenu}
+              to="/dashboard" 
+              style={isActive('/dashboard') ? activeLinkStyle : linkStyle}
             >
               📊 Dashboard
             </Link>
           </li>
-          <li style={navItemStyle}>
-            <Link 
-              to="/products" 
-              style={location.pathname === '/products' ? activeLinkStyle : linkStyle}
-              onClick={toggleMenu}
-            >
-              📦 Products
-            </Link>
-          </li>
-          <li style={navItemStyle}>
+          <li>
             <Link 
               to="/clients" 
-              style={location.pathname === '/clients' ? activeLinkStyle : linkStyle}
-              onClick={toggleMenu}
+              style={isActive('/clients') ? activeLinkStyle : linkStyle}
             >
               👥 Clients
             </Link>
           </li>
-          <li style={navItemStyle}>
+          <li>
+            <Link 
+              to="/products" 
+              style={isActive('/products') ? activeLinkStyle : linkStyle}
+            >
+              📦 Products
+            </Link>
+          </li>
+          <li>
             <Link 
               to="/reports" 
-              style={location.pathname === '/reports' ? activeLinkStyle : linkStyle}
-              onClick={toggleMenu}
+              style={isActive('/reports') ? activeLinkStyle : linkStyle}
             >
               📈 Reports
             </Link>
           </li>
-          <li style={navItemStyle}>
+          <li>
             <Link 
-              to="/company-settings" 
-              style={location.pathname === '/company-settings' ? activeLinkStyle : linkStyle}
-              onClick={toggleMenu}
+              to="/settings" 
+              style={isActive('/settings') ? activeLinkStyle : linkStyle}
             >
               ⚙️ Settings
             </Link>
           </li>
         </ul>
 
-        <div style={footerStyle}>
-          <button 
-            style={buttonStyle} 
-            onClick={toggleDarkMode}
-            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-          >
-            {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button onClick={toggleDarkMode} style={toggleButtonStyle}>
+            {isDarkMode ? '🌞' : '🌙'}
           </button>
-          <button 
-            style={buttonStyle} 
-            onClick={handleSignOut}
-            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.3)'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-          >
-            🚪 Sign Out
+          
+          <button onClick={handleLogout} style={buttonStyle}>
+            🚪 Logout
           </button>
+
+          {/* Mobile Hamburger */}
+          <div 
+            className="mobile-hamburger" 
+            style={hamburgerStyle}
+            onClick={toggleMenu}
+          >
+            <div style={hamburgerLineStyle}></div>
+            <div style={hamburgerLineStyle}></div>
+            <div style={hamburgerLineStyle}></div>
+          </div>
         </div>
-      </nav>
-    </>
+      </div>
+
+      {/* Mobile Menu */}
+      <div className="mobile-menu" style={mobileMenuStyle}>
+        <ul style={mobileNavLinksStyle}>
+          <li>
+            <Link 
+              to="/dashboard" 
+              style={isActive('/dashboard') ? activeLinkStyle : linkStyle}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              📊 Dashboard
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/clients" 
+              style={isActive('/clients') ? activeLinkStyle : linkStyle}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              👥 Clients
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/products" 
+              style={isActive('/products') ? activeLinkStyle : linkStyle}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              📦 Products
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/reports" 
+              style={isActive('/reports') ? activeLinkStyle : linkStyle}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              📈 Reports
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/settings" 
+              style={isActive('/settings') ? activeLinkStyle : linkStyle}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              ⚙️ Settings
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </nav>
   );
 }
 
