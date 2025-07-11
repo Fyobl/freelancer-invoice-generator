@@ -129,13 +129,13 @@ function CompanySettings() {
   const inputStyle = {
     width: '100%',
     padding: '12px 15px',
-    border: '2px solid #e1e5e9',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '14px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#333' : '#fff',
+    backgroundColor: isDarkMode ? '#2d3748' : '#fff',
     color: isDarkMode ? 'white' : 'black',
     boxSizing: 'border-box',
     outline: 'none',
@@ -153,11 +153,11 @@ function CompanySettings() {
   };
 
   const sectionStyle = {
-    background: isDarkMode ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
     padding: '30px',
     marginBottom: '30px',
     borderRadius: '16px',
-    border: '2px solid #f8f9fa',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '2px solid #f8f9fa',
     backdropFilter: 'blur(15px)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
@@ -178,10 +178,10 @@ function CompanySettings() {
   };
 
   const previewStyle = {
-    border: '2px solid #e9ecef',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e9ecef',
     borderRadius: '12px',
     padding: '25px',
-    backgroundColor: isDarkMode ? '#222' : '#f8f9fa',
+    backgroundColor: isDarkMode ? '#2d3748' : '#f8f9fa',
     color: isDarkMode ? 'white' : 'black',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
   };
@@ -190,7 +190,8 @@ function CompanySettings() {
     padding: '10px',
     border: '2px dashed #667eea',
     borderRadius: '8px',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: isDarkMode ? '#2d3748' : '#f8f9fa',
+    color: isDarkMode ? 'white' : 'black',
     cursor: 'pointer',
     transition: 'border-color 0.3s ease'
   };
