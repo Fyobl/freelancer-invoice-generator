@@ -3,9 +3,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
 // Backend API URL - adjust if needed
-const API_BASE_URL = window.location.origin.includes('localhost') 
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000/api' 
-  : '/api';
+  : `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Get user's email configuration
 export const getUserEmailConfig = async (userId) => {
@@ -98,6 +98,22 @@ export const testEmailConfig = async (emailConfig) => {
 
   } catch (error) {
     console.error('Email config test error:', error);
+    
+    // Better error handling for common issues
+    if (error.message && error.message.includes('Unexpected token')) {
+      return {
+        success: false,
+        error: 'Backend server not responding. Please make sure the backend is running on port 5000.'
+      };
+    }
+    
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return {
+        success: false,
+        error: 'Cannot connect to backend server. Please check if the server is running.'
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Configuration test failed'

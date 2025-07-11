@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
-import Navigation from './Navigation.js';
 
 const EMAIL_PROVIDERS = {
   gmail: {
@@ -191,7 +190,6 @@ function EmailConfig({ user }) {
 
   return (
     <div style={containerStyle}>
-      <Navigation user={user} />
       <div style={contentStyle}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300', color: 'white' }}>
