@@ -11,256 +11,323 @@ import {
   where, 
   getDocs, 
   deleteDoc, 
-  doc 
+  doc,
+  getDoc 
 } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
 
-function AccountSettings({ user }) {
+function AccountSettings() {
   const [userData, setUserData] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmText, setConfirmText] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const user = auth.currentUser;
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        try {
-          const userDoc = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-          if (!userDoc.empty) {
-            setUserData(userDoc.docs[0].data());
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
-
-    fetchUserData();
+    if (user) {
+      fetchUserData();
+    }
   }, [user]);
 
-  const deleteAllUserData = async (userId) => {
-    const collections = ['invoices', 'clients', 'products', 'quotes', 'users'];
-    
-    for (const collectionName of collections) {
-      const q = query(collection(db, collectionName), where('userId', '==', userId));
-      const snapshot = await getDocs(q);
-      
-      for (const docSnapshot of snapshot.docs) {
-        await deleteDoc(doc(db, collectionName, docSnapshot.id));
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
       }
-    }
-
-    // Also delete user document by email
-    const userQuery = query(collection(db, 'users'), where('email', '==', user.email));
-    const userSnapshot = await getDocs(userQuery);
-    for (const docSnapshot of userSnapshot.docs) {
-      await deleteDoc(doc(db, 'users', docSnapshot.id));
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!password) {
-      alert('Please enter your password to confirm deletion.');
+    if (!confirmPassword) {
+      alert('Please enter your password to confirm deletion');
       return;
     }
 
-    if (confirmText !== 'DELETE') {
-      alert('Please type "DELETE" to confirm account deletion.');
-      return;
-    }
-
-    setLoading(true);
-
+    setIsDeleting(true);
     try {
-      // Re-authenticate user before deletion
-      const credential = EmailAuthProvider.credential(user.email, password);
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(user.email, confirmPassword);
       await reauthenticateWithCredential(user, credential);
 
       // Delete all user data from Firestore
-      await deleteAllUserData(user.uid);
+      const collections = ['invoices', 'clients', 'products', 'quotes', 'companySettings'];
+      
+      for (const collectionName of collections) {
+        const q = query(collection(db, collectionName), where('userId', '==', user.uid));
+        const snapshot = await getDocs(q);
+        
+        const deletePromises = snapshot.docs.map(docSnapshot => 
+          deleteDoc(doc(db, collectionName, docSnapshot.id))
+        );
+        
+        await Promise.all(deletePromises);
+      }
 
-      // Delete the user account
+      // Delete user document
+      await deleteDoc(doc(db, 'users', user.uid));
+
+      // Delete user account
       await deleteUser(user);
 
-      alert('Your account and all associated data have been permanently deleted.');
+      alert('Account deleted successfully');
     } catch (error) {
       console.error('Error deleting account:', error);
-      if (error.code === 'auth/wrong-password') {
-        alert('Incorrect password. Please try again.');
-      } else if (error.code === 'auth/too-many-requests') {
-        alert('Too many failed attempts. Please try again later.');
-      } else {
-        alert('Error deleting account: ' + error.message);
-      }
-    } finally {
-      setLoading(false);
+      alert('Error deleting account: ' + error.message);
     }
+    setIsDeleting(false);
   };
 
+  // Styles matching the rest of the site
   const containerStyle = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    fontFamily: 'Arial, sans-serif'
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+  };
+
+  const contentStyle = {
+    padding: '30px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    paddingTop: '100px'
   };
 
   const headerStyle = {
-    background: 'rgba(255,255,255,0.95)',
-    padding: '40px',
-    borderRadius: '15px',
+    color: 'white',
     textAlign: 'center',
-    marginBottom: '30px',
-    backdropFilter: 'blur(10px)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+    marginBottom: '40px'
   };
 
   const cardStyle = {
-    background: 'white',
-    border: '2px solid #f8f9fa',
-    borderRadius: '12px',
+    background: 'rgba(255,255,255,0.95)',
     padding: '30px',
-    marginBottom: '20px',
-    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+    borderRadius: '16px',
+    marginBottom: '30px',
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    border: '2px solid rgba(255,255,255,0.2)'
   };
 
   const dangerCardStyle = {
     ...cardStyle,
     border: '2px solid #dc3545',
-    background: '#fff5f5'
+    background: 'rgba(248, 215, 218, 0.95)'
   };
 
   const inputStyle = {
     width: '100%',
-    padding: '12px',
-    margin: '8px 0',
-    border: '2px solid #ddd',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
     borderRadius: '8px',
-    fontSize: '16px',
-    boxSizing: 'border-box'
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
   };
 
   const buttonStyle = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
-    padding: '12px 25px',
+    padding: '15px 30px',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '16px',
     fontWeight: 'bold',
     cursor: 'pointer',
-    transition: 'transform 0.2s ease'
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
   };
 
   const dangerButtonStyle = {
     ...buttonStyle,
-    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
+    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+    boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: 'bold',
+    color: '#333',
+    fontSize: '14px'
   };
 
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto', paddingTop: '100px' }}>
+      <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             ⚙️ Account Settings
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Hello {userData?.firstName || user?.email?.split('@')[0]}! Manage your account settings here.
+            Hello {userData?.firstName || user?.email?.split('@')[0]}! Manage your account settings and preferences
           </p>
         </div>
 
         {/* Account Information */}
         <div style={cardStyle}>
-          <h3 style={{ color: '#333', marginBottom: '20px' }}>👤 Account Information</h3>
-          <div style={{ fontSize: '16px', color: '#666', lineHeight: '1.6' }}>
-            <p><strong>Name:</strong> {userData?.firstName} {userData?.lastName}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>Company:</strong> {userData?.companyName}</p>
-            <p><strong>Phone:</strong> {userData?.phone}</p>
+          <h2 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
+            👤 Account Information
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={labelStyle}>Email Address</label>
+              <input
+                type="email"
+                value={user?.email || ''}
+                disabled
+                style={{ ...inputStyle, backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>First Name</label>
+              <input
+                type="text"
+                value={userData?.firstName || ''}
+                disabled
+                style={{ ...inputStyle, backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Last Name</label>
+              <input
+                type="text"
+                value={userData?.lastName || ''}
+                disabled
+                style={{ ...inputStyle, backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Account Created</label>
+              <input
+                type="text"
+                value={user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'N/A'}
+                disabled
+                style={{ ...inputStyle, backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Danger Zone */}
         <div style={dangerCardStyle}>
-          <h3 style={{ color: '#dc3545', marginBottom: '20px' }}>⚠️ Danger Zone</h3>
-          
+          <h2 style={{ margin: '0 0 25px 0', color: '#dc3545', fontSize: '1.5rem' }}>
+            ⚠️ Danger Zone
+          </h2>
+          <div style={{ marginBottom: '20px' }}>
+            <p style={{ color: '#721c24', fontSize: '14px', margin: '0 0 15px 0', lineHeight: '1.6' }}>
+              <strong>Warning:</strong> Deleting your account will permanently remove all your data including:
+            </p>
+            <ul style={{ color: '#721c24', fontSize: '14px', marginLeft: '20px', lineHeight: '1.6' }}>
+              <li>All invoices and quotes</li>
+              <li>Client information</li>
+              <li>Product catalog</li>
+              <li>Company settings</li>
+              <li>Account information</li>
+            </ul>
+            <p style={{ color: '#721c24', fontSize: '14px', margin: '15px 0 0 0', fontWeight: 'bold' }}>
+              This action cannot be undone.
+            </p>
+          </div>
+
           {!showDeleteConfirm ? (
-            <div>
-              <p style={{ color: '#666', marginBottom: '20px' }}>
-                Permanently delete your account and all associated data. This action cannot be undone.
-              </p>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                style={dangerButtonStyle}
-                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-              >
-                🗑️ Delete Account
-              </button>
-            </div>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={dangerButtonStyle}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+              }}
+            >
+              🗑️ Delete Account
+            </button>
           ) : (
-            <div>
-              <h4 style={{ color: '#dc3545', marginBottom: '15px' }}>
-                ⚠️ Confirm Account Deletion
-              </h4>
-              <p style={{ color: '#666', marginBottom: '20px' }}>
-                This will permanently delete your account and ALL associated data including:
+            <div style={{ 
+              border: '2px solid #dc3545', 
+              borderRadius: '12px', 
+              padding: '25px', 
+              backgroundColor: '#fff5f5' 
+            }}>
+              <h3 style={{ color: '#dc3545', margin: '0 0 20px 0', fontSize: '1.2rem' }}>
+                🔒 Confirm Account Deletion
+              </h3>
+              <p style={{ color: '#721c24', fontSize: '14px', margin: '0 0 20px 0' }}>
+                Please enter your password to confirm deletion of your account:
               </p>
-              <ul style={{ color: '#666', marginBottom: '20px', paddingLeft: '20px' }}>
-                <li>All invoices and quotes</li>
-                <li>All clients and products</li>
-                <li>Company settings</li>
-                <li>Your user profile</li>
-              </ul>
               
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#dc3545' }}>
-                  Enter your password to confirm:
-                </label>
-                <input
-                  type="password"
-                  placeholder="Your current password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+              <label style={labelStyle}>Current Password *</label>
+              <input
+                type="password"
+                placeholder="Enter your current password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  borderColor: '#dc3545',
+                  marginBottom: '20px'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#dc3545'}
+                onBlur={(e) => e.target.style.borderColor = '#dc3545'}
+              />
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#dc3545' }}>
-                  Type "DELETE" to confirm:
-                </label>
-                <input
-                  type="text"
-                  placeholder="Type DELETE here"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={loading || !password || confirmText !== 'DELETE'}
+                  disabled={isDeleting || !confirmPassword}
                   style={{
                     ...dangerButtonStyle,
-                    opacity: (loading || !password || confirmText !== 'DELETE') ? 0.5 : 1,
-                    cursor: (loading || !password || confirmText !== 'DELETE') ? 'not-allowed' : 'pointer'
+                    opacity: isDeleting || !confirmPassword ? 0.6 : 1,
+                    cursor: isDeleting || !confirmPassword ? 'not-allowed' : 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDeleting && confirmPassword) {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDeleting && confirmPassword) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+                    }
                   }}
                 >
-                  {loading ? '🔄 Deleting...' : '💀 Permanently Delete Account'}
+                  {isDeleting ? '⏳ Deleting...' : '🗑️ Confirm Delete Account'}
                 </button>
                 
                 <button
                   onClick={() => {
                     setShowDeleteConfirm(false);
-                    setPassword('');
-                    setConfirmText('');
+                    setConfirmPassword('');
                   }}
-                  style={buttonStyle}
-                  disabled={loading}
+                  style={{
+                    ...buttonStyle,
+                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                    boxShadow: '0 4px 12px rgba(108, 117, 125, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 8px 20px rgba(108, 117, 125, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(108, 117, 125, 0.3)';
+                  }}
                 >
                   ❌ Cancel
                 </button>
