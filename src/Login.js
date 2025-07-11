@@ -193,6 +193,28 @@ function Login() {
             Create Account
           </Link>
         </div>
+        
+        <div style={{ ...linkStyle, marginTop: '15px' }}>
+          <Link 
+            to="/" 
+            style={{
+              ...linkButtonStyle,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              width: 'fit-content'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.color = '#764ba2';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.color = '#667eea';
+            }}
+          >
+            ← Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );
