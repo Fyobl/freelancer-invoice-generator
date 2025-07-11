@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp
-} from 'firebase/firestore';
-import jsPDF from 'jspdf';
 import Navigation from './Navigation.js';
+import jsPDF from 'jspdf';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -31,6 +21,9 @@ function Dashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
   const [companySettings, setCompanySettings] = useState({});
+  const [userData, setUserData] = useState(null);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
 
   const user = auth.currentUser;
 
@@ -190,6 +183,28 @@ function Dashboard() {
     if (!companySnapshot.empty) {
       const companyData = companySnapshot.docs[0].data();
       setCompanySettings(companyData);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchInvoices();
+      fetchProducts();
+      fetchClients();
+      fetchCompanySettings();
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
   };
 
@@ -476,14 +491,14 @@ function Dashboard() {
 
   return (
     <div style={containerStyle}>
-      <Navigation user={user} />
+      <Navigation user={user} userData={userData}/>
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '3rem', margin: '0 0 15px 0', fontWeight: '300' }}>
-            📊 Invoice Dashboard
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            📊 Dashboard
           </h1>
-          <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-            Manage your invoices, track payments, and grow your business
+          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
+            Welcome back, {userData?.firstName || user?.email?.split('@')[0]}! Here's your business overview.
           </p>
         </div>
 
@@ -714,8 +729,7 @@ function Dashboard() {
                 : 'Create your first invoice to get started!'}
             </p>
           </div>
-        ) : (
-          <div style={tableStyle}>
+        ) : (<div style={tableStyle}>
             <div style={{ padding: '25px' }}>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>

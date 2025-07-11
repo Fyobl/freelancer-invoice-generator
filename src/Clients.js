@@ -9,7 +9,8 @@ import {
   updateDoc,
   query,
   where,
-  serverTimestamp
+  serverTimestamp,
+  getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
 
@@ -22,12 +23,28 @@ function Clients() {
   const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userData, setUserData] = useState(null);
 
   const user = auth.currentUser;
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (user) {
+      fetchClients();
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchClients = async () => {
     const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
@@ -176,7 +193,7 @@ function Clients() {
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
-    backgroundColor: '#fff',
+    backgroundColor: 'fff',
     boxSizing: 'border-box',
     outline: 'none',
     height: '44px',
@@ -229,7 +246,7 @@ function Clients() {
             👥 Client Management
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Manage your clients and build lasting relationships
+            Hello {userData?.firstName || user?.email?.split('@')[0]}! Manage your clients and their information here.
           </p>
         </div>
 

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { db, auth } from './firebase.js';
+import React, { useState, useEffect } from 'react';
 import {
   collection,
   addDoc,
@@ -8,12 +7,15 @@ import {
   doc,
   query,
   where,
-  updateDoc
+  updateDoc,
+  getDoc
 } from 'firebase/firestore';
+import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 
 function Products({ user }) {
   const [products, setProducts] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [vat, setVat] = useState('');
@@ -33,8 +35,23 @@ function Products({ user }) {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchProducts();
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const addProduct = async () => {
     if (!name.trim() || !price.trim()) {
@@ -250,7 +267,7 @@ function Products({ user }) {
             📦 Product Management
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Manage your products and services efficiently
+            Hello {userData?.firstName || user?.email?.split('@')[0]}! Manage your products and services efficiently
           </p>
         </div>
 

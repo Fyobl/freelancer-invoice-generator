@@ -26,6 +26,7 @@ function CompanySettings() {
     companyNumber: '',
     logo: ''
   });
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -33,7 +34,20 @@ function CompanySettings() {
 
   useEffect(() => {
     fetchCompanySettings();
+    fetchUserData();
   }, []);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchCompanySettings = async () => {
     if (!user) return;
@@ -195,7 +209,7 @@ function CompanySettings() {
             🏢 Company Settings
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Customize your company information to appear on invoices and branding
+            Hello {userData?.firstName || user?.email?.split('@')[0]}! Customize your company information to appear on invoices and branding
           </p>
         </div>
 

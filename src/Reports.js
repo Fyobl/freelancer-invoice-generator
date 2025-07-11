@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from './firebase.js';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [dateRange, setDateRange] = useState('all');
   const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const user = auth.currentUser;
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    calculateStats();
-  }, [invoices, dateRange]);
+    if (user) {
+      fetchData();
+      fetchUserData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
     // Fetch invoices
@@ -38,6 +39,18 @@ function Reports() {
     const productsSnapshot = await getDocs(productsQuery);
     const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setProducts(productsData);
+  };
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
   };
 
   const calculateStats = () => {
@@ -220,7 +233,7 @@ function Reports() {
             📊 Reports & Analytics
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Comprehensive insights into your business performance
+            Hello {userData?.firstName || user?.email?.split('@')[0]}! View your business performance
           </p>
         </div>
 

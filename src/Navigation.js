@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from './firebase.js';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
 
 function Navigation({ user }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   const handleLogout = () => {
     signOut(auth);
@@ -175,7 +194,7 @@ function Navigation({ user }) {
         </div>
 
         <div style={{ fontSize: '14px', color: '#666' }}>
-          {user?.email}
+          Hi, {userData?.firstName || user?.email?.split('@')[0]}
         </div>
       </header>
 
@@ -277,7 +296,7 @@ function Navigation({ user }) {
 
           <div style={userInfoStyle}>
             <div style={{ color: '#bdc3c7', fontSize: '14px', marginBottom: '10px' }}>
-              Welcome, {user?.email}
+              Welcome, {userData?.firstName || user?.email?.split('@')[0]}
             </div>
             <button 
               onClick={handleLogout} 
