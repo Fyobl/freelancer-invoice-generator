@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -5,116 +6,99 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
 function Navigation({ user }) {
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            setUserData(userDoc.data());
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
-
-    fetchUserData();
+    if (user) {
+      fetchUserData();
+    }
   }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const handleLogout = () => {
     signOut(auth);
   };
 
-  const navStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '15px 25px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const menuButtonStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-around',
-    width: '30px',
-    height: '30px',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    zIndex: 1001
-  };
-
-  const hamburgerLineStyle = {
-    width: '30px',
-    height: '3px',
-    background: '#fff',
-    borderRadius: '3px',
-    transition: 'all 0.3s ease',
-    transformOrigin: '1px'
-  };
-
-  const mobileMenuStyle = {
-    position: 'fixed',
-    top: '80px',
-    left: 0,
-    right: 0,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '20px',
-    transform: isMenuOpen ? 'translateY(0)' : 'translateY(-100%)',
-    transition: 'transform 0.3s ease',
-    zIndex: 999,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-  };
-
-  const menuLinkStyle = {
-    display: 'block',
-    color: '#fff',
-    textDecoration: 'none',
-    padding: '15px 0',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    borderBottom: '1px solid rgba(255,255,255,0.1)'
-  };
-
-  const activeMenuLinkStyle = {
-    ...menuLinkStyle,
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '8px',
-    padding: '15px 20px'
-  };
+  const menuItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/clients', label: 'Clients', icon: '👥' },
+    { path: '/products', label: 'Products', icon: '📦' },
+    { path: '/reports', label: 'Reports', icon: '📈' },
+    { path: '/settings', label: 'Settings', icon: '⚙️' }
+  ];
 
   return (
     <>
-      <nav style={navStyle}>
-        <button 
-          style={menuButtonStyle}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+      {/* Navigation Bar */}
+      <nav style={{
+        background: '#fff',
+        borderBottom: '1px solid #e0e0e0',
+        padding: '0 20px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        {/* Hamburger Menu Button */}
+        <button
+          onClick={toggleMenu}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '4px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '40px',
+            height: '40px'
+          }}
         >
           <div style={{
-            ...hamburgerLineStyle,
-            transform: isMenuOpen ? 'rotate(45deg)' : 'rotate(0)'
+            width: '20px',
+            height: '2px',
+            backgroundColor: '#333',
+            margin: '2px 0',
+            transition: '0.3s'
           }}></div>
           <div style={{
-            ...hamburgerLineStyle,
-            opacity: isMenuOpen ? 0 : 1,
-            transform: isMenuOpen ? 'translateX(20px)' : 'translateX(0)'
+            width: '20px',
+            height: '2px',
+            backgroundColor: '#333',
+            margin: '2px 0',
+            transition: '0.3s'
           }}></div>
           <div style={{
-            ...hamburgerLineStyle,
-            transform: isMenuOpen ? 'rotate(-45deg) translate(6px, -6px)' : 'none'
+            width: '20px',
+            height: '2px',
+            backgroundColor: '#333',
+            margin: '2px 0',
+            transition: '0.3s'
           }}></div>
         </button>
 
@@ -146,68 +130,90 @@ function Navigation({ user }) {
           </span>
         </div>
 
-        <div style={{ fontSize: '14px', color: '#fff' }}>
-          Hi, {userData?.firstName || user?.email?.split('@')[0]}
+        <div style={{ fontSize: '14px', color: '#666' }}>
+          Hi {userData?.firstName || user?.email}
         </div>
       </nav>
 
-      <div style={mobileMenuStyle}>
-        <Link 
-          to="/" 
-          style={location.pathname === '/' ? activeMenuLinkStyle : menuLinkStyle}
-          onClick={() => setIsMenuOpen(false)}
-        >
-          📊 Dashboard
-        </Link>
-
-        <Link 
-          to="/products" 
-          style={location.pathname === '/products' ? activeMenuLinkStyle : menuLinkStyle}
-          onClick={() => setIsMenuOpen(false)}
-        >
-          📦 Products
-        </Link>
-
-        <Link 
-          to="/clients" 
-          style={location.pathname === '/clients' ? activeMenuLinkStyle : menuLinkStyle}
-          onClick={() => setIsMenuOpen(false)}
-        >
-          👥 Clients
-        </Link>
-
-        <Link 
-          to="/reports" 
-          style={location.pathname === '/reports' ? activeMenuLinkStyle : menuLinkStyle}
-          onClick={() => setIsMenuOpen(false)}
-        >
-          📈 Reports
-        </Link>
-
-        <Link 
-          to="/company-settings" 
-          style={location.pathname === '/company-settings' ? activeMenuLinkStyle : menuLinkStyle}
-          onClick={() => setIsMenuOpen(false)}
-        >
-          🏢 Company Settings
-        </Link>
-
-        <button 
-          onClick={handleLogout} 
-          style={{
-            ...menuLinkStyle,
-            background: 'rgba(255,255,255,0.1)',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            marginTop: '10px',
-            width: '100%',
-            textAlign: 'left'
-          }}
-        >
-          🚪 Logout
-        </button>
+      {/* Sidebar Menu */}
+      <div style={{
+        position: 'fixed',
+        top: '60px',
+        left: isMenuOpen ? '0' : '-250px',
+        width: '250px',
+        height: 'calc(100vh - 60px)',
+        background: '#f8f9fa',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'left 0.3s ease',
+        zIndex: 999,
+        boxShadow: isMenuOpen ? '2px 0 5px rgba(0,0,0,0.1)' : 'none',
+        overflow: 'hidden'
+      }}>
+        <div style={{ padding: '20px' }}>
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setIsMenuOpen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '12px 16px',
+                margin: '4px 0',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: location.pathname === item.path ? '#007bff' : '#333',
+                backgroundColor: location.pathname === item.path ? '#e3f2fd' : 'transparent',
+                border: location.pathname === item.path ? '1px solid #007bff' : '1px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span style={{ marginRight: '12px', fontSize: '18px' }}>
+                {item.icon}
+              </span>
+              <span style={{ fontWeight: location.pathname === item.path ? '600' : '400' }}>
+                {item.label}
+              </span>
+            </Link>
+          ))}
+          
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '12px 16px',
+              margin: '20px 0 4px 0',
+              borderRadius: '8px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              width: '100%',
+              fontSize: '14px'
+            }}
+          >
+            <span style={{ marginRight: '12px', fontSize: '18px' }}>🚪</span>
+            Logout
+          </button>
+        </div>
       </div>
+
+      {/* Overlay when menu is open */}
+      {isMenuOpen && (
+        <div
+          onClick={() => setIsMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            top: '60px',
+            left: '250px',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            zIndex: 998
+          }}
+        />
+      )}
     </>
   );
 }
