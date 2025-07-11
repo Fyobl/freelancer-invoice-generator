@@ -4,6 +4,7 @@ import { auth } from './firebase.js';
 import { onAuthStateChanged, deleteUser, updatePassword } from 'firebase/auth';
 import { getAuth, updateProfile } from "firebase/auth";
 
+import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';
 import Dashboard from './Dashboard.js';
@@ -37,7 +38,7 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
+            element={user ? <Dashboard user={user} /> : <Home />}
           />
           <Route
             path="/dashboard"
