@@ -590,7 +590,7 @@ function Dashboard() {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
 
-      const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName);
+      const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName, companySettings);
 
       if (result.success) {
         setEmailConfirmation(`✅ Email client opened for invoice ${invoice.invoiceNumber} to ${recipientEmail}!`);

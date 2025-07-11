@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   collection,
@@ -18,9 +17,10 @@ import { sendQuoteEmail } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
-  const [userData, setUserData] = useState(null);
+  const [companySettings, setCompanySettings] = useState({});
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientName, setClientName] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -37,14 +37,14 @@ function Quotes({ user }) {
   useEffect(() => {
     if (user) {
       fetchQuotes();
+      fetchUserData();
       fetchClients();
       fetchProducts();
-      fetchUserData();
+      fetchCompanySettings();
     }
   }, [user]);
 
   const fetchUserData = async () => {
-    if (!user) return;
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
@@ -52,6 +52,17 @@ function Quotes({ user }) {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+    }
+  };
+
+  const fetchCompanySettings = async () => {
+    try {
+      const companyDoc = await getDoc(doc(db, 'companySettings', user.uid));
+      if (companyDoc.exists()) {
+        setCompanySettings(companyDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
     }
   };
 
@@ -64,7 +75,7 @@ function Quotes({ user }) {
         ...doc.data()
       }));
       setQuotes(data);
-      
+
       // Calculate next quote number
       const maxQuoteNumber = data.reduce((max, quote) => {
         const num = parseInt(quote.quoteNumber?.replace('QUO-', '')) || 0;
@@ -167,7 +178,7 @@ function Quotes({ user }) {
       setVat('');
       setValidUntil('');
       setNotes('');
-      
+
       fetchQuotes();
     } catch (error) {
       console.error('Error adding quote:', error);
@@ -192,12 +203,12 @@ function Quotes({ user }) {
       const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const invoicesSnapshot = await getDocs(invoicesQuery);
       const invoices = invoicesSnapshot.docs.map(doc => doc.data());
-      
+
       const maxInvoiceNumber = invoices.reduce((max, invoice) => {
         const num = parseInt(invoice.invoiceNumber?.replace('INV-', '')) || 0;
         return Math.max(max, num);
       }, 0);
-      
+
       const invoiceNumber = `INV-${String(maxInvoiceNumber + 1).padStart(4, '0')}`;
       const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -239,7 +250,7 @@ function Quotes({ user }) {
     // Try to get client email from the selected client
     const client = clients.find(c => c.id === quote.clientId);
     const recipientEmail = client?.email || '';
-    
+
     if (!recipientEmail) {
       setEmailConfirmation('❌ No email address found for this client. Please add an email address to the client profile.');
       setTimeout(() => setEmailConfirmation(''), 5000);
@@ -248,13 +259,13 @@ function Quotes({ user }) {
 
     setEmailSending(true);
     setEmailConfirmation('');
-    
+
     try {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
-      
+
       const result = await sendQuoteEmail(quote, recipientEmail, senderName, companyName);
-      
+
       if (result.success) {
         setEmailConfirmation(`✅ Email client opened for quote ${quote.quoteNumber} to ${recipientEmail}!`);
       } else {
@@ -269,7 +280,7 @@ function Quotes({ user }) {
     }
   };
 
-  
+
 
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -731,7 +742,7 @@ function Quotes({ user }) {
           )}
         </div>
 
-        
+
       </div>
     </div>
   );
