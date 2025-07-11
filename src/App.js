@@ -58,6 +58,10 @@ function App() {
           element={user ? <Reports user={user} /> : <Navigate to="/login" />}
         />
         <Route
+          path="/settings"
+          element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/company-settings"
           element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
         />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
@@ -176,7 +175,7 @@ function Navigation({ user }) {
               </span>
             </Link>
           ))}
-          
+
           <button
             onClick={handleLogout}
             style={{
