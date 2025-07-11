@@ -13,7 +13,6 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { generateQuotePDF, sendQuotePDFViaEmail } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
@@ -241,24 +240,6 @@ function Quotes({ user }) {
       } catch (error) {
         console.error('Error deleting quote:', error);
       }
-    }
-  };
-
-  const sendQuoteEmail = async (quote) => {
-    try {
-      // Get client email from the clients array
-      const client = clients.find(c => c.id === quote.clientId);
-      const recipientEmail = client?.email || prompt('Enter client email address:');
-      
-      if (!recipientEmail) {
-        alert('Email address is required to send quote');
-        return;
-      }
-
-      await sendQuotePDFViaEmail(quote, companySettings, recipientEmail);
-    } catch (error) {
-      console.error('Error sending quote email:', error);
-      alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
     }
   };
 
@@ -673,18 +654,6 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
-                    <button
-                      onClick={() => sendQuoteEmail(quote)}
-                      style={{
-                        ...buttonStyle,
-                        background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
-                      }}
-                    >
-                      📧 Email Quote
-                    </button>
                     <button
                       onClick={() => deleteQuote(quote.id)}
                       style={{
