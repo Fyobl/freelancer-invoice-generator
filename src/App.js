@@ -60,23 +60,22 @@ const AppContent = () => {
   }
 
   return (
-    <div className="app">
-      <Router>
-        <div className="main-layout">
-          <main className="content-area">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard user={user} />} />
-              <Route path="/products" element={<Products user={user} />} />
-              <Route path="/clients" element={<Clients user={user} />} />
-              <Route path="/reports" element={<Reports user={user} />} />
-              <Route path="/company-settings" element={<CompanySettings user={user} />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </div>
+    <Router>
+      <div className="app">
+        <Navigation user={user} />
+        <main className="content-area">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard user={user} />} />
+            <Route path="/products" element={<Products user={user} />} />
+            <Route path="/clients" element={<Clients user={user} />} />
+            <Route path="/reports" element={<Reports user={user} />} />
+            <Route path="/company-settings" element={<CompanySettings user={user} />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 };
 
