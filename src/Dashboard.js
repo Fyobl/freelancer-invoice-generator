@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
 import jsPDF from 'jspdf';
@@ -195,6 +195,25 @@ function Dashboard() {
       fetchUserData();
     }
   }, [user]);
+
+  const fetchInvoices = async () => {
+    if (!user) return;
+
+    try {
+      const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+
+      const invoiceList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setInvoices(invoiceList);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      console.log('This is likely due to Firestore security rules requiring authentication');
+    }
+  };
 
   const fetchUserData = async () => {
     if (!user) return;

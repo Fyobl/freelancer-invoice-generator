@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from './firebase.js';
 import {
   collection,
   addDoc,
@@ -10,6 +9,7 @@ import {
   doc,
   setDoc
 } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
 
 function CompanySettings() {
