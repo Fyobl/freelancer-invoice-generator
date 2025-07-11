@@ -1,5 +1,11 @@
+
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
+
+// Backend API URL - adjust if needed
+const API_BASE_URL = window.location.origin.includes('localhost') 
+  ? 'http://localhost:5000/api' 
+  : '/api';
 
 // Get user's email configuration
 export const getUserEmailConfig = async (userId) => {
@@ -15,34 +21,88 @@ export const getUserEmailConfig = async (userId) => {
   }
 };
 
-// Send email using user's own SMTP (this would require a backend service)
+// Send email using user's own SMTP via backend
 export const sendEmailWithUserSMTP = async (emailConfig, emailData) => {
-  // Note: This is a placeholder. In a real implementation, you would need:
-  // 1. A backend service (Node.js with nodemailer, Python with smtplib, etc.)
-  // 2. To send the email data to your backend
-  // 3. The backend would use the user's SMTP settings to send the email
+  try {
+    const response = await fetch(`${API_BASE_URL}/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        smtpConfig: {
+          host: emailConfig.smtp,
+          port: emailConfig.port,
+          secure: emailConfig.secure,
+          auth: {
+            user: emailConfig.email,
+            pass: emailConfig.password
+          }
+        },
+        emailData: emailData
+      })
+    });
 
-  const emailPayload = {
-    smtpConfig: {
-      host: emailConfig.smtp,
-      port: emailConfig.port,
-      secure: emailConfig.secure,
-      auth: {
-        user: emailConfig.email,
-        pass: emailConfig.password
-      }
-    },
-    emailData: emailData
-  };
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send email');
+    }
 
-  // This would be sent to your backend API endpoint
-  console.log('Would send to backend:', emailPayload);
+    return {
+      success: true,
+      message: result.message,
+      messageId: result.messageId
+    };
 
-  // For now, return a mock response
-  return {
-    success: true,
-    message: 'Email configuration ready - backend SMTP service needed for actual sending'
-  };
+  } catch (error) {
+    console.error('Email sending error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send email'
+    };
+  }
+};
+
+// Test email configuration via backend
+export const testEmailConfig = async (emailConfig) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/test-email-config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        smtpConfig: {
+          host: emailConfig.smtp,
+          port: emailConfig.port,
+          secure: emailConfig.secure,
+          auth: {
+            user: emailConfig.email,
+            pass: emailConfig.password
+          }
+        }
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Configuration test failed');
+    }
+
+    return {
+      success: true,
+      message: result.message
+    };
+
+  } catch (error) {
+    console.error('Email config test error:', error);
+    return {
+      success: false,
+      error: error.message || 'Configuration test failed'
+    };
+  }
 };
 
 export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyName) => {
@@ -61,23 +121,27 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
     };
   }
 
-  // Use user's own SMTP settings
+  // Prepare email data
   const emailData = {
     from: userEmailConfig.email,
+    fromName: companyName || senderName,
     to: recipientEmail,
     subject: `Quote ${quote.quoteNumber} from ${companyName || senderName}`,
     html: `
-      <h2>Quote Details</h2>
-      <p><strong>Quote Number:</strong> ${quote.quoteNumber}</p>
-      <p><strong>Client Name:</strong> ${quote.clientName}</p>
-      <p><strong>Amount:</strong> £${parseFloat(quote.amount).toFixed(2)}</p>
-      <p><strong>VAT:</strong> ${quote.vat || 0}%</p>
-      <p><strong>Total:</strong> £${(parseFloat(quote.amount) * (1 + (quote.vat || 0) / 100)).toFixed(2)}</p>
-      <p><strong>Valid Until:</strong> ${quote.validUntil}</p>
-      <p><strong>Status:</strong> ${quote.status}</p>
-      <p><strong>Notes:</strong> ${quote.notes || 'N/A'}</p>
-      <br>
-      <p>Best regards,<br>${senderName || companyName}</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Quote Details</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Quote Number:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.quoteNumber}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Client Name:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.clientName}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${parseFloat(quote.amount).toFixed(2)}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>VAT:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.vat || 0}%</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${(parseFloat(quote.amount) * (1 + (quote.vat || 0) / 100)).toFixed(2)}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Valid Until:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.validUntil}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Status:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.status}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Notes:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${quote.notes || 'N/A'}</td></tr>
+        </table>
+        <p style="margin-top: 30px;">Best regards,<br/><strong>${senderName || companyName}</strong></p>
+      </div>
     `
   };
 
@@ -100,24 +164,28 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
     };
   }
 
-  // Use user's own SMTP settings
+  // Prepare email data
   const emailData = {
     from: userEmailConfig.email,
+    fromName: companyName || senderName,
     to: recipientEmail,
     subject: `Invoice ${invoice.invoiceNumber} from ${companyName || senderName}`,
     html: `
-      <h2>Invoice Details</h2>
-      <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-      <p><strong>Client Name:</strong> ${invoice.clientName}</p>
-      <p><strong>Amount:</strong> £${parseFloat(invoice.amount).toFixed(2)}</p>
-      <p><strong>VAT:</strong> ${invoice.vat || 0}%</p>
-      <p><strong>Total:</strong> £${(parseFloat(invoice.amount) * (1 + (invoice.vat || 0) / 100)).toFixed(2)}</p>
-      <p><strong>Due Date:</strong> ${invoice.dueDate}</p>
-      <p><strong>Status:</strong> ${invoice.status}</p>
-      <p><strong>Notes:</strong> ${invoice.notes || 'N/A'}</p>
-      <br>
-      <p>Payment is due by ${invoice.dueDate}.</p>
-      <p>Best regards,<br>${senderName || companyName}</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Invoice Details</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Invoice Number:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.invoiceNumber}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Client Name:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.clientName}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${parseFloat(invoice.amount).toFixed(2)}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>VAT:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.vat || 0}%</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${(parseFloat(invoice.amount) * (1 + (invoice.vat || 0) / 100)).toFixed(2)}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Due Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.dueDate}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Status:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.status}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Notes:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${invoice.notes || 'N/A'}</td></tr>
+        </table>
+        <p style="color: #d73527; font-weight: bold;">Payment is due by ${invoice.dueDate}.</p>
+        <p style="margin-top: 30px;">Best regards,<br/><strong>${senderName || companyName}</strong></p>
+      </div>
     `
   };
 

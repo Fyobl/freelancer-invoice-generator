@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "firebase": "^10.0.0",
     "jspdf": "^2.5.1",
+    "nodemailer": "^7.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.1",

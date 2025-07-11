@@ -16,12 +16,25 @@ localPort = 3001
 externalPort = 3001
 
 [workflows]
-runButton = "Run"
+runButton = "Full Stack"
 
 [[workflows.workflow]]
 name = "Run"
 author = 44867545
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm start"
+
+[[workflows.workflow]]
+name = "Full Stack"
+author = 44867545
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

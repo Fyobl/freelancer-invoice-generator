@@ -101,13 +101,19 @@ function EmailConfig({ user }) {
     setMessage('');
 
     try {
-      // This would normally send a test email using the user's SMTP settings
-      // For now, we'll just validate the configuration
       if (!emailConfig.email || !emailConfig.password || !emailConfig.smtp) {
         throw new Error('Please fill in all required fields');
       }
 
-      setMessage('✅ Email configuration appears valid! (Test email functionality would be implemented with backend SMTP)');
+      // Import the test function
+      const { testEmailConfig: testConfig } = await import('./emailService.js');
+      const result = await testConfig(emailConfig);
+
+      if (result.success) {
+        setMessage('✅ ' + result.message);
+      } else {
+        setMessage('❌ ' + result.error);
+      }
     } catch (error) {
       setMessage('❌ Configuration test failed: ' + error.message);
     } finally {
