@@ -368,15 +368,23 @@ function Dashboard() {
   const downloadPDF = async (invoice) => {
     try {
       console.log('Starting PDF download for invoice:', invoice.invoiceNumber);
-      
+
       // Use the same PDF generation function as the email service
       const doc = await generateInvoicePDF(invoice, companySettings);
 
-      // Download the PDF
-      const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-      console.log('Attempting to save PDF with filename:', fileName);
-      doc.save(fileName);
-      console.log('PDF downloaded successfully');
+      // Convert PDF to base64
+      const pdfDataUri = await doc.output('datauristring');
+
+      // Generate mailto link
+      const subject = `Invoice ${invoice.invoiceNumber} from ${companySettings.companyName}`;
+      const body = `Dear ${invoice.clientName},\n\nPlease find attached invoice ${invoice.invoiceNumber}.\n\nSincerely,\n${companySettings.companyName}`;
+      const attachment = encodeURIComponent(pdfDataUri);
+      const mailtoLink = `mailto:${userData?.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${attachment}`;
+
+      // Open the email client
+      window.location.href = mailtoLink;
+
+      console.log('PDF download initiated');
     } catch (error) {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error.message, error.stack);
@@ -386,7 +394,7 @@ function Dashboard() {
     }
   };
 
-  
+
 
   // Filter invoices based on search and status
   const filteredInvoices = invoices.filter(invoice => {
@@ -624,7 +632,7 @@ function Dashboard() {
           </select>
         </div>
 
-        
+
 
         {/* Invoice Table */}
         {filteredInvoices.length === 0 ? (
