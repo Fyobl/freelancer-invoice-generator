@@ -253,3 +253,180 @@ function CompanySettings({ user }) {
 }
 
 export default CompanySettings;
+import React, { useState } from 'react';
+import { useDarkMode } from './DarkModeContext.js';
+
+function CompanySettings({ user }) {
+  const { isDarkMode } = useDarkMode();
+  const [settings, setSettings] = useState({
+    companyName: '',
+    email: '',
+    phone: '',
+    address: '',
+    taxId: '',
+    currency: 'GBP'
+  });
+
+  const containerStyle = {
+    minHeight: '100vh',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
+      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    paddingTop: '80px',
+    paddingBottom: '40px',
+    color: isDarkMode ? '#f8fafc' : '#1e293b'
+  };
+
+  const contentStyle = {
+    maxWidth: '800px',
+    margin: '0 auto'
+  };
+
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '40px',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
+  };
+
+  const formStyle = {
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    padding: '40px',
+    borderRadius: '16px',
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
+      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px',
+    marginBottom: '20px',
+    borderRadius: '8px',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #cbd5e1',
+    background: isDarkMode ? '#374151' : '#ffffff',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    fontSize: '16px'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: '500',
+    color: isDarkMode ? '#f1f5f9' : '#374151'
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '15px 30px',
+    borderRadius: '10px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+    transition: 'all 0.3s ease'
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Settings saved:', settings);
+    alert('Settings saved successfully!');
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={contentStyle}>
+        <div style={headerStyle}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+            ⚙️ Company Settings
+          </h1>
+          <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
+            Configure your company details and preferences
+          </p>
+        </div>
+
+        <form style={formStyle} onSubmit={handleSubmit}>
+          <div>
+            <label style={labelStyle}>Company Name</label>
+            <input
+              type="text"
+              value={settings.companyName}
+              onChange={(e) => setSettings({...settings, companyName: e.target.value})}
+              style={inputStyle}
+              placeholder="Enter your company name"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Email</label>
+            <input
+              type="email"
+              value={settings.email}
+              onChange={(e) => setSettings({...settings, email: e.target.value})}
+              style={inputStyle}
+              placeholder="company@example.com"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Phone</label>
+            <input
+              type="tel"
+              value={settings.phone}
+              onChange={(e) => setSettings({...settings, phone: e.target.value})}
+              style={inputStyle}
+              placeholder="+44 20 1234 5678"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Address</label>
+            <textarea
+              value={settings.address}
+              onChange={(e) => setSettings({...settings, address: e.target.value})}
+              style={{...inputStyle, height: '80px', resize: 'vertical'}}
+              placeholder="Enter your company address"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Tax ID / VAT Number</label>
+            <input
+              type="text"
+              value={settings.taxId}
+              onChange={(e) => setSettings({...settings, taxId: e.target.value})}
+              style={inputStyle}
+              placeholder="GB123456789"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Currency</label>
+            <select
+              value={settings.currency}
+              onChange={(e) => setSettings({...settings, currency: e.target.value})}
+              style={inputStyle}
+            >
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+            </select>
+          </div>
+
+          <button type="submit" style={buttonStyle}>
+            Save Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default CompanySettings;

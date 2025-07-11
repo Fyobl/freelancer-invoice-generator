@@ -188,3 +188,130 @@ const Navigation = ({ user }) => {
 };
 
 export default Navigation;
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase.js';
+import { useDarkMode } from './DarkModeContext.js';
+
+function Navigation({ user }) {
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const location = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const navigationStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '60px',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    borderBottom: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 20px',
+    zIndex: 1000,
+    boxShadow: isDarkMode 
+      ? '0 4px 12px rgba(0,0,0,0.3)' 
+      : '0 4px 12px rgba(0,0,0,0.1)'
+  };
+
+  const logoStyle = {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b'
+  };
+
+  const navLinksStyle = {
+    display: 'flex',
+    gap: '20px',
+    alignItems: 'center'
+  };
+
+  const linkStyle = {
+    textDecoration: 'none',
+    color: isDarkMode ? '#cbd5e1' : '#64748b',
+    fontWeight: '500',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease'
+  };
+
+  const activeLinkStyle = {
+    ...linkStyle,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white'
+  };
+
+  const buttonStyle = {
+    background: isDarkMode ? '#374151' : '#f1f5f9',
+    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+    border: isDarkMode ? '1px solid #475569' : '1px solid #cbd5e1',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    marginLeft: '10px'
+  };
+
+  return (
+    <nav style={navigationStyle}>
+      <div style={logoStyle}>
+        📊 Invoice Manager
+      </div>
+      
+      <div style={navLinksStyle}>
+        <Link 
+          to="/dashboard" 
+          style={location.pathname === '/dashboard' ? activeLinkStyle : linkStyle}
+        >
+          Dashboard
+        </Link>
+        <Link 
+          to="/products" 
+          style={location.pathname === '/products' ? activeLinkStyle : linkStyle}
+        >
+          Products
+        </Link>
+        <Link 
+          to="/clients" 
+          style={location.pathname === '/clients' ? activeLinkStyle : linkStyle}
+        >
+          Clients
+        </Link>
+        <Link 
+          to="/reports" 
+          style={location.pathname === '/reports' ? activeLinkStyle : linkStyle}
+        >
+          Reports
+        </Link>
+        <Link 
+          to="/company-settings" 
+          style={location.pathname === '/company-settings' ? activeLinkStyle : linkStyle}
+        >
+          Settings
+        </Link>
+        
+        <button onClick={toggleDarkMode} style={buttonStyle}>
+          {isDarkMode ? '☀️' : '🌙'}
+        </button>
+        
+        <button onClick={handleLogout} style={buttonStyle}>
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+export default Navigation;
