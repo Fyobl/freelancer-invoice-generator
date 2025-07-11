@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase.js';
 import {
@@ -41,7 +40,7 @@ function CompanySettings() {
 
     const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data();
       setCompanyData(data);
@@ -78,7 +77,7 @@ function CompanySettings() {
     try {
       const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      
+
       const dataToSave = {
         ...companyData,
         userId: user.uid,
@@ -190,7 +189,7 @@ function CompanySettings() {
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={contentStyle}>
+      <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             🏢 Company Settings
@@ -480,7 +479,7 @@ function CompanySettings() {
           >
             {loading ? '⏳ Saving...' : '💾 Save Company Settings'}
           </button>
-          
+
           {saved && (
             <div style={{ 
               marginTop: '20px',

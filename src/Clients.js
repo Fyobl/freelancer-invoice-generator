@@ -223,7 +223,7 @@ function Clients() {
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={contentStyle}>
+      <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             👥 Client Management

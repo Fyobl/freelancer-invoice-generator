@@ -44,7 +44,8 @@ function Dashboard() {
   const contentStyle = {
     padding: '30px',
     maxWidth: '1400px',
-    margin: '0 auto'
+    margin: '0 auto',
+    paddingTop: '100px'
   };
 
   const headerStyle = {
