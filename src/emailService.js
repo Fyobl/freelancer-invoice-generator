@@ -4,6 +4,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { jsPDF } from 'jspdf';
 
+// Debug logging for jsPDF import
+console.log('jsPDF import check:', typeof jsPDF);
+
 const getUserEmailTemplates = async (userId) => {
   try {
     const configDoc = await getDoc(doc(db, 'emailTemplates', userId));
