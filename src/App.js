@@ -38,7 +38,7 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={user ? <Dashboard user={user} /> : <Home />}
+            element={user ? <Navigate to="/dashboard" /> : <Home />}
           />
           <Route
             path="/dashboard"
@@ -79,6 +79,10 @@ function App() {
           <Route
             path="/email-config"
             element={user ? <EmailConfig user={user} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/settings"
+            element={user ? <Navigate to="/account-settings" /> : <Navigate to="/login" />}
           />
         </Routes>
       </main>
