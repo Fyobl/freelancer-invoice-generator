@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase.js';
+import { auth } from './firebase';
 import { DarkModeProvider, useDarkMode } from './DarkModeContext.js';
 import Navigation from './Navigation.js';
 import Dashboard from './Dashboard.js';
@@ -24,6 +24,7 @@ const AppContent = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
       setUser(user);
       setLoading(false);
     });

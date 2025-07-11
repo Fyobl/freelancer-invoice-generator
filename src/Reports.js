@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase.js';
+import { db } from './firebase';
 import {
   collection,
   query,
   where,
   getDocs
 } from 'firebase/firestore';
-import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
 function Reports({ user }) {
@@ -20,20 +19,26 @@ function Reports({ user }) {
 
   const fetchInvoices = async () => {
     if (!user) {
+      console.log('No user found, skipping invoice fetch in Reports');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('Fetching invoices for reports, user:', user.uid);
       const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      console.log('Successfully fetched invoices for reports:', data.length);
       setInvoices(data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      if (error.code === 'failed-precondition') {
+        console.log('Failed precondition error - check Firestore security rules');
+      }
     } finally {
       setLoading(false);
     }
@@ -160,7 +165,6 @@ function Reports({ user }) {
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Navigation user={user} />
         <div style={contentStyle}>
           <div style={headerStyle}>
             <h1 style={{ fontSize: '2.5rem', margin: 0 }}>📊 Loading Reports...</h1>
@@ -172,7 +176,6 @@ function Reports({ user }) {
 
   return (
     <div style={containerStyle}>
-      <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>

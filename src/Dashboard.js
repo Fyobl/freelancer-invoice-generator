@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase.js';
+import { db } from './firebase';
 import {
   collection,
   addDoc,
@@ -35,9 +35,14 @@ function Dashboard({ user }) {
   }, [user]);
 
   const fetchInvoices = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping invoice fetch');
+      setLoading(false);
+      return;
+    }
     
     try {
+      console.log('Fetching invoices for user:', user.uid);
       const q = query(
         collection(db, 'invoices'), 
         where('userId', '==', user.uid),
@@ -48,9 +53,13 @@ function Dashboard({ user }) {
         id: doc.id,
         ...doc.data()
       }));
+      console.log('Successfully fetched invoices:', data.length);
       setInvoices(data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      if (error.code === 'failed-precondition') {
+        console.log('This is likely due to Firestore security rules requiring authentication');
+      }
     } finally {
       setLoading(false);
     }
