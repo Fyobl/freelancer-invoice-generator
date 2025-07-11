@@ -523,10 +523,16 @@ function Dashboard() {
 
       // Download the PDF
       const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      console.log('Attempting to save PDF with filename:', fileName);
+      console.log('PDF document created successfully, saving...');
       doc.save(fileName);
+      console.log('PDF saved successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error('Error details:', error.message, error.stack);
+      console.error('Invoice data:', invoice);
+      console.error('Company settings:', companySettings);
+      alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
     }
   };
 
@@ -761,8 +767,7 @@ function Dashboard() {
                 onChange={(e) => setTemplate(e.target.value)}
                 style={selectStyle}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              >
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9              >
                 <option value="standard">Standard</option>
                 <option value="professional">Professional</option>
               </select>

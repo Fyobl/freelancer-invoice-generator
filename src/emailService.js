@@ -1,4 +1,3 @@
-
 import { auth, db, storage } from './firebase.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -33,20 +32,20 @@ const uploadPDFToStorage = async (pdfDoc, fileName, userId) => {
   try {
     // Generate PDF blob
     const pdfBlob = pdfDoc.output('blob');
-    
+
     // Create storage reference with user-specific path
     const storageRef = ref(storage, `pdfs/${userId}/${fileName}`);
-    
+
     // Upload file
     await uploadBytes(storageRef, pdfBlob);
-    
+
     // Get download URL
     const downloadURL = await getDownloadURL(storageRef);
-    
+
     // Store file metadata in Firestore for cleanup tracking
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 7); // 7 days from now
-    
+
     await setDoc(doc(db, 'pdfFiles', `${userId}_${fileName}`), {
       fileName,
       filePath: `pdfs/${userId}/${fileName}`,
@@ -55,7 +54,7 @@ const uploadPDFToStorage = async (pdfDoc, fileName, userId) => {
       expirationDate,
       userId
     });
-    
+
     return downloadURL;
   } catch (error) {
     console.error('Error uploading PDF to storage:', error);
@@ -226,9 +225,13 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   doc.setFont(undefined, 'italic');
   doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
 
+  console.log('PDF generation completed successfully');
   return doc;
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
+    console.error('Error details:', error.message, error.stack);
+    console.error('Invoice data causing error:', invoice);
+    console.error('Company settings causing error:', companySettings);
     throw error;
   }
 };
@@ -383,9 +386,13 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setFont(undefined, 'italic');
   doc.text('Thank you for considering our services!', pageWidth / 2, footerY + 20, { align: 'center' });
 
+  console.log('PDF generation completed successfully');
   return doc;
   } catch (error) {
     console.error('Error generating quote PDF:', error);
+    console.error('Error details:', error.message, error.stack);
+    console.error('Invoice data causing error:', quote);
+    console.error('Company settings causing error:', companySettings);
     throw error;
   }
 };
@@ -413,7 +420,7 @@ export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyN
     // Generate PDF
     const pdfDoc = await generateQuotePDF(quote, companySettings || {});
     const pdfFileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    
+
     // Upload to Firebase Storage
     const downloadURL = await uploadPDFToStorage(pdfDoc, pdfFileName, user.uid);
 
@@ -496,7 +503,7 @@ export const sendInvoiceEmail = async (invoice, recipientEmail, senderName, comp
     // Generate PDF
     const pdfDoc = await generateInvoicePDF(invoice, companySettings || {});
     const pdfFileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    
+
     // Upload to Firebase Storage
     const downloadURL = await uploadPDFToStorage(pdfDoc, pdfFileName, user.uid);
 
