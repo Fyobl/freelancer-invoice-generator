@@ -370,205 +370,24 @@ function Dashboard() {
     setSelectedProductId('');
   };
 
-  const exportPDF = (invoice) => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let currentY = 20;
-
-    // Professional header with gradient-like effect
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-
-    // Company logo on left side of header
-    if (companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
+  const downloadPDF = async (invoice) => {
+    try {
+      const companyName = userData?.companyName || 'Your Company';
+      const senderName = userData?.firstName || user?.email?.split('@')[0];
+      
+      // Use the email service to generate PDF and get download link
+      const result = await sendInvoiceEmail(invoice, 'temp@example.com', senderName, companyName, companySettings);
+      
+      if (result.success && result.downloadURL) {
+        // Open the PDF download link in a new tab
+        window.open(result.downloadURL, '_blank');
+      } else {
+        alert('Failed to generate PDF. Please check your email template configuration.');
       }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
-
-    // Company branding section
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont(undefined, 'bold');
-    const invoiceTextX = companySettings.logo ? 55 : 20;
-    doc.text('INVOICE', invoiceTextX, 25);
-
-    // Company details on right side of header
-    if (companySettings.name || companySettings.companyName) {
-      doc.setFontSize(12);
-      doc.text(companySettings.name || companySettings.companyName, pageWidth - 20, 15, { align: 'right' });
-    }
-    if (companySettings.address) {
-      doc.setFontSize(10);
-      doc.text(companySettings.address, pageWidth - 20, 25, { align: 'right' });
-    }
-    if (companySettings.email) {
-      doc.text(companySettings.email, pageWidth - 20, 32, { align: 'right' });
-    }
-
-    currentY = 60;
-    doc.setTextColor(0, 0, 0);
-
-    // Invoice details section with clean layout
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 35, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 35);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Invoice Details', 25, currentY + 12);
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-
-    // Left column
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 25, currentY + 22);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, currentY + 30);
-
-    // Right column
-    doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - 120, currentY + 22);
-    doc.text(`Status: ${invoice.status}`, pageWidth - 120, currentY + 30);
-
-    currentY += 55;
-
-    // Bill To section
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 25, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 25);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Bill To:', 25, currentY + 12);
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    doc.text(invoice.clientName, 25, currentY + 20);
-
-    currentY += 45;
-
-    // Items/Services table header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text('Description', 25, currentY + 10);
-    doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
-
-    currentY += 15;
-    doc.setTextColor(0, 0, 0);
-
-    // Service/product line
-    doc.setFillColor(255, 255, 255);
-    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 15);
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(invoice.productName || 'Service', 25, currentY + 10);
-    doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
-
-    currentY += 35;
-
-    // Financial summary section
-    const summaryStartY = currentY;
-    const summaryWidth = 100;
-    const summaryX = pageWidth - 120;
-
-    doc.setFillColor(248, 249, 250);
-    doc.rect(summaryX, summaryStartY, summaryWidth, 45, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(summaryX, summaryStartY, summaryWidth, 45);
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-
-    // Subtotal
-    doc.text('Subtotal:', summaryX + 5, summaryStartY + 10);
-    doc.text(`£${Number(invoice.amount).toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 10, { align: 'right' });
-
-    // VAT
-    const vatAmount = Number(invoice.amount) * Number(invoice.vat) / 100;
-    doc.text(`VAT (${invoice.vat}%):`, summaryX + 5, summaryStartY + 20);
-    doc.text(`£${vatAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 20, { align: 'right' });
-
-    // Total line
-    doc.setDrawColor(41, 128, 185);
-    doc.line(summaryX + 5, summaryStartY + 25, summaryX + summaryWidth - 5, summaryStartY + 25);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    const totalAmount = Number(invoice.amount) + vatAmount;
-    doc.text('Total:', summaryX + 5, summaryStartY + 35);
-    doc.text(`£${totalAmount.toFixed(2)}`, summaryX + summaryWidth - 5, summaryStartY + 35, { align: 'right' });
-
-    currentY += 65;
-
-    // Notes section
-    if (invoice.notes) {
-      doc.setFillColor(248, 249, 250);
-      doc.rect(20, currentY, pageWidth - 40, 30, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(20, currentY, pageWidth - 40, 30);
-
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.text('Notes:', 25, currentY + 12);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-
-      // Split notes into lines if too long
-      const noteLines = doc.splitTextToSize(invoice.notes, pageWidth - 50);
-      doc.text(noteLines, 25, currentY + 22);
-
-      currentY += 40;
-    }
-
-    // Payment terms section
-    if (companySettings.paymentTerms) {
-      currentY += 10;
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.text('Payment Terms:', 20, currentY);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-      const termsLines = doc.splitTextToSize(companySettings.paymentTerms, pageWidth - 40);
-      doc.text(termsLines, 20, currentY + 10);
-      currentY += 10 + (termsLines.length * 5);
-    }
-
-    // Footer with company registration details
-    const footerY = pageHeight - 30;
-    doc.setDrawColor(41, 128, 185);
-    doc.line(20, footerY, pageWidth - 20, footerY);
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100, 100, 100);
-
-    let footerText = [];
-    if (companySettings.companyNumber) {
-      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
-    }
-    if (companySettings.vatNumber) {
-      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
-    }
-
-    if (footerText.length > 0) {
-      doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
-    }
-
-    // Thank you message
-    doc.setTextColor(41, 128, 185);
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'italic');
-    doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
-
-    doc.save(`${invoice.invoiceNumber}_${invoice.clientName}.pdf`);
   };
 
   const handleEmailInvoice = async (invoice) => {
@@ -915,7 +734,7 @@ function Dashboard() {
                         <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
                         <td style={{ padding: '15px', textAlign: 'center' }}>
                           <button
-                            onClick={() => exportPDF(inv)}
+                            onClick={() => downloadPDF(inv)}
                             style={{ 
                               padding: '8px 15px', 
                               background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
