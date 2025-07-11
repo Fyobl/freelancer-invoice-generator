@@ -767,7 +767,8 @@ function Dashboard() {
                 onChange={(e) => setTemplate(e.target.value)}
                 style={selectStyle}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9              >
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              >
                 <option value="standard">Standard</option>
                 <option value="professional">Professional</option>
               </select>
