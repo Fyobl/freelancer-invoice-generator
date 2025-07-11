@@ -129,7 +129,7 @@ function Navigation({ user }) {
           </span>
         </div>
 
-        <div style={{ fontSize: '14px', color: '#666' }}>
+        <div style={{ fontSize: '14px', color: '#666', fontWeight: 'bold' }}>
           Hi {userData?.firstName || user?.email}
         </div>
       </nav>
