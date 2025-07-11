@@ -234,11 +234,13 @@ function Products({ user }) {
   };
 
   const statCardStyle = {
-    background: 'rgba(255,255,255,0.9)',
+    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.9)',
     padding: '20px',
     borderRadius: '12px',
     textAlign: 'center',
-    backdropFilter: 'blur(10px)'
+    backdropFilter: 'blur(10px)',
+    color: isDarkMode ? '#ffffff' : '#333333',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : 'none'
   };
 
   return (
