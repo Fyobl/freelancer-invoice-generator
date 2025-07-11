@@ -256,13 +256,13 @@ function Quotes({ user }) {
       const result = await sendQuoteEmail(quote, recipientEmail, senderName, companyName);
       
       if (result.success) {
-        setEmailConfirmation(`✅ Quote ${quote.quoteNumber} sent successfully to ${recipientEmail}!`);
+        setEmailConfirmation(`✅ Email client opened for quote ${quote.quoteNumber} to ${recipientEmail}!`);
       } else {
-        setEmailConfirmation('❌ Failed to send email. Please check your email configuration.');
+        setEmailConfirmation('❌ Failed to open email client. Please check your email templates configuration.');
       }
     } catch (error) {
-      console.error('Error sending email:', error);
-      setEmailConfirmation('❌ Error sending email. Please try again.');
+      console.error('Error opening email client:', error);
+      setEmailConfirmation('❌ Error opening email client. Please try again.');
     } finally {
       setEmailSending(false);
       setTimeout(() => setEmailConfirmation(''), 5000);

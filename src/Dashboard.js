@@ -573,13 +573,13 @@ function Dashboard() {
   };
 
   const handleEmailInvoice = async (invoice) => {
-    setSelectedInvoice(invoice);
     // Try to get client email from the selected client
     const client = clients.find(c => c.id === invoice.clientId);
     const recipientEmail = client?.email || '';
 
     if (!recipientEmail.trim()) {
-      alert('Please enter a valid email address for the client.');
+      setEmailConfirmation('❌ No email address found for this client. Please add an email address to the client profile.');
+      setTimeout(() => setEmailConfirmation(null), 5000);
       return;
     }
 
@@ -593,15 +593,16 @@ function Dashboard() {
       const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName);
 
       if (result.success) {
-        setEmailConfirmation(`✅ Invoice ${invoice.invoiceNumber} sent successfully to ${recipientEmail}!`);
+        setEmailConfirmation(`✅ Email client opened for invoice ${invoice.invoiceNumber} to ${recipientEmail}!`);
       } else {
-        setEmailConfirmation(`❌ Failed to send invoice ${invoice.invoiceNumber}. Please check your EmailJS configuration.`);
+        setEmailConfirmation('❌ Failed to open email client. Please check your email templates configuration.');
       }
     } catch (error) {
-      console.error('Error sending email:', error);
-      setEmailConfirmation(`❌ Error sending invoice ${invoice.invoiceNumber}. Please try again.`);
+      console.error('Error opening email client:', error);
+      setEmailConfirmation('❌ Error opening email client. Please try again.');
     } finally {
       setEmailSending(false);
+      setTimeout(() => setEmailConfirmation(null), 5000);
     }
   };
 
@@ -946,7 +947,7 @@ function Dashboard() {
                               cursor: 'pointer'
                             }}
                           >
-                            {emailSending ? '📧 Sending...' : '📧'}
+                            {emailSending ? '📧 Opening...' : '📧 Email'}
                           </button>
                           <button
                             onClick={() => handleDelete(inv.id)}
@@ -968,105 +969,6 @@ function Dashboard() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Email Modal */}
-        {emailModalOpen && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '30px',
-              borderRadius: '15px',
-              width: '90%',
-              maxWidth: '500px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-            }}>
-              <h3 style={{ marginTop: 0, color: '#333', textAlign: 'center' }}>
-                📧 Email Invoice {selectedInvoice?.invoiceNumber}
-              </h3>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                  Client Name
-                </label>
-                <input
-                  style={{
-                    ...inputStyle,
-                    backgroundColor: '#f8f9fa',
-                    color: '#6c757d'
-                  }}
-                  value={selectedInvoice?.clientName || ''}
-                  disabled
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                  Recipient Email *
-                </label>
-                <input
-                  style={inputStyle}
-                  type="email"
-                  placeholder="Enter client email address"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Invoice Preview</h4>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Amount:</strong> £{parseFloat(selectedInvoice?.amount || 0).toFixed(2)}
-                </p>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Due Date:</strong> {selectedInvoice?.dueDate}
-                </p>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  <strong>Status:</strong> {selectedInvoice?.status}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => {
-                    setEmailModalOpen(false);
-                    setRecipientEmail('');
-                    setSelectedInvoice(null);
-                  }}
-                  style={{
-                    ...buttonStyle,
-                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={sendEmail}
-                  disabled={emailSending}
-                  style={{
-                    ...buttonStyle,
-                    background: emailSending 
-                      ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                      : 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                    cursor: emailSending ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {emailSending ? '📧 Sending...' : '📧 Send Email'}
-                </button>
               </div>
             </div>
           </div>

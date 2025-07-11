@@ -1,127 +1,52 @@
-
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
-const EMAIL_PROVIDERS = {
-  gmail: {
-    name: 'Gmail',
-    smtp: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    instructions: 'You need to use an App Password. Go to Google Account settings > Security > App passwords to generate one.'
-  },
-  outlook: {
-    name: 'Outlook/Hotmail',
-    smtp: 'smtp-mail.outlook.com',
-    port: 587,
-    secure: false,
-    instructions: '⚠️ IMPORTANT: Microsoft has disabled basic authentication for most Outlook accounts. SMTP may not work even with App Passwords. Consider using Gmail instead, or contact your IT admin if this is a business account.'
-  },
-  yahoo: {
-    name: 'Yahoo',
-    smtp: 'smtp.mail.yahoo.com',
-    port: 587,
-    secure: false,
-    instructions: 'You need to generate an app password. Go to Yahoo Account Security > Generate app password.'
-  },
-  custom: {
-    name: 'Custom SMTP',
-    smtp: '',
-    port: 587,
-    secure: false,
-    instructions: 'Enter your custom SMTP server details.'
-  }
-};
-
 function EmailConfig({ user }) {
-  const [selectedProvider, setSelectedProvider] = useState('gmail');
-  const [emailConfig, setEmailConfig] = useState({
-    email: '',
-    password: '',
-    smtp: '',
-    port: 587,
-    secure: false,
-    provider: 'gmail'
+  const [emailTemplates, setEmailTemplates] = useState({
+    quoteSubject: 'Quote #{quoteNumber} from {companyName}',
+    quoteBody: 'Dear {clientName},\n\nPlease find attached quote #{quoteNumber} for your consideration.\n\nQuote Details:\n- Amount: £{amount}\n- VAT: {vat}%\n- Total: £{total}\n- Valid Until: {validUntil}\n\nNotes: {notes}\n\nPlease let us know if you have any questions.\n\nBest regards,\n{companyName}',
+    invoiceSubject: 'Invoice #{invoiceNumber} from {companyName}',
+    invoiceBody: 'Dear {clientName},\n\nPlease find attached invoice #{invoiceNumber} for payment.\n\nInvoice Details:\n- Amount: £{amount}\n- VAT: {vat}%\n- Total: £{total}\n- Due Date: {dueDate}\n\nNotes: {notes}\n\nPlease process payment by the due date. Thank you for your business.\n\nBest regards,\n{companyName}'
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isTestingEmail, setIsTestingEmail] = useState(false);
 
   useEffect(() => {
-    loadEmailConfig();
+    loadEmailTemplates();
   }, [user]);
 
-  useEffect(() => {
-    if (selectedProvider !== 'custom') {
-      const provider = EMAIL_PROVIDERS[selectedProvider];
-      setEmailConfig(prev => ({
-        ...prev,
-        smtp: provider.smtp,
-        port: provider.port,
-        secure: provider.secure,
-        provider: selectedProvider
-      }));
-    }
-  }, [selectedProvider]);
-
-  const loadEmailConfig = async () => {
+  const loadEmailTemplates = async () => {
     if (!user) return;
     try {
-      const configDoc = await getDoc(doc(db, 'emailConfigs', user.uid));
+      const configDoc = await getDoc(doc(db, 'emailTemplates', user.uid));
       if (configDoc.exists()) {
-        const config = configDoc.data();
-        setEmailConfig(config);
-        setSelectedProvider(config.provider || 'gmail');
+        const templates = configDoc.data();
+        setEmailTemplates(templates);
       }
     } catch (error) {
-      console.error('Error loading email config:', error);
+      console.error('Error loading email templates:', error);
     }
   };
 
-  const saveEmailConfig = async () => {
+  const saveEmailTemplates = async () => {
     if (!user) return;
     setLoading(true);
     setMessage('');
 
     try {
-      await setDoc(doc(db, 'emailConfigs', user.uid), emailConfig);
-      setMessage('✅ Email configuration saved successfully!');
+      await setDoc(doc(db, 'emailTemplates', user.uid), emailTemplates);
+      setMessage('✅ Email templates saved successfully!');
     } catch (error) {
-      console.error('Error saving email config:', error);
-      setMessage('❌ Error saving email configuration: ' + error.message);
+      console.error('Error saving email templates:', error);
+      setMessage('❌ Error saving email templates: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const testEmailConfig = async () => {
-    setIsTestingEmail(true);
-    setMessage('');
-
-    try {
-      if (!emailConfig.email || !emailConfig.password || !emailConfig.smtp) {
-        throw new Error('Please fill in all required fields');
-      }
-
-      // Import the test function
-      const { testEmailConfig: testConfig } = await import('./emailService.js');
-      const result = await testConfig(emailConfig);
-
-      if (result.success) {
-        setMessage('✅ ' + result.message);
-      } else {
-        setMessage('❌ ' + result.error);
-      }
-    } catch (error) {
-      setMessage('❌ Configuration test failed: ' + error.message);
-    } finally {
-      setIsTestingEmail(false);
-    }
-  };
-
   const handleChange = (field, value) => {
-    setEmailConfig(prev => ({
+    setEmailTemplates(prev => ({
       ...prev,
       [field]: value
     }));
@@ -160,14 +85,11 @@ function EmailConfig({ user }) {
     boxSizing: 'border-box'
   };
 
-  const selectStyle = {
+  const textareaStyle = {
     ...inputStyle,
-    appearance: 'none',
-    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e")',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 1rem center',
-    backgroundSize: '1rem',
-    paddingRight: '3rem'
+    minHeight: '120px',
+    resize: 'vertical',
+    fontFamily: 'monospace'
   };
 
   const buttonStyle = {
@@ -179,13 +101,15 @@ function EmailConfig({ user }) {
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
-    marginRight: '10px',
     marginTop: '10px'
   };
 
-  const testButtonStyle = {
-    ...buttonStyle,
-    background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)'
+  const labelStyle = {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#666',
+    display: 'block',
+    marginBottom: '5px'
   };
 
   return (
@@ -193,147 +117,104 @@ function EmailConfig({ user }) {
       <div style={contentStyle}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300', color: 'white' }}>
-            📧 Email Configuration
+            📧 Email Templates
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0, color: 'white' }}>
-            Set up your own email to send quotes and invoices
+            Configure email templates for quotes and invoices
           </p>
         </div>
 
         <div style={cardStyle}>
-          <h2 style={{ marginTop: 0, color: '#333' }}>Choose Your Email Provider</h2>
-          
-          <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>
-            Email Provider
+          <h2 style={{ marginTop: 0, color: '#333' }}>📄 Quote Email Template</h2>
+
+          <label style={labelStyle}>
+            Quote Email Subject
           </label>
-          <select
-            style={selectStyle}
-            value={selectedProvider}
-            onChange={(e) => setSelectedProvider(e.target.value)}
-          >
-            {Object.entries(EMAIL_PROVIDERS).map(([key, provider]) => (
-              <option key={key} value={key}>{provider.name}</option>
-            ))}
-          </select>
+          <input
+            type="text"
+            style={inputStyle}
+            value={emailTemplates.quoteSubject}
+            onChange={(e) => handleChange('quoteSubject', e.target.value)}
+            placeholder="Quote #{quoteNumber} from {companyName}"
+          />
+
+          <label style={labelStyle}>
+            Quote Email Body
+          </label>
+          <textarea
+            style={textareaStyle}
+            value={emailTemplates.quoteBody}
+            onChange={(e) => handleChange('quoteBody', e.target.value)}
+            placeholder="Enter your quote email template..."
+          />
 
           <div style={{ 
-            background: selectedProvider === 'outlook' ? '#fff3cd' : '#e3f2fd', 
+            background: '#e3f2fd', 
             padding: '15px', 
             borderRadius: '8px', 
-            marginBottom: '20px',
-            border: `1px solid ${selectedProvider === 'outlook' ? '#ffc107' : '#2196f3'}`
+            marginTop: '15px',
+            border: '1px solid #2196f3'
           }}>
-            <strong>Instructions:</strong><br />
-            {EMAIL_PROVIDERS[selectedProvider].instructions}
+            <strong>Available Variables for Quotes:</strong><br />
+            <code>{'{quoteNumber}'}</code>, <code>{'{clientName}'}</code>, <code>{'{companyName}'}</code>, <code>{'{amount}'}</code>, <code>{'{vat}'}</code>, <code>{'{total}'}</code>, <code>{'{validUntil}'}</code>, <code>{'{notes}'}</code>
           </div>
+        </div>
 
-          {selectedProvider === 'outlook' && (
-            <div style={{ 
-              background: '#f8d7da', 
-              padding: '15px', 
-              borderRadius: '8px', 
-              marginBottom: '20px',
-              border: '1px solid #dc3545'
-            }}>
-              <strong>⚠️ Outlook/Hotmail Users:</strong><br />
-              Microsoft has disabled basic authentication for security. Even with App Passwords, you may get "Authentication unsuccessful" errors. 
-              <br /><br />
-              <strong>Recommended Solutions:</strong>
-              <ul style={{ marginBottom: 0, paddingLeft: '20px' }}>
-                <li>Use Gmail instead (App Passwords still work)</li>
-                <li>Use a business email with Exchange/Office 365</li>
-                <li>Contact your IT administrator if this is a work account</li>
-              </ul>
-            </div>
-          )}
+        <div style={cardStyle}>
+          <h2 style={{ marginTop: 0, color: '#333' }}>🧾 Invoice Email Template</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>
-                Email Address *
-              </label>
-              <input
-                type="email"
-                style={inputStyle}
-                value={emailConfig.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="your-email@gmail.com"
-              />
-            </div>
+          <label style={labelStyle}>
+            Invoice Email Subject
+          </label>
+          <input
+            type="text"
+            style={inputStyle}
+            value={emailTemplates.invoiceSubject}
+            onChange={(e) => handleChange('invoiceSubject', e.target.value)}
+            placeholder="Invoice #{invoiceNumber} from {companyName}"
+          />
 
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>
-                Password / App Password *
-              </label>
-              <input
-                type="password"
-                style={inputStyle}
-                value={emailConfig.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="Your app password"
-              />
-            </div>
+          <label style={labelStyle}>
+            Invoice Email Body
+          </label>
+          <textarea
+            style={textareaStyle}
+            value={emailTemplates.invoiceBody}
+            onChange={(e) => handleChange('invoiceBody', e.target.value)}
+            placeholder="Enter your invoice email template..."
+          />
 
-            {selectedProvider === 'custom' && (
-              <>
-                <div>
-                  <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>
-                    SMTP Server *
-                  </label>
-                  <input
-                    type="text"
-                    style={inputStyle}
-                    value={emailConfig.smtp}
-                    onChange={(e) => handleChange('smtp', e.target.value)}
-                    placeholder="smtp.yourprovider.com"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>
-                    Port
-                  </label>
-                  <input
-                    type="number"
-                    style={inputStyle}
-                    value={emailConfig.port}
-                    onChange={(e) => handleChange('port', parseInt(e.target.value))}
-                    placeholder="587"
-                  />
-                </div>
-              </>
-            )}
+          <div style={{ 
+            background: '#e3f2fd', 
+            padding: '15px', 
+            borderRadius: '8px', 
+            marginTop: '15px',
+            border: '1px solid #2196f3'
+          }}>
+            <strong>Available Variables for Invoices:</strong><br />
+            <code>{'{invoiceNumber}'}</code>, <code>{'{clientName}'}</code>, <code>{'{companyName}'}</code>, <code>{'{amount}'}</code>, <code>{'{vat}'}</code>, <code>{'{total}'}</code>, <code>{'{dueDate}'}</code>, <code>{'{notes}'}</code>
           </div>
+        </div>
 
-          <div style={{ marginTop: '20px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={emailConfig.secure}
-                onChange={(e) => handleChange('secure', e.target.checked)}
-                style={{ marginRight: '8px' }}
-              />
-              Use SSL/TLS (recommended for port 465)
-            </label>
-          </div>
+        <div style={cardStyle}>
+          <h3 style={{ marginTop: 0, color: '#333' }}>ℹ️ How It Works</h3>
+          <ul style={{ color: '#666', lineHeight: '1.6' }}>
+            <li><strong>Click Email Button:</strong> Opens your default email application</li>
+            <li><strong>Pre-filled Email:</strong> Subject and body are automatically filled with your template</li>
+            <li><strong>Recipient:</strong> Client email address is automatically added</li>
+            <li><strong>Customize:</strong> You can edit the email before sending</li>
+            <li><strong>Variables:</strong> Use curly braces like <code>{'{clientName}'}</code> to insert dynamic values</li>
+          </ul>
+        </div>
 
-          <div style={{ marginTop: '30px' }}>
-            <button
-              onClick={saveEmailConfig}
-              disabled={loading}
-              style={buttonStyle}
-            >
-              {loading ? '💾 Saving...' : '💾 Save Configuration'}
-            </button>
-
-            <button
-              onClick={testEmailConfig}
-              disabled={isTestingEmail}
-              style={testButtonStyle}
-            >
-              {isTestingEmail ? '🧪 Testing...' : '🧪 Test Configuration'}
-            </button>
-          </div>
+        <div style={{ marginTop: '30px', textAlign: 'center' }}>
+          <button
+            onClick={saveEmailTemplates}
+            disabled={loading}
+            style={buttonStyle}
+          >
+            {loading ? '💾 Saving...' : '💾 Save Templates'}
+          </button>
 
           {message && (
             <div style={{
@@ -347,16 +228,6 @@ function EmailConfig({ user }) {
               {message}
             </div>
           )}
-        </div>
-
-        <div style={cardStyle}>
-          <h3 style={{ marginTop: 0, color: '#333' }}>🔒 Security Notes</h3>
-          <ul style={{ color: '#666', lineHeight: '1.6' }}>
-            <li><strong>App Passwords:</strong> Most providers require app-specific passwords instead of your regular password</li>
-            <li><strong>Two-Factor Authentication:</strong> You may need to enable 2FA to create app passwords</li>
-            <li><strong>Data Security:</strong> Your email credentials are encrypted and stored securely</li>
-            <li><strong>Gmail Users:</strong> Enable "Less secure app access" or use App Passwords</li>
-          </ul>
         </div>
       </div>
     </div>
