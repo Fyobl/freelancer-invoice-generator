@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase.js';
+import { db, auth } from './firebase.js';
 import {
   collection,
   addDoc,
@@ -11,105 +11,113 @@ import {
   where,
   serverTimestamp
 } from 'firebase/firestore';
-function Clients({ user }) {
-  const isDarkMode = false;
+import Navigation from './Navigation.js';
+
+function Clients() {
   const [clients, setClients] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [notes, setNotes] = useState('');
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    notes: ''
-  });
+
+  const user = auth.currentUser;
 
   useEffect(() => {
-    if (user) {
-      fetchClients();
-    }
-  }, [user]);
+    fetchClients();
+  }, []);
 
   const fetchClients = async () => {
-    if (!user) return;
-
-    try {
-      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setClients(data);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    } finally {
-      setLoading(false);
-    }
+    const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setClients(data);
   };
 
-  const addClient = async (e) => {
-    e.preventDefault();
-    if (!user) return;
+  const addClient = async () => {
+    if (!name.trim() || !email.trim()) return;
 
-    try {
-      await addDoc(collection(db, 'clients'), {
-        ...formData,
-        userId: user.uid,
-        createdAt: serverTimestamp()
-      });
+    await addDoc(collection(db, 'clients'), {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      notes: notes.trim(),
+      userId: user.uid,
+      createdAt: serverTimestamp()
+    });
 
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        notes: ''
-      });
-      setShowModal(false);
-      fetchClients();
-    } catch (error) {
-      console.error('Error adding client:', error);
-    }
+    resetForm();
+    fetchClients();
+  };
+
+  const updateClient = async () => {
+    if (!name.trim() || !email.trim()) return;
+
+    await updateDoc(doc(db, 'clients', editingId), {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      notes: notes.trim()
+    });
+
+    resetForm();
+    fetchClients();
   };
 
   const deleteClient = async (id) => {
-    try {
+    if (window.confirm('Are you sure you want to delete this client?')) {
       await deleteDoc(doc(db, 'clients', id));
       fetchClients();
-    } catch (error) {
-      console.error('Error deleting client:', error);
     }
   };
 
+  const editClient = (client) => {
+    setEditingId(client.id);
+    setName(client.name);
+    setEmail(client.email);
+    setPhone(client.phone || '');
+    setAddress(client.address || '');
+    setNotes(client.notes || '');
+  };
+
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setNotes('');
+    setEditingId(null);
+  };
+
   const filteredClients = clients.filter(client =>
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Styles
   const containerStyle = {
     minHeight: '100vh',
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
-      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    paddingLeft: '20px',
-    paddingRight: '20px',
-    paddingTop: '80px',
-    paddingBottom: '40px',
-    color: isDarkMode ? '#f8fafc' : '#1e293b'
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   };
 
   const contentStyle = {
+    padding: '30px',
     maxWidth: '1200px',
     margin: '0 auto'
   };
 
   const headerStyle = {
+    color: 'white',
     textAlign: 'center',
-    marginBottom: '40px',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b'
+    marginBottom: '40px'
   };
 
   const statsStyle = {
@@ -120,119 +128,108 @@ function Clients({ user }) {
   };
 
   const statCardStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    padding: '25px',
-    borderRadius: '16px',
+    background: 'rgba(255,255,255,0.9)',
+    padding: '20px',
+    borderRadius: '12px',
     textAlign: 'center',
-    boxShadow: isDarkMode 
-      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
-      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0'
+    backdropFilter: 'blur(10px)'
   };
 
-  const searchStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    padding: '25px',
+  const formStyle = {
+    background: 'rgba(255,255,255,0.95)',
+    padding: '30px',
     borderRadius: '16px',
     marginBottom: '30px',
-    boxShadow: isDarkMode 
-      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
-      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0'
+    backdropFilter: 'blur(15px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
   };
 
   const inputStyle = {
     width: '100%',
-    padding: '12px',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
     borderRadius: '8px',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #cbd5e1',
-    background: isDarkMode ? '#374151' : '#ffffff',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b',
-    fontSize: '16px'
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top'
+  };
+
+  const textareaStyle = {
+    ...inputStyle,
+    minHeight: '80px',
+    resize: 'vertical'
+  };
+
+  const selectStyle = {
+    width: '100%',
+    padding: '12px 15px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '44px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none'
   };
 
   const buttonStyle = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
-    padding: '15px 30px',
-    borderRadius: '10px',
-    fontSize: '16px',
-    fontWeight: '600',
+    padding: '12px 25px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
     cursor: 'pointer',
-    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-    transition: 'all 0.3s ease',
-    marginBottom: '30px'
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    marginRight: '10px'
   };
 
-  const clientsGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '25px',
-    marginTop: '30px'
+  const cancelButtonStyle = {
+    ...buttonStyle,
+    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
   };
 
   const clientCardStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    background: 'white',
+    border: '2px solid #f8f9fa',
+    borderRadius: '12px',
     padding: '25px',
-    borderRadius: '16px',
-    boxShadow: isDarkMode 
-      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
-      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
-    transition: 'transform 0.2s ease'
+    marginBottom: '20px',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
   };
 
-  const modalStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
+  const searchStyle = {
+    background: 'rgba(255,255,255,0.9)',
+    padding: '20px',
+    borderRadius: '12px',
+    marginBottom: '30px',
+    backdropFilter: 'blur(10px)'
   };
-
-  const modalContentStyle = {
-    background: isDarkMode ? '#1e293b' : '#ffffff',
-    padding: '40px',
-    borderRadius: '16px',
-    width: '90%',
-    maxWidth: '500px',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b'
-  };
-
-  if (loading) {
-    return (
-      <div style={containerStyle}>
-        <div style={contentStyle}>
-          <div style={headerStyle}>
-            <h1 style={{ fontSize: '2.5rem', margin: 0 }}>👥 Loading Clients...</h1>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={containerStyle}>
+      <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
             👥 Client Management
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
-            Manage your client relationships and contact information
+            Manage your clients and build lasting relationships
           </p>
         </div>
 
@@ -240,19 +237,19 @@ function Clients({ user }) {
         <div style={statsStyle}>
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Total Clients</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
               {clients.length}
             </p>
           </div>
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Active Clients</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
               {clients.length}
             </p>
           </div>
           <div style={statCardStyle}>
             <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Contacts</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#333' }}>
               {clients.filter(c => c.email).length}
             </p>
           </div>
@@ -260,7 +257,7 @@ function Clients({ user }) {
 
         {/* Search */}
         <div style={searchStyle}>
-          <h3 style={{ margin: '0 0 15px 0' }}>🔍 Search Clients</h3>
+          <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>🔍 Search Clients</h3>
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -270,126 +267,193 @@ function Clients({ user }) {
           />
         </div>
 
-        <button style={buttonStyle} onClick={() => setShowModal(true)}>
-          ➕ Add New Client
-        </button>
+        {/* Add/Edit Client Form */}
+        <div style={formStyle}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.5rem' }}>
+            {editingId ? '✏️ Edit Client' : '➕ Add New Client'}
+          </h3>
 
-        {/* Clients Grid */}
-        <div style={clientsGridStyle}>
-          {filteredClients.map((client) => (
-            <div key={client.id} style={clientCardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#667eea', fontSize: '1.3rem' }}>
-                  {client.name}
-                </h3>
-                <button
-                  onClick={() => deleteClient(client.id)}
-                  style={{
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    padding: '5px 10px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Client Name *
+              </label>
+              <input
+                placeholder="Enter client name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={inputStyle}
+              />
 
-              <div>
-                {client.email && (
-                  <p style={{ margin: '0 0 10px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                    <strong>📧 Email:</strong> {client.email}
-                  </p>
-                )}
-                {client.phone && (
-                  <p style={{ margin: '0 0 10px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                    <strong>📞 Phone:</strong> {client.phone}
-                  </p>
-                )}
-                {client.address && (
-                  <p style={{ margin: '0 0 10px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                    <strong>📍 Address:</strong> {client.address}
-                  </p>
-                )}
-                {client.notes && (
-                  <p style={{ margin: '0 0 10px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                    <strong>📝 Notes:</strong> {client.notes}
-                  </p>
-                )}
-              </div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Email Address *
+              </label>
+              <input
+                placeholder="client@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={inputStyle}
+              />
+
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Phone Number
+              </label>
+              <input
+                placeholder="+44 7123 456789"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                style={inputStyle}
+              />
             </div>
-          ))}
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Address
+              </label>
+              <textarea
+                placeholder="Client's full address..."
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                style={textareaStyle}
+              />
+
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Notes
+              </label>
+              <textarea
+                placeholder="Additional notes about this client..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <button
+              onClick={editingId ? updateClient : addClient}
+              style={buttonStyle}
+              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+            >
+              {editingId ? '💾 Update Client' : '➕ Add Client'}
+            </button>
+
+            {editingId && (
+              <button
+                onClick={resetForm}
+                style={cancelButtonStyle}
+                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+              >
+                ❌ Cancel
+              </button>
+            )}
+          </div>
         </div>
 
-        {filteredClients.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: isDarkMode ? '#9ca3af' : '#666' }}>
-            <h3>No clients found</h3>
-            <p>Add your first client to get started!</p>
-          </div>
-        )}
+        {/* Clients List */}
+        <div style={{ background: 'rgba(255,255,255,0.9)', padding: '30px', borderRadius: '16px', backdropFilter: 'blur(15px)' }}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '1.5rem' }}>
+            📋 Your Clients ({filteredClients.length})
+          </h3>
 
-        {/* Modal */}
-        {showModal && (
-          <div style={modalStyle}>
-            <div style={modalContentStyle}>
-              <h2 style={{ marginTop: 0 }}>Add New Client</h2>
-              <form onSubmit={addClient}>
-                <input
-                  type="text"
-                  placeholder="Client Name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={{ ...inputStyle, marginBottom: '15px' }}
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  style={{ ...inputStyle, marginBottom: '15px' }}
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  style={{ ...inputStyle, marginBottom: '15px' }}
-                />
-                <textarea
-                  placeholder="Address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  style={{ ...inputStyle, marginBottom: '15px', minHeight: '80px' }}
-                />
-                <textarea
-                  placeholder="Notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  style={{ ...inputStyle, marginBottom: '15px', minHeight: '80px' }}
-                />
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                  <button type="submit" style={buttonStyle}>
-                    Add Client
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    style={{
-                      ...buttonStyle,
-                      background: '#6c757d'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+          {filteredClients.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <p style={{ fontSize: '1.2rem', margin: '0 0 10px 0' }}>
+                {searchTerm ? 'No clients match your search.' : 'No clients yet.'}
+              </p>
+              <p style={{ margin: 0 }}>
+                {!searchTerm && 'Add your first client using the form above!'}
+              </p>
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {filteredClients.map(client => (
+                <div 
+                  key={client.id} 
+                  style={clientCardStyle}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.1)';
+                    e.currentTarget.style.borderColor = '#667eea';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.borderColor = '#f8f9fa';
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 15px 0', fontSize: '1.3rem', color: '#333' }}>
+                        {client.name}
+                      </h4>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                        <div>
+                          <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                            <strong>📧 Email:</strong> {client.email}
+                          </p>
+                          {client.phone && (
+                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                              <strong>📱 Phone:</strong> {client.phone}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          {client.address && (
+                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                              <strong>📍 Address:</strong> {client.address}
+                            </p>
+                          )}
+                          {client.notes && (
+                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                              <strong>📝 Notes:</strong> {client.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '120px' }}>
+                      <button
+                        onClick={() => editClient(client)}
+                        style={{
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                          fontSize: '12px',
+                          padding: '8px 16px',
+                          marginRight: 0
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => deleteClient(client.id)}
+                        style={{
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                          fontSize: '12px',
+                          padding: '8px 16px',
+                          marginRight: 0
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
