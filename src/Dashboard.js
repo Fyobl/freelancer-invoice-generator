@@ -374,10 +374,10 @@ function Dashboard() {
     try {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
-      
+
       // Use the email service to generate PDF and get download link
       const result = await sendInvoiceEmail(invoice, 'temp@example.com', senderName, companyName, companySettings);
-      
+
       if (result.success && result.downloadURL) {
         // Open the PDF download link in a new tab
         window.open(result.downloadURL, '_blank');
@@ -408,18 +408,36 @@ function Dashboard() {
       const companyName = userData?.companyName || 'Your Company';
       const senderName = userData?.firstName || user?.email?.split('@')[0];
 
+      console.log('Calling sendInvoiceEmail with:', {
+        invoiceNumber: invoice.invoiceNumber,
+        recipientEmail,
+        senderName,
+        companyName
+      });
+
       const result = await sendInvoiceEmail(invoice, recipientEmail, senderName, companyName, companySettings);
 
-      if (result.success) {
-        setEmailConfirmation(`✅ Email client opened for invoice ${invoice.invoiceNumber} to ${recipientEmail}!`);
-      } else {
-        setEmailConfirmation('❌ Failed to open email client. Please check your email templates configuration.');
-      }
-    } catch (error) {
-      console.error('Error opening email client:', error);
-      setEmailConfirmation('❌ Error opening email client. Please try again.');
-    } finally {
+      console.log('sendInvoiceEmail result:', result);
+
       setEmailSending(false);
+
+      if (result.success) {
+        const successMsg = `✅ ${result.message}`;
+        console.log(successMsg);
+        setEmailConfirmation(successMsg);
+      } else {
+        const errorMsg = `❌ ${result.error}`;
+        console.log(errorMsg);
+        setEmailConfirmation(errorMsg);
+      }
+
+      setTimeout(() => setEmailConfirmation(null), 5000);
+    } catch (error) {
+      setEmailSending(false);
+      console.error('Error sending email:', error);
+      const errorMsg = `❌ Error sending email: ${error.message}`;
+      console.log(errorMsg);
+      setEmailConfirmation(errorMsg);
       setTimeout(() => setEmailConfirmation(null), 5000);
     }
   };
