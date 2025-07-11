@@ -29,8 +29,8 @@ function Dashboard() {
 
   // Styling objects
   const containerStyle = {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   };
 
