@@ -9,673 +9,398 @@ import {
   updateDoc,
   query,
   where,
-  serverTimestamp,
-  orderBy
+  orderBy,
+  serverTimestamp
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
 import { useDarkMode } from './DarkModeContext.js';
 
-function Dashboard() {
+function Dashboard({ user }) {
   const { isDarkMode } = useDarkMode();
-  const [clientName, setClientName] = useState('');
-  const [selectedClientId, setSelectedClientId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [vat, setVat] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState('Unpaid');
-  const [notes, setNotes] = useState('');
   const [invoices, setInvoices] = useState([]);
-  const [products, setProducts] = useState([]);
   const [clients, setClients] = useState([]);
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [template, setTemplate] = useState('standard');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
-  const [companySettings, setCompanySettings] = useState({});
-
-  const user = auth.currentUser;
-
-  // Styles
-  const pageStyle = {
-    minHeight: '100vh',
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' 
-      : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    paddingLeft: '20px',
-    paddingRight: '20px',
-    paddingTop: '80px',
-    paddingBottom: '40px',
-    color: isDarkMode ? '#f8fafc' : '#1e293b'
-  };
-
-  const containerStyle = {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  };
-
-  const headerStyle = {
-    textAlign: 'center',
-    marginBottom: '40px',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b',
-    padding: '20px 0'
-  };
-
-  const statsStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginBottom: '40px'
-  };
-
-  const statCardStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    padding: '25px',
-    borderRadius: '16px',
-    textAlign: 'center',
-    boxShadow: isDarkMode 
-      ? '0 10px 25px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3)' 
-      : '0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05)',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-  };
-
-  const formStyle = {
-    background: isDarkMode 
-      ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    padding: '40px',
-    borderRadius: '20px',
-    marginBottom: '40px',
-    boxShadow: isDarkMode 
-      ? '0 20px 40px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)' 
-      : '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.05)',
-    border: isDarkMode ? '1px solid #475569' : '1px solid #e2e8f0',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 15px',
-    border: isDarkMode ? '2px solid #475569' : '2px solid #cbd5e1',
-    borderRadius: '8px',
-    fontSize: '14px',
-    marginBottom: '15px',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    backgroundColor: isDarkMode ? '#334155' : '#ffffff',
-    color: isDarkMode ? '#f1f5f9' : '#1e293b',
-    boxSizing: 'border-box',
-    outline: 'none',
-    height: '44px'
-  };
-
-  const textareaStyle = {
-    ...inputStyle,
-    minHeight: '80px',
-    resize: 'vertical',
-    lineHeight: '1.5'
-  };
-
-  const selectStyle = {
-    ...inputStyle,
-    appearance: 'none'
-  };
-
-  const buttonStyle = {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    padding: '15px 30px',
-    borderRadius: '12px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    marginRight: '15px',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-  };
-
-  const invoiceCardStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'white',
-    border: isDarkMode ? '2px solid #4a5568' : '2px solid #f8f9fa',
-    borderRadius: '16px',
-    padding: '25px',
-    marginBottom: '20px',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-    color: isDarkMode ? '#ffffff' : '#333333'
-  };
-
-  const searchFilterStyle = {
-    background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)',
-    padding: '25px',
-    borderRadius: '16px',
-    marginBottom: '30px',
-    backdropFilter: 'blur(15px)',
-    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)',
-    color: isDarkMode ? '#ffffff' : '#333333'
-  };
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      if (currentUser) {
-        fetchInvoices();
-        fetchProducts();
-        fetchClients();
-        fetchCompanySettings();
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchInvoices();
-      fetchProducts();
-      fetchClients();
-      fetchCompanySettings();
-    }
-  }, [user]);
+  const [products, setProducts] = useState([]);
+  const [newInvoice, setNewInvoice] = useState({
+    clientId: '',
+    items: [{ productId: '', quantity: 1 }],
+    dueDate: '',
+    status: 'Draft'
+  });
 
   const fetchInvoices = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      console.log('No authenticated user');
-      return;
-    }
-
     try {
       const q = query(
         collection(db, 'invoices'),
-        where('userId', '==', currentUser.uid)
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
       );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
+      const querySnapshot = await getDocs(q);
+      const invoiceList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      
-      // Sort by createdAt on the client side instead
-      data.sort((a, b) => {
-        const aDate = a.createdAt?.toDate?.() || new Date(0);
-        const bDate = b.createdAt?.toDate?.() || new Date(0);
-        return bDate - aDate;
-      });
-      
-      setInvoices(data);
-
-      const invoiceNumbers = data.map(inv => parseInt(inv.invoiceNumber) || 0);
-      const maxNumber = Math.max(...invoiceNumbers, 0);
-      setNextInvoiceNumber(maxNumber + 1);
+      setInvoices(invoiceList);
     } catch (error) {
       console.error('Error fetching invoices:', error);
     }
   };
 
-  const fetchProducts = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    try {
-      const q = query(collection(db, 'products'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProducts(data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-
   const fetchClients = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
     try {
-      const q = query(collection(db, 'clients'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setClients(data);
+      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const clientList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClients(clientList);
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
   };
 
-  const fetchCompanySettings = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
+  const fetchProducts = async () => {
     try {
-      const q = query(collection(db, 'companySettings'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        const data = snapshot.docs[0].data();
-        setCompanySettings(data);
-      }
+      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const productList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(productList);
     } catch (error) {
-      console.error('Error fetching company settings:', error);
+      console.error('Error fetching products:', error);
     }
   };
 
-  const handleProductSelect = (productId) => {
-    setSelectedProductId(productId);
-    if (productId) {
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        setAmount(product.price);
-      }
-    }
-  };
+  useEffect(() => {
+    fetchInvoices();
+    fetchClients();
+    fetchProducts();
+  }, [user]);
 
-  const handleClientSelect = (clientId) => {
-    setSelectedClientId(clientId);
-    if (clientId) {
-      const client = clients.find(c => c.id === clientId);
-      if (client) {
-        setClientName(client.name);
-      }
-    }
-  };
-
-  const addInvoice = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser || !clientName.trim() || !amount.trim()) return;
-
+  const addInvoice = async (e) => {
+    e.preventDefault();
     try {
-      const invoiceData = {
-        invoiceNumber: nextInvoiceNumber.toString(),
-        clientName: clientName.trim(),
-        clientId: selectedClientId || null,
-        amount: parseFloat(amount) || 0,
-        vat: parseFloat(vat) || 0,
-        dueDate: dueDate || null,
-        status: status,
-        notes: notes.trim(),
-        template: template,
-        userId: currentUser.uid,
+      await addDoc(collection(db, 'invoices'), {
+        ...newInvoice,
+        userId: user.uid,
         createdAt: serverTimestamp()
-      };
-
-      await addDoc(collection(db, 'invoices'), invoiceData);
-      resetForm();
+      });
+      setNewInvoice({
+        clientId: '',
+        items: [{ productId: '', quantity: 1 }],
+        dueDate: '',
+        status: 'Draft'
+      });
       fetchInvoices();
     } catch (error) {
       console.error('Error adding invoice:', error);
     }
   };
 
-  const updateInvoice = async (id, updates) => {
+  const deleteInvoice = async (id) => {
     try {
-      await updateDoc(doc(db, 'invoices', id), updates);
+      await deleteDoc(doc(db, 'invoices', id));
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
+  };
+
+  const updateInvoiceStatus = async (id, status) => {
+    try {
+      await updateDoc(doc(db, 'invoices', id), { status });
       fetchInvoices();
     } catch (error) {
       console.error('Error updating invoice:', error);
     }
   };
 
-  const deleteInvoice = async (id) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      try {
-        await deleteDoc(doc(db, 'invoices', id));
-        fetchInvoices();
-      } catch (error) {
-        console.error('Error deleting invoice:', error);
+  const calculateInvoiceTotal = (items) => {
+    return items.reduce((total, item) => {
+      const product = products.find(p => p.id === item.productId);
+      if (product) {
+        const subtotal = product.price * item.quantity;
+        const vatAmount = subtotal * (product.vat / 100);
+        return total + subtotal + vatAmount;
       }
-    }
+      return total;
+    }, 0);
   };
 
-  const resetForm = () => {
-    setClientName('');
-    setSelectedClientId('');
-    setAmount('');
-    setVat('');
-    setDueDate('');
-    setStatus('Unpaid');
-    setNotes('');
-    setSelectedProductId('');
-    setTemplate('standard');
+  const totalRevenue = invoices
+    .filter(invoice => invoice.status === 'Paid')
+    .reduce((sum, invoice) => sum + calculateInvoiceTotal(invoice.items || []), 0);
+
+  const pendingAmount = invoices
+    .filter(invoice => invoice.status !== 'Paid')
+    .reduce((sum, invoice) => sum + calculateInvoiceTotal(invoice.items || []), 0);
+
+  // Styles
+  const containerStyle = {
+    minHeight: '100vh',
+    background: isDarkMode 
+      ? 'linear-gradient(135deg, #0f1419 0%, #1a202c 100%)' 
+      : 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    paddingTop: '100px',
+    paddingBottom: '60px',
+    color: isDarkMode ? '#e2e8f0' : '#2d3748'
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const calculateStats = () => {
-    const total = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-    const paid = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-    const unpaid = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-    const overdue = invoices.filter(inv => inv.status === 'Overdue').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-
-    return { total, paid, unpaid, overdue };
+  const contentStyle = {
+    maxWidth: '1400px',
+    margin: '0 auto'
   };
 
-  const stats = calculateStats();
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Paid': return '#28a745';
-      case 'Unpaid': return '#ffc107';
-      case 'Overdue': return '#dc3545';
-      default: return '#6c757d';
-    }
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '50px',
+    color: isDarkMode ? '#ffffff' : '#1a202c'
   };
 
-  if (!user) {
-    return <div>Loading...</div>;
-  }
+  const statsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: '30px',
+    marginBottom: '50px'
+  };
+
+  const statCardStyle = {
+    background: isDarkMode 
+      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
+      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
+    padding: '40px 30px',
+    borderRadius: '20px',
+    textAlign: 'center',
+    boxShadow: isDarkMode 
+      ? '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' 
+      : '0 20px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
+    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
+    color: isDarkMode ? '#e2e8f0' : '#2d3748',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    cursor: 'pointer'
+  };
+
+  const formContainerStyle = {
+    background: isDarkMode 
+      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
+      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
+    padding: '50px',
+    borderRadius: '24px',
+    marginBottom: '50px',
+    boxShadow: isDarkMode 
+      ? '0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)' 
+      : '0 25px 50px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)',
+    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
+    color: isDarkMode ? '#e2e8f0' : '#2d3748'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '16px 20px',
+    border: isDarkMode ? '2px solid #4a5568' : '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '16px',
+    marginBottom: '20px',
+    transition: 'all 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
+    color: isDarkMode ? '#e2e8f0' : '#2d3748',
+    boxSizing: 'border-box',
+    outline: 'none'
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'none',
+    backgroundImage: isDarkMode 
+      ? 'url("data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%23e2e8f0\' viewBox=\'0 0 20 20\'><path d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\'/></svg>")' 
+      : 'url("data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%232d3748\' viewBox=\'0 0 20 20\'><path d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\'/></svg>")',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 16px center',
+    backgroundSize: '20px'
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+    color: '#ffffff',
+    border: 'none',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    marginRight: '15px',
+    boxShadow: '0 10px 20px rgba(66, 153, 225, 0.3)'
+  };
+
+  const invoiceGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+    gap: '30px'
+  };
+
+  const invoiceCardStyle = {
+    background: isDarkMode 
+      ? 'linear-gradient(145deg, #1a202c 0%, #2d3748 100%)' 
+      : 'linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)',
+    border: isDarkMode ? '1px solid #4a5568' : '1px solid rgba(226, 232, 240, 0.5)',
+    borderRadius: '20px',
+    padding: '30px',
+    transition: 'all 0.3s ease',
+    boxShadow: isDarkMode 
+      ? '0 15px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' 
+      : '0 15px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
+    color: isDarkMode ? '#e2e8f0' : '#2d3748'
+  };
 
   return (
-    <div style={pageStyle}>
+    <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={containerStyle}>
+      <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0', fontWeight: '300' }}>
-            📋 Invoice Dashboard
+          <h1 style={{ fontSize: '3.5rem', margin: '0 0 15px 0', fontWeight: '800', letterSpacing: '-0.05em' }}>
+            Dashboard
           </h1>
-          <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-            Create and manage your invoices with ease
+          <p style={{ fontSize: '1.25rem', opacity: '0.8', margin: 0, fontWeight: '400' }}>
+            Welcome back, {user?.email}. Here's what's happening with your business.
           </p>
         </div>
 
-        {/* Statistics */}
-        <div style={statsStyle}>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#667eea' }}>Total Revenue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.total.toFixed(2)}
+        <div style={statsGridStyle}>
+          <div style={{...statCardStyle, borderLeft: '5px solid #4299e1'}}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📊</div>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Total Invoices</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#4299e1' }}>{invoices.length}</p>
+          </div>
+
+          <div style={{...statCardStyle, borderLeft: '5px solid #48bb78'}}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>💰</div>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Total Revenue</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#48bb78' }}>
+              £{totalRevenue.toFixed(2)}
             </p>
           </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>Paid</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.paid.toFixed(2)}
+
+          <div style={{...statCardStyle, borderLeft: '5px solid #ed8936'}}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>⏳</div>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Pending Amount</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#ed8936' }}>
+              £{pendingAmount.toFixed(2)}
             </p>
           </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#ffc107' }}>Unpaid</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.unpaid.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCardStyle}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#dc3545' }}>Overdue</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-              £{stats.overdue.toFixed(2)}
-            </p>
+
+          <div style={{...statCardStyle, borderLeft: '5px solid #9f7aea'}}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>👥</div>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', opacity: '0.8' }}>Active Clients</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: '#9f7aea' }}>{clients.length}</p>
           </div>
         </div>
 
-        {/* Create Invoice Form */}
-        <div style={formStyle}>
-          <h2 style={{ margin: '0 0 30px 0', fontSize: '2rem', fontWeight: '300' }}>
-            ✨ Create New Invoice
-          </h2>
+        <div style={formContainerStyle}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '30px', fontWeight: '700' }}>Create New Invoice</h2>
+          <form onSubmit={addInvoice}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Client</label>
+                <select
+                  value={newInvoice.clientId}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, clientId: e.target.value })}
+                  style={selectStyle}
+                  required
+                >
+                  <option value="">Select a client</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Client Name *
-              </label>
-              <input
-                placeholder="Enter client name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                style={inputStyle}
-              />
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Select Product (Optional)
-              </label>
-              <select
-                value={selectedProductId}
-                onChange={(e) => handleProductSelect(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="">Select a product</option>
-                {products.map(prod => (
-                  <option key={prod.id} value={prod.id}>
-                    {prod.name} - £{Number(prod.price).toFixed(2)}
-                  </option>
-                ))}
-              </select>
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Amount (£) *
-              </label>
-              <input
-                placeholder="0.00"
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                style={inputStyle}
-              />
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                VAT (£)
-              </label>
-              <input
-                placeholder="0.00"
-                type="number"
-                step="0.01"
-                value={vat}
-                onChange={(e) => setVat(e.target.value)}
-                style={inputStyle}
-              />
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Due Date</label>
+                <input
+                  type="date"
+                  value={newInvoice.dueDate}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                  style={inputStyle}
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                style={inputStyle}
-              />
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="Unpaid">Unpaid</option>
-                <option value="Paid">Paid</option>
-                <option value="Overdue">Overdue</option>
-              </select>
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Template Style
-              </label>
-              <select
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="standard">Standard</option>
-                <option value="modern">Modern</option>
-                <option value="classic">Classic</option>
-              </select>
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Notes
-              </label>
-              <textarea
-                placeholder="Additional notes or terms..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                style={textareaStyle}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginTop: '30px' }}>
-            <button onClick={addInvoice} style={buttonStyle}>
-              🚀 Create Invoice
+            <button type="submit" style={buttonStyle}>
+              Create Invoice
             </button>
-          </div>
+          </form>
         </div>
 
-        {/* Search and Filter */}
-        <div style={searchFilterStyle}>
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '1.5rem' }}>🔍 Search & Filter</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Search Invoices
-              </label>
-              <input
-                placeholder="Search by client name or invoice number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: isDarkMode ? '#e5e7eb' : '#555' }}>
-                Filter by Status
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="all">All Statuses</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-                <option value="Overdue">Overdue</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <div>
+          <h2 style={{ fontSize: '2rem', marginBottom: '30px', fontWeight: '700' }}>Recent Invoices</h2>
+          <div style={invoiceGridStyle}>
+            {invoices.map(invoice => {
+              const client = clients.find(c => c.id === invoice.clientId);
+              const total = calculateInvoiceTotal(invoice.items || []);
 
-        {/* Invoices List */}
-        <div style={{ background: isDarkMode ? 'rgba(26,32,46,0.95)' : 'rgba(255,255,255,0.95)', padding: '30px', borderRadius: '20px', backdropFilter: 'blur(15px)', border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.2)' }}>
-          <h3 style={{ margin: '0 0 25px 0', fontSize: '1.8rem', fontWeight: '300', color: isDarkMode ? '#ffffff' : '#333' }}>
-            📄 Your Invoices ({filteredInvoices.length})
-          </h3>
-
-          {filteredInvoices.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: isDarkMode ? '#9ca3af' : '#666' }}>
-              <h3 style={{ fontSize: '1.5rem', margin: '0 0 15px 0', fontWeight: '300' }}>
-                📄 No invoices found
-              </h3>
-              <p style={{ fontSize: '1.2rem', opacity: '0.9', margin: 0 }}>
-                {searchTerm || filterStatus !== 'all' 
-                  ? 'Try adjusting your search or filter criteria.' 
-                  : 'Create your first invoice using the form above!'}
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '20px' }}>
-              {filteredInvoices.map(invoice => (
+              return (
                 <div key={invoice.id} style={invoiceCardStyle}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '600' }}>
-                          Invoice #{invoice.invoiceNumber}
-                        </h4>
-                        <span style={{
-                          background: getStatusColor(invoice.status),
-                          color: 'white',
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem',
-                          fontWeight: 'bold'
-                        }}>
-                          {invoice.status}
-                        </span>
-                      </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
+                      {client ? client.name : 'Unknown Client'}
+                    </h3>
+                    <span style={{
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      backgroundColor: invoice.status === 'Paid' ? '#48bb78' : 
+                                     invoice.status === 'Sent' ? '#4299e1' : '#ed8936',
+                      color: '#ffffff'
+                    }}>
+                      {invoice.status}
+                    </span>
+                  </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                        <div>
-                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                            <strong>Client:</strong> {invoice.clientName}
-                          </p>
-                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                            <strong>Amount:</strong> £{Number(invoice.amount).toFixed(2)}
-                          </p>
-                          {invoice.vat > 0 && (
-                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                              <strong>VAT:</strong> £{Number(invoice.vat).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: '0.8' }}>Due Date</p>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>{invoice.dueDate}</p>
+                  </div>
 
-                        <div>
-                          {invoice.dueDate && (
-                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                              <strong>Due Date:</strong> {invoice.dueDate}
-                            </p>
-                          )}
-                          <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                            <strong>Template:</strong> {invoice.template}
-                          </p>
-                          {invoice.notes && (
-                            <p style={{ margin: '0 0 8px 0', color: isDarkMode ? '#e5e7eb' : '#666' }}>
-                              <strong>Notes:</strong> {invoice.notes}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  <div style={{ marginBottom: '25px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: '0.8' }}>Total Amount</p>
+                    <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#4299e1' }}>
+                      £{total.toFixed(2)}
+                    </p>
+                  </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '120px' }}>
-                      <select
-                        value={invoice.status}
-                        onChange={(e) => updateInvoice(invoice.id, { status: e.target.value })}
-                        style={{
-                          ...selectStyle,
-                          marginBottom: '8px',
-                          fontSize: '12px',
-                          padding: '6px 10px',
-                          height: '32px'
-                        }}
-                      >
-                        <option value="Paid">Paid</option>
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {invoice.status !== 'Paid' && (
                       <button
-                        onClick={() => deleteInvoice(invoice.id)}
+                        onClick={() => updateInvoiceStatus(invoice.id, 'Paid')}
                         style={{
-                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                          color: 'white',
-                          border: 'none',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                          padding: '10px 20px',
+                          fontSize: '14px'
                         }}
                       >
-                        🗑️ Delete
+                        Mark Paid
                       </button>
-                    </div>
+                    )}
+                    <button
+                      onClick={() => deleteInvoice(invoice.id)}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)',
+                        padding: '10px 20px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
