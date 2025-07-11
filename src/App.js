@@ -128,7 +128,8 @@ function App() {
 
   return (
     <Router>
-      <Routes>
+      <main style={{ minHeight: '100vh' }}>
+        <Routes>
         <Route
           path="/"
           element={user ? <Dashboard user={user} /> : <Navigate to="/login" />}
@@ -170,7 +171,8 @@ function App() {
           element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
         />
       </Routes>
-    </Router>
+        </main>
+      </BrowserRouter>
   );
 }
 
