@@ -46,8 +46,12 @@ app.post('/api/send-email', async (req, res) => {
       },
       // Additional security options
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2',
+        ciphers: 'HIGH:MEDIUM:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA'
+      },
+      // Force STARTTLS for port 587
+      requireTLS: smtpConfig.port === 587
     });
 
     // Verify connection
@@ -114,8 +118,12 @@ app.post('/api/test-email-config', async (req, res) => {
         pass: smtpConfig.auth.pass
       },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2',
+        ciphers: 'HIGH:MEDIUM:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA'
+      },
+      // Force STARTTLS for port 587
+      requireTLS: smtpConfig.port === 587
     });
 
     // Just verify the connection without sending

@@ -16,7 +16,7 @@ const EMAIL_PROVIDERS = {
     smtp: 'smtp-mail.outlook.com',
     port: 587,
     secure: false,
-    instructions: 'Use your regular Outlook password or create an app password in account settings.'
+    instructions: 'You must use an App Password. Go to Microsoft Account Security > Advanced Security Options > App Passwords. Regular passwords will not work due to security restrictions.'
   },
   yahoo: {
     name: 'Yahoo',
