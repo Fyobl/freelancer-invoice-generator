@@ -146,9 +146,33 @@ function Navigation({ user }) {
           }}></div>
         </button>
 
-        <h1 style={{ margin: 0, fontSize: '20px', color: '#333' }}>
-          Invoice Generator
-        </h1>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          fontSize: '22px', 
+          fontWeight: 'bold',
+          color: '#2c3e50',
+          fontFamily: 'Arial, sans-serif'
+        }}>
+          <span style={{ 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            marginRight: '8px'
+          }}>
+            📄
+          </span>
+          <span style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            letterSpacing: '0.5px'
+          }}>
+            Easy Invoice
+          </span>
+        </div>
 
         <div style={{ fontSize: '14px', color: '#666' }}>
           {user?.email}
