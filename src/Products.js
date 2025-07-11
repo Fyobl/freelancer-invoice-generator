@@ -245,60 +245,107 @@ function Products({ user }) {
 
   return (
     <div style={pageStyle}>
+      <style>
+        {`
+          input::placeholder, textarea::placeholder {
+            color: ${isDarkMode ? '#a0aec0' : '#999'} !important;
+          }
+          input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {
+            color: ${isDarkMode ? '#a0aec0' : '#999'} !important;
+          }
+          input::-moz-placeholder, textarea::-moz-placeholder {
+            color: ${isDarkMode ? '#a0aec0' : '#999'} !important;
+            opacity: 1;
+          }
+          input:-ms-input-placeholder, textarea:-ms-input-placeholder {
+            color: ${isDarkMode ? '#a0aec0' : '#999'} !important;
+          }
+        `}
+      </style>
       <Navigation user={user} />
       <div style={containerStyle}>
         <div style={formStyle}>
           <h2>Products</h2>
           {/* Search and Filter */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px', marginBottom: '20px' }}>
-            <input
-              style={inputStyle}
-              placeholder="🔍 Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <select
-              style={selectStyle}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="name">Sort by Name</option>
-              <option value="price">Sort by Price</option>
-              <option value="vat">Sort by VAT</option>
-            </select>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+                Search Products
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="🔍 Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+                Sort By
+              </label>
+              <select
+                style={selectStyle}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="name">Sort by Name</option>
+                <option value="price">Sort by Price</option>
+                <option value="vat">Sort by VAT</option>
+              </select>
+            </div>
           </div>
 
           {/* Product Form */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-            <input
-              style={inputStyle}
-              placeholder="Product Name *"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Price £ *"
-              type="number"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="VAT % (optional)"
-              type="number"
-              step="0.01"
-              value={vat}
-              onChange={(e) => setVat(e.target.value)}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+                Product Name *
+              </label>
+              <input
+                style={{...inputStyle, '::placeholder': { color: isDarkMode ? '#a0aec0' : '#999' }}}
+                placeholder="Enter product name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+                Price *
+              </label>
+              <input
+                style={{...inputStyle, '::placeholder': { color: isDarkMode ? '#a0aec0' : '#999' }}}
+                placeholder="Enter price in £"
+                type="number"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+                VAT %
+              </label>
+              <input
+                style={{...inputStyle, '::placeholder': { color: isDarkMode ? '#a0aec0' : '#999' }}}
+                placeholder="Enter VAT percentage"
+                type="number"
+                step="0.01"
+                value={vat}
+                onChange={(e) => setVat(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: isDarkMode ? '#e2e8f0' : '#333' }}>
+              Product Description
+            </label>
+            <textarea
+              style={{...inputStyle, height: '80px', resize: 'vertical', '::placeholder': { color: isDarkMode ? '#a0aec0' : '#999' }}}
+              placeholder="Enter product description (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <textarea
-            style={{...inputStyle, height: '80px', resize: 'vertical'}}
-            placeholder="Product Description (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
 
           <div style={{ marginTop: '20px' }}>
             {editingProduct ? (
