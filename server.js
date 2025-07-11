@@ -81,7 +81,11 @@ app.post('/api/send-email', async (req, res) => {
     
     // Provide more specific error messages
     if (error.code === 'EAUTH') {
-      errorMessage = 'Authentication failed. Please check your email and password/app password.';
+      if (error.response && error.response.includes('basic authentication is disabled')) {
+        errorMessage = 'Outlook/Hotmail: Basic authentication is disabled by Microsoft. Please use Gmail or another provider that supports SMTP with app passwords.';
+      } else {
+        errorMessage = 'Authentication failed. Please check your email and password/app password.';
+      }
     } else if (error.code === 'ENOTFOUND') {
       errorMessage = 'SMTP server not found. Please check your SMTP settings.';
     } else if (error.code === 'ECONNECTION') {
@@ -140,7 +144,11 @@ app.post('/api/test-email-config', async (req, res) => {
     let errorMessage = 'Email configuration test failed';
     
     if (error.code === 'EAUTH') {
-      errorMessage = 'Authentication failed. Please check your email and password/app password.';
+      if (error.response && error.response.includes('basic authentication is disabled')) {
+        errorMessage = 'Outlook/Hotmail: Microsoft has disabled basic authentication. Please use Gmail or another email provider that supports SMTP with app passwords.';
+      } else {
+        errorMessage = 'Authentication failed. Please check your email and password/app password.';
+      }
     } else if (error.code === 'ENOTFOUND') {
       errorMessage = 'SMTP server not found. Please check your SMTP settings.';
     } else if (error.message) {

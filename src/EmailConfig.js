@@ -16,7 +16,7 @@ const EMAIL_PROVIDERS = {
     smtp: 'smtp-mail.outlook.com',
     port: 587,
     secure: false,
-    instructions: 'You must use an App Password. Go to Microsoft Account Security > Advanced Security Options > App Passwords. Regular passwords will not work due to security restrictions.'
+    instructions: '⚠️ IMPORTANT: Microsoft has disabled basic authentication for most Outlook accounts. SMTP may not work even with App Passwords. Consider using Gmail instead, or contact your IT admin if this is a business account.'
   },
   yahoo: {
     name: 'Yahoo',
@@ -217,15 +217,35 @@ function EmailConfig({ user }) {
           </select>
 
           <div style={{ 
-            background: '#e3f2fd', 
+            background: selectedProvider === 'outlook' ? '#fff3cd' : '#e3f2fd', 
             padding: '15px', 
             borderRadius: '8px', 
             marginBottom: '20px',
-            border: '1px solid #2196f3'
+            border: `1px solid ${selectedProvider === 'outlook' ? '#ffc107' : '#2196f3'}`
           }}>
             <strong>Instructions:</strong><br />
             {EMAIL_PROVIDERS[selectedProvider].instructions}
           </div>
+
+          {selectedProvider === 'outlook' && (
+            <div style={{ 
+              background: '#f8d7da', 
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid #dc3545'
+            }}>
+              <strong>⚠️ Outlook/Hotmail Users:</strong><br />
+              Microsoft has disabled basic authentication for security. Even with App Passwords, you may get "Authentication unsuccessful" errors. 
+              <br /><br />
+              <strong>Recommended Solutions:</strong>
+              <ul style={{ marginBottom: 0, paddingLeft: '20px' }}>
+                <li>Use Gmail instead (App Passwords still work)</li>
+                <li>Use a business email with Exchange/Office 365</li>
+                <li>Contact your IT administrator if this is a work account</li>
+              </ul>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
             <div>
