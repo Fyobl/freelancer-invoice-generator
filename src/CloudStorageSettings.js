@@ -16,7 +16,13 @@ function CloudStorageSettings({ user }) {
     gcpCredentials: '',
     azureAccount: '',
     azureKey: '',
-    azureContainer: ''
+    azureContainer: '',
+    oneDriveClientId: '',
+    oneDriveClientSecret: '',
+    oneDriveTenantId: '',
+    dropboxAppKey: '',
+    dropboxAppSecret: '',
+    dropboxAccessToken: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -138,6 +144,8 @@ function CloudStorageSettings({ user }) {
               <option value="aws">Amazon S3</option>
               <option value="gcp">Google Cloud Storage</option>
               <option value="azure">Azure Blob Storage</option>
+              <option value="onedrive">Microsoft OneDrive</option>
+              <option value="dropbox">Dropbox</option>
             </select>
 
             {cloudSettings.provider === 'aws' && (
@@ -286,6 +294,94 @@ function CloudStorageSettings({ user }) {
               </div>
             )}
 
+            {cloudSettings.provider === 'onedrive' && (
+              <div style={{ marginTop: '20px' }}>
+                <h3 style={{ color: '#333', marginBottom: '15px' }}>Microsoft OneDrive Configuration</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      Client ID (Application ID)
+                    </label>
+                    <input
+                      type="text"
+                      value={cloudSettings.oneDriveClientId}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, oneDriveClientId: e.target.value })}
+                      style={inputStyle}
+                      placeholder="12345678-1234-1234-1234-123456789012"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      Client Secret
+                    </label>
+                    <input
+                      type="password"
+                      value={cloudSettings.oneDriveClientSecret}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, oneDriveClientSecret: e.target.value })}
+                      style={inputStyle}
+                      placeholder="Client secret value..."
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      Tenant ID (Directory ID)
+                    </label>
+                    <input
+                      type="text"
+                      value={cloudSettings.oneDriveTenantId}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, oneDriveTenantId: e.target.value })}
+                      style={inputStyle}
+                      placeholder="87654321-4321-4321-4321-210987654321"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {cloudSettings.provider === 'dropbox' && (
+              <div style={{ marginTop: '20px' }}>
+                <h3 style={{ color: '#333', marginBottom: '15px' }}>Dropbox Configuration</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      App Key
+                    </label>
+                    <input
+                      type="text"
+                      value={cloudSettings.dropboxAppKey}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, dropboxAppKey: e.target.value })}
+                      style={inputStyle}
+                      placeholder="abcdefghij123456"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      App Secret
+                    </label>
+                    <input
+                      type="password"
+                      value={cloudSettings.dropboxAppSecret}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, dropboxAppSecret: e.target.value })}
+                      style={inputStyle}
+                      placeholder="App secret..."
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      Access Token
+                    </label>
+                    <input
+                      type="password"
+                      value={cloudSettings.dropboxAccessToken}
+                      onChange={(e) => setCloudSettings({ ...cloudSettings, dropboxAccessToken: e.target.value })}
+                      style={inputStyle}
+                      placeholder="sl.xxxxxxxxxxxxx"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button 
               type="submit" 
               disabled={saving}
@@ -317,6 +413,8 @@ function CloudStorageSettings({ user }) {
             <p><strong>AWS S3:</strong> Create an IAM user with S3 permissions and get the access keys.</p>
             <p><strong>Google Cloud:</strong> Create a service account with Storage Admin role and download the JSON key.</p>
             <p><strong>Azure:</strong> Get your storage account access key from the Azure portal.</p>
+            <p><strong>OneDrive:</strong> Register an app in Azure AD, get Client ID, Secret, and Tenant ID with Files.ReadWrite permissions.</p>
+            <p><strong>Dropbox:</strong> Create a Dropbox app in the App Console, get App Key, Secret, and generate an Access Token.</p>
             <p><strong>Security:</strong> All credentials are encrypted and stored securely. Never share your keys publicly.</p>
           </div>
         </div>

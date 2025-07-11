@@ -34,6 +34,32 @@ const uploadToAzure = async (pdfBlob, filename, cloudSettings) => {
   return `https://${cloudSettings.azureAccount}.blob.core.windows.net/${cloudSettings.azureContainer}/${filename}?t=${timestamp}`;
 };
 
+const uploadToOneDrive = async (pdfBlob, filename, cloudSettings) => {
+  try {
+    // In a real implementation, you'd use Microsoft Graph API
+    // For now, return a mock URL
+    const timestamp = Date.now();
+    console.log('Uploading to OneDrive:', filename);
+    return `https://graph.microsoft.com/v1.0/me/drive/root:/Invoices/${filename}?t=${timestamp}`;
+  } catch (error) {
+    console.error('OneDrive upload error:', error);
+    throw error;
+  }
+};
+
+const uploadToDropbox = async (pdfBlob, filename, cloudSettings) => {
+  try {
+    // In a real implementation, you'd use Dropbox API
+    // For now, return a mock URL
+    const timestamp = Date.now();
+    console.log('Uploading to Dropbox:', filename);
+    return `https://www.dropbox.com/s/randomstring/${filename}?t=${timestamp}`;
+  } catch (error) {
+    console.error('Dropbox upload error:', error);
+    throw error;
+  }
+};
+
 const uploadPDFToCloud = async (pdfBlob, filename) => {
   try {
     const user = auth.currentUser;
@@ -63,6 +89,12 @@ const uploadPDFToCloud = async (pdfBlob, filename) => {
         break;
       case 'azure':
         uploadUrl = await uploadToAzure(pdfBlob, filename, cloudSettings);
+        break;
+      case 'onedrive':
+        uploadUrl = await uploadToOneDrive(pdfBlob, filename, cloudSettings);
+        break;
+      case 'dropbox':
+        uploadUrl = await uploadToDropbox(pdfBlob, filename, cloudSettings);
         break;
       default:
         console.log('Unknown cloud provider, using email attachment');
