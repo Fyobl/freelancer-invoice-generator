@@ -1,475 +1,328 @@
-import jsPDF from 'jspdf';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from './firebase.js';
-import { auth } from './firebase.js';
+import { jsPDF } from 'jspdf';
 
+// Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
 
-export const generateInvoicePDF = async (invoice, companySettings) => {
-  console.log('PDF generation started');
-
+const generateInvoicePDF = async (invoice, companySettings) => {
   try {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 20;
-    let yPosition = 30;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let currentY = 20;
 
-    // Company Header
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companySettings.companyName || 'Your Company', margin, yPosition);
+  // Professional header
+  doc.setFillColor(41, 128, 185);
+  doc.rect(0, 0, pageWidth, 40, 'F');
 
-    yPosition += 10;
+  // Company logo
+  if (companySettings.logo) {
+    try {
+      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+    } catch (error) {
+      console.log('Error adding logo to PDF:', error);
+    }
+  }
+
+  // Company name in header
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+
+  // Company details in header
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  if (companySettings.address) {
+    doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+  }
+  if (companySettings.email) {
+    doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
+  }
+
+  currentY = 60;
+  doc.setTextColor(0, 0, 0);
+
+  // Invoice title
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+  doc.text('INVOICE', 20, currentY);
+
+  // Invoice details
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+  doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 20, currentY + 15);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 25);
+  doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - 120, currentY + 25);
+  doc.text(`Status: ${invoice.status}`, pageWidth - 120, currentY + 35);
+
+  currentY += 60;
+
+  // Bill To section
+  doc.setFillColor(248, 249, 250);
+  doc.rect(20, currentY, pageWidth - 40, 25, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, currentY, pageWidth - 40, 25);
+
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text('Bill To:', 25, currentY + 12);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
+  doc.text(invoice.clientName, 25, currentY + 20);
+
+  currentY += 45;
+
+  // Items table header
+  doc.setFillColor(41, 128, 185);
+  doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.text('Description', 25, currentY + 10);
+  doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
+
+  currentY += 15;
+  doc.setTextColor(0, 0, 0);
+
+  // Service line
+  doc.setFillColor(255, 255, 255);
+  doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, currentY, pageWidth - 40, 15);
+
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.text(invoice.productName || 'Service', 25, currentY + 10);
+  doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
+
+  currentY += 35;
+
+  // Totals section
+  const amount = parseFloat(invoice.amount) || 0;
+  const vatRate = parseFloat(invoice.vat) || 0;
+  const vatAmount = amount * (vatRate / 100);
+  const total = amount + vatAmount;
+
+  doc.setFillColor(248, 249, 250);
+  doc.rect(pageWidth - 120, currentY, 100, 45, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(pageWidth - 120, currentY, 100, 45);
+
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.text('Subtotal:', pageWidth - 115, currentY + 10);
+  doc.text(`£${amount.toFixed(2)}`, pageWidth - 25, currentY + 10, { align: 'right' });
+
+  doc.text(`VAT (${vatRate}%):`, pageWidth - 115, currentY + 20);
+  doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 25, currentY + 20, { align: 'right' });
+
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(12);
+  doc.text('Total:', pageWidth - 115, currentY + 35);
+  doc.text(`£${total.toFixed(2)}`, pageWidth - 25, currentY + 35, { align: 'right' });
+
+  // Notes section
+  if (invoice.notes) {
+    currentY += 70;
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-
-    if (companySettings.address) {
-      doc.text(companySettings.address, margin, yPosition);
-      yPosition += 5;
-    }
-    if (companySettings.phone) {
-      doc.text(`Phone: ${companySettings.phone}`, margin, yPosition);
-      yPosition += 5;
-    }
-    if (companySettings.email) {
-      doc.text(`Email: ${companySettings.email}`, margin, yPosition);
-      yPosition += 5;
-    }
-
-    // Invoice Title and Number
-    yPosition += 15;
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE', pageWidth - margin - 30, yPosition, { align: 'right' });
-
-    yPosition += 8;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, pageWidth - margin - 50, yPosition, { align: 'right' });
-
-    yPosition += 6;
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-
-    if (invoice.dueDate) {
-      yPosition += 6;
-      doc.text(`Due Date: ${invoice.dueDate}`, pageWidth - margin - 45, yPosition, { align: 'right' });
-    }
-
-    // Bill To Section
-    yPosition += 20;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Bill To:', margin, yPosition);
-
-    yPosition += 8;
-    doc.setFont('helvetica', 'normal');
-    doc.text(invoice.clientName, margin, yPosition);
-
-    // Invoice Items Header
-    yPosition += 30;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Description', margin, yPosition);
-    doc.text('Amount', pageWidth - margin - 40, yPosition, { align: 'right' });
-
-    // Line under header
-    yPosition += 3;
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
-
-    // Invoice Items
-    yPosition += 15;
-    doc.setFont('helvetica', 'normal');
-    doc.text('Professional Services', margin, yPosition);
-    doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-
-    // VAT if applicable
-    if (invoice.vat && invoice.vat > 0) {
-      yPosition += 8;
-      const vatAmount = (invoice.amount * invoice.vat) / 100;
-      doc.text(`VAT (${invoice.vat}%)`, margin, yPosition);
-      doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-    }
-
-    // Total
-    yPosition += 15;
-    doc.line(pageWidth - margin - 80, yPosition, pageWidth - margin, yPosition);
-    yPosition += 10;
-    doc.setFont('helvetica', 'bold');
-    const totalAmount = invoice.vat ? invoice.amount + (invoice.amount * invoice.vat / 100) : invoice.amount;
-    doc.text('Total:', pageWidth - margin - 60, yPosition, { align: 'right' });
-    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - margin - 20, yPosition, { align: 'right' });
-
-    // Notes
-    if (invoice.notes) {
-      yPosition += 30;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Notes:', margin, yPosition);
-      yPosition += 8;
-      doc.setFont('helvetica', 'normal');
-      const splitNotes = doc.splitTextToSize(invoice.notes, pageWidth - (margin * 2));
-      doc.text(splitNotes, margin, yPosition);
-    }
-
-    console.log('PDF generation completed successfully');
-    return doc;
-  } catch (error) {
-    console.error('Error in PDF generation:', error);
-    throw error;
+    doc.setFont(undefined, 'bold');
+    doc.text('Notes:', 20, currentY);
+    doc.setFont(undefined, 'normal');
+    doc.text(invoice.notes, 20, currentY + 10);
   }
-};
 
-export const sendInvoicePDFViaEmail = async (invoice, companySettings, recipientEmail) => {
-  try {
-    console.log('Calling sendInvoiceEmail with:', {
-      invoiceNumber: invoice.invoiceNumber,
-      recipientEmail: recipientEmail,
-      senderName: companySettings.contactName || 'N/A',
-      companyName: companySettings.companyName || 'N/A'
-    });
+  // Footer
+  const footerY = 250;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(128, 128, 128);
 
-    // Generate PDF
-    const doc = await generateInvoicePDF(invoice, companySettings);
-
-    // Get email template
-    const user = auth.currentUser;
-    let emailTemplate = {
-      subject: 'Invoice {invoiceNumber} from {companyName}',
-      body: `Dear {clientName},
-
-Please find your invoice attached via the following link:
-{downloadLink}
-
-Invoice Details:
-- Invoice Number: {invoiceNumber}
-- Amount: £{amount}
-- Due Date: {dueDate}
-
-Thank you for your business!
-
-Best regards,
-{contactName}`
-    };
-
-    if (user) {
-      try {
-        const emailDoc = await require('firebase/firestore').getDoc(require('firebase/firestore').doc(db, 'emailSettings', user.uid));
-        if (emailDoc.exists()) {
-          emailTemplate = emailDoc.data().templates.invoice;
-        }
-      } catch (error) {
-        console.log('Using default email template');
-      }
-
-      // Check if user has cloud storage configured
-      const cloudStorageQuery = query(
-        collection(db, 'cloudStorage'), 
-        where('userId', '==', user.uid),
-        where('isConnected', '==', true)
-      );
-      const cloudStorageSnapshot = await getDocs(cloudStorageQuery);
-
-      if (!cloudStorageSnapshot.empty) {
-        // Upload to cloud storage and get link
-        const cloudData = cloudStorageSnapshot.docs[0].data();
-        const uploadResult = await uploadToCloudStorage(doc, invoice, cloudData, 'invoice');
-
-        if (uploadResult.success) {
-          // Replace template variables
-          const subject = replaceTemplateVariables(emailTemplate.subject, {
-            invoiceNumber: invoice.invoiceNumber,
-            clientName: invoice.clientName,
-            amount: Number(invoice.amount).toFixed(2),
-            dueDate: invoice.dueDate || 'N/A',
-            downloadLink: uploadResult.url,
-            companyName: companySettings.companyName || 'Your Company',
-            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-          });
-
-          const body = replaceTemplateVariables(emailTemplate.body, {
-            invoiceNumber: invoice.invoiceNumber,
-            clientName: invoice.clientName,
-            amount: Number(invoice.amount).toFixed(2),
-            dueDate: invoice.dueDate || 'N/A',
-            downloadLink: uploadResult.url,
-            companyName: companySettings.companyName || 'Your Company',
-            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-          });
-
-          const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-          window.open(mailtoLink, '_blank');
-          return;
-        }
-      }
-    }
-
-    // Fallback to PDF attachment (original method)
-    const pdfBlob = doc.output('blob');
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-      const base64 = e.target.result.split(',')[1];
-
-      const subject = replaceTemplateVariables(emailTemplate.subject, {
-        invoiceNumber: invoice.invoiceNumber,
-        clientName: invoice.clientName,
-        amount: Number(invoice.amount).toFixed(2),
-        dueDate: invoice.dueDate || 'N/A',
-        downloadLink: 'PDF attached',
-        companyName: companySettings.companyName || 'Your Company',
-        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-      });
-
-      const body = replaceTemplateVariables(emailTemplate.body.replace('{downloadLink}', 'Please find your invoice attached.'), {
-        invoiceNumber: invoice.invoiceNumber,
-        clientName: invoice.clientName,
-        amount: Number(invoice.amount).toFixed(2),
-        dueDate: invoice.dueDate || 'N/A',
-        downloadLink: 'PDF attached',
-        companyName: companySettings.companyName || 'Your Company',
-        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-      });
-
-      const filename = `invoice_${invoice.invoiceNumber}.pdf`;
-      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
-
-      window.open(mailtoLink, '_blank');
-    };
-
-    reader.readAsDataURL(pdfBlob);
-
-  } catch (error) {
-    console.error('Error sending invoice email:', error);
-    throw error;
+  let footerText = [];
+  if (companySettings.companyNumber) {
+    footerText.push(`Company Registration: ${companySettings.companyNumber}`);
   }
-};
+  if (companySettings.vatNumber) {
+    footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+  }
 
-export const sendQuotePDFViaEmail = async (quote, companySettings, recipientEmail) => {
-  try {
-    // Generate quote PDF
-    const doc = await generateQuotePDF(quote, companySettings);
+  if (footerText.length > 0) {
+    doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
+  }
 
-    // Get email template
-    const user = auth.currentUser;
-    let emailTemplate = {
-      subject: 'Quote {quoteNumber} from {companyName}',
-      body: `Dear {clientName},
+  doc.setTextColor(41, 128, 185);
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'italic');
+  doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
 
-Please find your quote attached via the following link:
-{downloadLink}
-
-Quote Details:
-- Quote Number: {quoteNumber}
-- Amount: £{amount}
-- Valid Until: {validUntil}
-
-Thank you for considering our services!
-
-Best regards,
-{contactName}`
-    };
-
-    if (user) {
-      try {
-        const emailDoc = await require('firebase/firestore').getDoc(require('firebase/firestore').doc(db, 'emailSettings', user.uid));
-        if (emailDoc.exists()) {
-          emailTemplate = emailDoc.data().templates.quote;
-        }
-      } catch (error) {
-        console.log('Using default email template');
-      }
-
-      // Check if user has cloud storage configured
-      const cloudStorageQuery = query(
-        collection(db, 'cloudStorage'), 
-        where('userId', '==', user.uid),
-        where('isConnected', '==', true)
-      );
-      const cloudStorageSnapshot = await getDocs(cloudStorageQuery);
-
-      if (!cloudStorageSnapshot.empty) {
-        // Upload to cloud storage and get link
-        const cloudData = cloudStorageSnapshot.docs[0].data();
-        const uploadResult = await uploadToCloudStorage(doc, quote, cloudData, 'quote');
-
-        if (uploadResult.success) {
-          // Replace template variables
-          const subject = replaceTemplateVariables(emailTemplate.subject, {
-            quoteNumber: quote.quoteNumber || quote.id,
-            clientName: quote.clientName,
-            amount: Number(quote.amount).toFixed(2),
-            validUntil: quote.validUntil || 'N/A',
-            downloadLink: uploadResult.url,
-            companyName: companySettings.companyName || 'Your Company',
-            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-          });
-
-          const body = replaceTemplateVariables(emailTemplate.body, {
-            quoteNumber: quote.quoteNumber || quote.id,
-            clientName: quote.clientName,
-            amount: Number(quote.amount).toFixed(2),
-            validUntil: quote.validUntil || 'N/A',
-            downloadLink: uploadResult.url,
-            companyName: companySettings.companyName || 'Your Company',
-            contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-          });
-
-          const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-          window.open(mailtoLink, '_blank');
-          return;
-        }
-      }
-    }
-
-    // Fallback to PDF attachment
-    const pdfBlob = doc.output('blob');
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-      const base64 = e.target.result.split(',')[1];
-
-      const subject = replaceTemplateVariables(emailTemplate.subject, {
-        quoteNumber: quote.quoteNumber || quote.id,
-        clientName: quote.clientName,
-        amount: Number(quote.amount).toFixed(2),
-        validUntil: quote.validUntil || 'N/A',
-        downloadLink: 'PDF attached',
-        companyName: companySettings.companyName || 'Your Company',
-        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-      });
-
-      const body = replaceTemplateVariables(emailTemplate.body.replace('{downloadLink}', 'Please find your quote attached.'), {
-        quoteNumber: quote.quoteNumber || quote.id,
-        clientName: quote.clientName,
-        amount: Number(quote.amount).toFixed(2),
-        validUntil: quote.validUntil || 'N/A',
-        downloadLink: 'PDF attached',
-        companyName: companySettings.companyName || 'Your Company',
-        contactName: companySettings.contactName || companySettings.companyName || 'Your Company'
-      });
-
-      const filename = `quote_${quote.quoteNumber || quote.id}.pdf`;
-      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${filename}:${base64}`;
-
-      window.open(mailtoLink, '_blank');
-    };
-
-    reader.readAsDataURL(pdfBlob);
-
+  console.log('PDF generation completed successfully');
+  return doc;
   } catch (error) {
-    console.error('Error sending quote email:', error);
+    console.error('Error generating invoice PDF:', error);
+    console.error('Error details:', error.message, error.stack);
+    console.error('Invoice data causing error:', invoice);
+    console.error('Company settings causing error:', companySettings);
     throw error;
   }
 };
 
 const generateQuotePDF = async (quote, companySettings) => {
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.width;
-  const margin = 20;
-  let yPosition = 30;
+  try {
+    const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let currentY = 20;
 
-  // Company Header
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text(companySettings.companyName || 'Your Company', margin, yPosition);
+  // Professional header
+  doc.setFillColor(41, 128, 185);
+  doc.rect(0, 0, pageWidth, 40, 'F');
 
-  yPosition += 10;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-
-  if (companySettings.address) {
-    doc.text(companySettings.address, margin, yPosition);
-    yPosition += 5;
+  // Company logo
+  if (companySettings.logo) {
+    try {
+      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+    } catch (error) {
+      console.log('Error adding logo to PDF:', error);
+    }
   }
-  if (companySettings.phone) {
-    doc.text(`Phone: ${companySettings.phone}`, margin, yPosition);
-    yPosition += 5;
+
+  // Company name in header
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+
+  // Company details in header
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  if (companySettings.address) {
+    doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
   }
   if (companySettings.email) {
-    doc.text(`Email: ${companySettings.email}`, margin, yPosition);
-    yPosition += 5;
+    doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
   }
 
-  // Quote Title and Number
-  yPosition += 15;
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('QUOTE', pageWidth - margin - 30, yPosition, { align: 'right' });
+  currentY = 60;
+  doc.setTextColor(0, 0, 0);
 
-  yPosition += 8;
+  // Quote title
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+  doc.text('QUOTE', 20, currentY);
+
+  // Quote details
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Quote #: ${quote.quoteNumber || quote.id}`, pageWidth - margin - 50, yPosition, { align: 'right' });
+  doc.setFont(undefined, 'normal');
+  doc.text(`Quote Number: ${quote.quoteNumber}`, 20, currentY + 15);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 25);
+  doc.text(`Valid Until: ${quote.validUntil}`, pageWidth - 120, currentY + 25);
+  doc.text(`Status: ${quote.status}`, pageWidth - 120, currentY + 35);
 
-  yPosition += 6;
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, yPosition, { align: 'right' });
+  currentY += 60;
 
-  if (quote.validUntil) {
-    yPosition += 6;
-    doc.text(`Valid Until: ${quote.validUntil}`, pageWidth - margin - 45, yPosition, { align: 'right' });
+  // Quote To section
+  doc.setFillColor(248, 249, 250);
+  doc.rect(20, currentY, pageWidth - 40, 25, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, currentY, pageWidth - 40, 25);
+
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text('Quote To:', 25, currentY + 12);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
+  doc.text(quote.clientName, 25, currentY + 20);
+
+  currentY += 45;
+
+  // Items table header
+  doc.setFillColor(41, 128, 185);
+  doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.text('Description', 25, currentY + 10);
+  doc.text('Amount', pageWidth - 60, currentY + 10, { align: 'right' });
+
+  currentY += 15;
+  doc.setTextColor(0, 0, 0);
+
+  // Service line
+  doc.setFillColor(255, 255, 255);
+  doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, currentY, pageWidth - 40, 15);
+
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.text(quote.productName || 'Service', 25, currentY + 10);
+  doc.text(`£${Number(quote.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
+
+  currentY += 35;
+
+  // Totals section
+  const amount = parseFloat(quote.amount) || 0;
+  const vatRate = parseFloat(quote.vat) || 0;
+  const vatAmount = amount * (vatRate / 100);
+  const total = amount + vatAmount;
+
+  doc.setFillColor(248, 249, 250);
+  doc.rect(pageWidth - 120, currentY, 100, 45, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(pageWidth - 120, currentY, 100, 45);
+
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.text('Subtotal:', pageWidth - 115, currentY + 10);
+  doc.text(`£${amount.toFixed(2)}`, pageWidth - 25, currentY + 10, { align: 'right' });
+
+  doc.text(`VAT (${vatRate}%):`, pageWidth - 115, currentY + 20);
+  doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 25, currentY + 20, { align: 'right' });
+
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(12);
+  doc.text('Total:', pageWidth - 115, currentY + 35);
+  doc.text(`£${total.toFixed(2)}`, pageWidth - 25, currentY + 35, { align: 'right' });
+
+  // Notes section
+  if (quote.notes) {
+    currentY += 70;
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text('Notes:', 20, currentY);
+    doc.setFont(undefined, 'normal');
+    doc.text(quote.notes, 20, currentY + 10);
   }
 
-  // Quote To Section
-  yPosition += 20;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Quote For:', margin, yPosition);
+  // Footer
+  const footerY = 250;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(128, 128, 128);
 
-  yPosition += 8;
-  doc.setFont('helvetica', 'normal');
-  doc.text(quote.clientName, margin, yPosition);
+  let footerText = [];
+  if (companySettings.companyNumber) {
+    footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+  }
+  if (companySettings.vatNumber) {
+    footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+  }
 
-  // Quote Items
-  yPosition += 30;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Description', margin, yPosition);
-  doc.text('Amount', pageWidth - margin - 40, yPosition, { align: 'right' });
+  if (footerText.length > 0) {
+    doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
+  }
 
-  yPosition += 3;
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  doc.setTextColor(41, 128, 185);
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'italic');
+  doc.text('Thank you for considering our services!', pageWidth / 2, footerY + 20, { align: 'center' });
 
-  yPosition += 15;
-  doc.setFont('helvetica', 'normal');
-  doc.text(quote.description || 'Professional Services', margin, yPosition);
-  doc.text(`£${Number(quote.amount).toFixed(2)}`, pageWidth - margin - 40, yPosition, { align: 'right' });
-
-  // Total
-  yPosition += 15;
-  doc.line(pageWidth - margin - 80, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Total:', pageWidth - margin - 60, yPosition, { align: 'right' });
-  doc.text(`£${Number(quote.amount).toFixed(2)}`, pageWidth - margin - 20, yPosition, { align: 'right' });
-
+  console.log('PDF generation completed successfully');
   return doc;
-};
-
-const replaceTemplateVariables = (template, variables) => {
-  let result = template;
-  for (const [key, value] of Object.entries(variables)) {
-    const regex = new RegExp(`{${key}}`, 'g');
-    result = result.replace(regex, value);
+  } catch (error) {
+    console.error('Error generating quote PDF:', error);
+    console.error('Error details:', error.message, error.stack);
+    console.error('Invoice data causing error:', quote);
+    console.error('Company settings causing error:', companySettings);
+    throw error;
   }
-  return result;
 };
 
-const uploadToCloudStorage = async (doc, item, cloudData, type) => {
-  // This is a placeholder for cloud storage upload
-  // In a real implementation, you would:
-  // 1. Convert PDF to blob/buffer
-  // 2. Use the cloud provider's API to upload
-  // 3. Return the shareable URL
-
-  console.log('Note: In production, expired file cleanup should be handled by Cloud Functions');
-
-  // Simulate upload delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // Generate filename based on type
-  const filename = type === 'invoice' ? 
-    `${item.invoiceNumber}.pdf` : 
-    `${item.quoteNumber || item.id}.pdf`;
-
-  // For testing with OneDrive, you can use your test link here
-  // In production, this would be the actual cloud storage URL
-  return {
-    success: true,
-    url: `https://1drv.ms/b/c/your-onedrive-link/${filename}` // Replace with your actual OneDrive structure
-  };
-};
+export { generateInvoicePDF, generateQuotePDF };
