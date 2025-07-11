@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'firebase/auth';
 
 import Login from './Login.js';
+import Register from './Register.js';
 import Dashboard from './Dashboard.js';
 import Products from './Products.js';
 import Clients from './Clients.js';
@@ -37,6 +39,10 @@ function App() {
           element={!user ? <Login /> : <Navigate to="/" />}
         />
         <Route
+          path="/register"
+          element={!user ? <Register onRegister={setUser} /> : <Navigate to="/" />}
+        />
+        <Route
           path="/products"
           element={user ? <Products user={user} /> : <Navigate to="/login" />}
         />
@@ -50,7 +56,7 @@ function App() {
         />
         <Route
           path="/company-settings"
-          element={<CompanySettings />}
+          element={user ? <CompanySettings user={user} /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

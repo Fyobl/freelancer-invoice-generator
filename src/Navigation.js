@@ -5,9 +5,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
 function Navigation({ user }) {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const location = useLocation();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -30,134 +30,87 @@ function Navigation({ user }) {
     signOut(auth);
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-
-  const headerStyle = {
+  const navStyle = {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
-    background: '#f8f9fa',
-    padding: '15px 20px',
-    borderBottom: '1px solid #dee2e6',
+    zIndex: 1000,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '15px 25px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 1000,
-    height: '60px',
-    boxSizing: 'border-box'
+    alignItems: 'center'
   };
 
-  const hamburgerStyle = {
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    padding: '5px',
+  const menuButtonStyle = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-around',
     width: '30px',
-    height: '30px'
+    height: '30px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    zIndex: 1001
   };
 
   const hamburgerLineStyle = {
-    width: '100%',
+    width: '30px',
     height: '3px',
-    backgroundColor: '#333',
+    background: '#fff',
+    borderRadius: '3px',
     transition: 'all 0.3s ease',
-    transformOrigin: 'center'
+    transformOrigin: '1px'
   };
 
-  const sideMenuStyle = {
+  const mobileMenuStyle = {
     position: 'fixed',
-    top: 0,
-    left: isMenuOpen ? '0' : '-300px',
-    width: '300px',
-    height: '100vh',
-    background: '#2c3e50',
-    transition: 'left 0.3s ease',
-    zIndex: 1001,
-    padding: '80px 0 20px 0',
-    boxShadow: isMenuOpen ? '2px 0 10px rgba(0,0,0,0.3)' : 'none'
-  };
-
-  const overlayStyle = {
-    position: 'fixed',
-    top: 0,
+    top: '80px',
     left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(0,0,0,0.5)',
+    right: 0,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '20px',
+    transform: isMenuOpen ? 'translateY(0)' : 'translateY(-100%)',
+    transition: 'transform 0.3s ease',
     zIndex: 999,
-    display: isMenuOpen ? 'block' : 'none',
-    transition: 'opacity 0.3s ease'
+    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
   };
 
   const menuLinkStyle = {
     display: 'block',
-    padding: '15px 25px',
+    color: '#fff',
     textDecoration: 'none',
-    color: '#ecf0f1',
+    padding: '15px 0',
     fontSize: '16px',
-    fontWeight: '500',
-    transition: 'background-color 0.3s ease',
-    borderLeft: '4px solid transparent'
+    fontWeight: 'bold',
+    borderBottom: '1px solid rgba(255,255,255,0.1)'
   };
 
   const activeMenuLinkStyle = {
     ...menuLinkStyle,
-    backgroundColor: '#34495e',
-    borderLeft: '4px solid #3498db',
-    color: '#3498db'
-  };
-
-  const menuLinkHoverStyle = {
-    backgroundColor: '#34495e'
-  };
-
-  const userInfoStyle = {
-    padding: '20px 25px',
-    borderTop: '1px solid #34495e',
-    marginTop: 'auto'
-  };
-
-  const logoutButtonStyle = {
-    width: '100%',
-    padding: '12px',
-    background: '#e74c3c',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    marginTop: '10px',
-    transition: 'background-color 0.3s ease'
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: '8px',
+    padding: '15px 20px'
   };
 
   return (
     <>
-      {/* Header */}
-      <header style={headerStyle}>
+      <nav style={navStyle}>
         <button 
-          style={hamburgerStyle} 
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
+          style={menuButtonStyle}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           <div style={{
             ...hamburgerLineStyle,
-            transform: isMenuOpen ? 'rotate(45deg) translate(6px, 6px)' : 'none'
+            transform: isMenuOpen ? 'rotate(45deg)' : 'rotate(0)'
           }}></div>
           <div style={{
             ...hamburgerLineStyle,
-            opacity: isMenuOpen ? '0' : '1'
+            opacity: isMenuOpen ? 0 : 1,
+            transform: isMenuOpen ? 'translateX(20px)' : 'translateX(0)'
           }}></div>
           <div style={{
             ...hamburgerLineStyle,
@@ -193,122 +146,68 @@ function Navigation({ user }) {
           </span>
         </div>
 
-        <div style={{ fontSize: '14px', color: '#666' }}>
+        <div style={{ fontSize: '14px', color: '#fff' }}>
           Hi, {userData?.firstName || user?.email?.split('@')[0]}
         </div>
-      </header>
-
-      {/* Overlay */}
-      <div style={overlayStyle} onClick={closeMenu}></div>
-
-      {/* Side Menu */}
-      <nav style={sideMenuStyle}>
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <Link 
-            to="/" 
-            style={location.pathname === '/' ? activeMenuLinkStyle : menuLinkStyle}
-            onClick={closeMenu}
-            onMouseEnter={(e) => {
-              if (location.pathname !== '/') {
-                e.target.style.backgroundColor = menuLinkHoverStyle.backgroundColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== '/') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📊 Dashboard
-          </Link>
-
-          <Link 
-            to="/products" 
-            style={location.pathname === '/products' ? activeMenuLinkStyle : menuLinkStyle}
-            onClick={closeMenu}
-            onMouseEnter={(e) => {
-              if (location.pathname !== '/products') {
-                e.target.style.backgroundColor = menuLinkHoverStyle.backgroundColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== '/products') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📦 Products
-          </Link>
-
-          <Link 
-            to="/clients" 
-            style={location.pathname === '/clients' ? activeMenuLinkStyle : menuLinkStyle}
-            onClick={closeMenu}
-            onMouseEnter={(e) => {
-              if (location.pathname !== '/clients') {
-                e.target.style.backgroundColor = menuLinkHoverStyle.backgroundColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== '/clients') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            👥 Clients
-          </Link>
-
-          <Link 
-            to="/reports" 
-            style={location.pathname === '/reports' ? activeMenuLinkStyle : menuLinkStyle}
-            onClick={closeMenu}
-            onMouseEnter={(e) => {
-              if (location.pathname !== '/reports') {
-                e.target.style.backgroundColor = menuLinkHoverStyle.backgroundColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== '/reports') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            📈 Reports
-          </Link>
-
-          <Link 
-            to="/company-settings" 
-            style={location.pathname === '/company-settings' ? activeMenuLinkStyle : menuLinkStyle}
-            onClick={closeMenu}
-            onMouseEnter={(e) => {
-              if (location.pathname !== '/company-settings') {
-                e.target.style.backgroundColor = menuLinkHoverStyle.backgroundColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== '/company-settings') {
-                e.target.style.backgroundColor = 'transparent';
-              }
-            }}
-          >
-            🏢 Company Settings
-          </Link>
-
-          <div style={userInfoStyle}>
-            <div style={{ color: '#bdc3c7', fontSize: '14px', marginBottom: '10px' }}>
-              Welcome, {userData?.firstName || user?.email?.split('@')[0]}
-            </div>
-            <button 
-              onClick={handleLogout} 
-              style={logoutButtonStyle}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#c0392b'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#e74c3c'}
-            >
-              Logout
-            </button>
-          </div>
-        </div>
       </nav>
+
+      <div style={mobileMenuStyle}>
+        <Link 
+          to="/" 
+          style={location.pathname === '/' ? activeMenuLinkStyle : menuLinkStyle}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          📊 Dashboard
+        </Link>
+
+        <Link 
+          to="/products" 
+          style={location.pathname === '/products' ? activeMenuLinkStyle : menuLinkStyle}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          📦 Products
+        </Link>
+
+        <Link 
+          to="/clients" 
+          style={location.pathname === '/clients' ? activeMenuLinkStyle : menuLinkStyle}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          👥 Clients
+        </Link>
+
+        <Link 
+          to="/reports" 
+          style={location.pathname === '/reports' ? activeMenuLinkStyle : menuLinkStyle}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          📈 Reports
+        </Link>
+
+        <Link 
+          to="/company-settings" 
+          style={location.pathname === '/company-settings' ? activeMenuLinkStyle : menuLinkStyle}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          🏢 Company Settings
+        </Link>
+
+        <button 
+          onClick={handleLogout} 
+          style={{
+            ...menuLinkStyle,
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            marginTop: '10px',
+            width: '100%',
+            textAlign: 'left'
+          }}
+        >
+          🚪 Logout
+        </button>
+      </div>
     </>
   );
 }
