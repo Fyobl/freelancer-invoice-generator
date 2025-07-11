@@ -92,8 +92,7 @@ function AccountSettings() {
   const contentStyle = {
     padding: '30px',
     maxWidth: '1200px',
-    margin: '0 auto',
-    paddingTop: '100px'
+    margin: '0 auto'
   };
 
   const headerStyle = {
@@ -102,18 +101,19 @@ function AccountSettings() {
     marginBottom: '40px'
   };
 
-  const cardStyle = {
+  const sectionStyle = {
     background: 'rgba(255,255,255,0.95)',
     padding: '30px',
-    borderRadius: '16px',
     marginBottom: '30px',
+    borderRadius: '16px',
+    border: '2px solid #f8f9fa',
     backdropFilter: 'blur(15px)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    border: '2px solid rgba(255,255,255,0.2)'
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
   };
 
-  const dangerCardStyle = {
-    ...cardStyle,
+  const dangerSectionStyle = {
+    ...sectionStyle,
     border: '2px solid #dc3545',
     background: 'rgba(248, 215, 218, 0.95)'
   };
@@ -165,10 +165,10 @@ function AccountSettings() {
   return (
     <div style={containerStyle}>
       <Navigation user={user} />
-      <div style={contentStyle}>
+      <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
-            ⚙️ Account Settings
+            👤 Account Settings
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
             Hello {userData?.firstName || user?.email?.split('@')[0]}! Manage your account settings and preferences
@@ -176,9 +176,19 @@ function AccountSettings() {
         </div>
 
         {/* Account Information */}
-        <div style={cardStyle}>
+        <div 
+          style={sectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
           <h2 style={{ margin: '0 0 25px 0', color: '#333', fontSize: '1.5rem' }}>
-            👤 Account Information
+            ℹ️ Account Information
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
@@ -221,7 +231,17 @@ function AccountSettings() {
         </div>
 
         {/* Danger Zone */}
-        <div style={dangerCardStyle}>
+        <div 
+          style={dangerSectionStyle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 25px 50px rgba(220, 53, 69, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+          }}
+        >
           <h2 style={{ margin: '0 0 25px 0', color: '#dc3545', fontSize: '1.5rem' }}>
             ⚠️ Danger Zone
           </h2>
