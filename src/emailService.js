@@ -2,7 +2,7 @@
 import { auth, db, storage } from './firebase.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 const getUserEmailTemplates = async (userId) => {
   try {
@@ -74,7 +74,8 @@ const cleanupExpiredFiles = async () => {
 };
 
 const generateInvoicePDF = async (invoice, companySettings) => {
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = 20;
 
@@ -223,10 +224,15 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   doc.text('Thank you for your business!', pageWidth / 2, footerY + 20, { align: 'center' });
 
   return doc;
+  } catch (error) {
+    console.error('Error generating invoice PDF:', error);
+    throw error;
+  }
 };
 
 const generateQuotePDF = async (quote, companySettings) => {
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = 20;
 
@@ -375,6 +381,10 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.text('Thank you for considering our services!', pageWidth / 2, footerY + 20, { align: 'center' });
 
   return doc;
+  } catch (error) {
+    console.error('Error generating quote PDF:', error);
+    throw error;
+  }
 };
 
 export const sendQuoteEmail = async (quote, recipientEmail, senderName, companyName, companySettings) => {
