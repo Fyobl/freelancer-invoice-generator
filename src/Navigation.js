@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { signOut, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { auth, db } from './firebase.js';
-
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
@@ -225,67 +219,4 @@ function Navigation({ user }) {
   );
 }
 
-function AccountSettings() {
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const user = auth.currentUser;
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setPasswordConfirmation(e.target.value);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!user) {
-      alert("No user is currently logged in.");
-      return;
-    }
-
-    if (isDeleting) return;
-
-    if (!passwordConfirmation) {
-      alert("Please enter your password to confirm deletion.");
-      return;
-    }
-
-    setIsDeleting(true);
-
-    try {
-      const credential = EmailAuthProvider.credential(user.email, passwordConfirmation);
-      await reauthenticateWithCredential(user, credential);
-
-      // Delete user document from Firestore
-      await deleteDoc(doc(db, 'users', user.uid));
-
-      // Delete the user from Firebase Auth
-      await deleteUser(user);
-
-      alert("Account deleted successfully.");
-      navigate('/'); // Redirect to home page after deletion
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      alert("Error deleting account: " + error.message);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <div>
-      <h1>Account Settings</h1>
-      <p>Enter your password to confirm account deletion:</p>
-      <input
-        type="password"
-        value={passwordConfirmation}
-        onChange={handleChange}
-        placeholder="Your Password"
-      />
-      <button onClick={handleDeleteAccount} disabled={isDeleting}>
-        {isDeleting ? "Deleting..." : "Delete Account"}
-      </button>
-    </div>
-  );
-}
-
 export default Navigation;
-export { AccountSettings };
