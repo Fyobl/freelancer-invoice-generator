@@ -1,0 +1,68 @@
+Failed to compile.
+
+SyntaxError: /home/runner/workspace/src/Navigation.js: Identifier 'React' has already been declared. (226:7)
+  224 | 
+  225 | ```
+> 226 | import React, { useState, useEffect } from 'react';
+      |        ^
+  227 | import { Link, useLocation } from 'react-router-dom';
+  228 | import { signOut } from 'firebase/auth';
+  229 | import { getDoc, doc } from 'firebase/firestore';
+    at parser.next (<anonymous>)
+    at normalizeFile.next (<anonymous>)
+    at run.next (<anonymous>)
+    at transform.next (<anonymous>)
+ERROR in ./src/Navigation.js
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: /home/runner/workspace/src/Navigation.js: Identifier 'React' has already been declared. (226:7)
+
+  224 | 
+  225 | ```
+> 226 | import React, { useState, useEffect } from 'react';
+      |        ^
+  227 | import { Link, useLocation } from 'react-router-dom';
+  228 | import { signOut } from 'firebase/auth';
+  229 | import { getDoc, doc } from 'firebase/firestore';
+    at constructor (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:367:19)
+    at FlowParserMixin.raise (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6627:19)
+    at FlowScopeHandler.checkRedeclarationInScope (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:1644:19)
+    at FlowScopeHandler.declareName (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:1610:12)
+    at FlowScopeHandler.declareName (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:1711:11)
+    at FlowParserMixin.declareNameFromIdentifier (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:7591:16)
+    at FlowParserMixin.checkIdentifier (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:7587:12)
+    at FlowParserMixin.checkLVal (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:7526:12)
+    at FlowParserMixin.finishImportSpecifier (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14266:10)
+    at FlowParserMixin.parseImportSpecifierLocal (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:3411:31)
+    at FlowParserMixin.maybeParseDefaultImportSpecifier (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14370:12)
+    at FlowParserMixin.parseImportSpecifiersAndAfter (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14239:29)
+    at FlowParserMixin.parseImport (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14235:17)
+    at FlowParserMixin.parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12876:27)
+    at FlowParserMixin.parseStatementLike (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:2946:24)
+    at FlowParserMixin.parseModuleItem (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12744:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:13316:36)
+    at FlowParserMixin.parseBlockBody (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:13309:10)
+    at FlowParserMixin.parseProgram (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12625:10)
+    at FlowParserMixin.parseTopLevel (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12615:25)
+    at FlowParserMixin.parseTopLevel (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:3715:28)
+    at FlowParserMixin.parse (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14492:10)
+    at parse (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14526:38)
+    at parser (/home/runner/workspace/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/home/runner/workspace/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (/home/runner/workspace/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/home/runner/workspace/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (/home/runner/workspace/node_modules/gensync/index.js:261:32)
+    at /home/runner/workspace/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/home/runner/workspace/node_modules/gensync/index.js:223:11)
+    at /home/runner/workspace/node_modules/gensync/index.js:189:28
+    at /home/runner/workspace/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+    at /home/runner/workspace/node_modules/gensync/index.js:113:33
+    at step (/home/runner/workspace/node_modules/gensync/index.js:287:14)
+    at /home/runner/workspace/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/home/runner/workspace/node_modules/gensync/index.js:223:11)
+
+webpack compiled with 1 error
