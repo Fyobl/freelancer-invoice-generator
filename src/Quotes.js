@@ -166,7 +166,6 @@ function Quotes({ user }) {
       setNotes('');
       
       fetchQuotes();
-      alert('Quote created successfully!');
     } catch (error) {
       console.error('Error adding quote:', error);
       alert('Error creating quote. Please try again.');
