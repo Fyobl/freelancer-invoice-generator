@@ -290,7 +290,7 @@ function Admin({ user }) {
               </div>
               <div style={statCardStyle}>
                 <h3 style={{ fontSize: '2rem', margin: '0 0 10px 0', color: '#ffc107' }}>
-                  ${analytics.monthlyRevenue?.toFixed(2)}
+                  £{analytics.monthlyRevenue?.toFixed(2)}
                 </h3>
                 <p style={{ margin: 0, color: '#666', fontSize: '1.1rem' }}>Monthly Revenue</p>
               </div>
@@ -468,7 +468,7 @@ function Admin({ user }) {
                             {sub.status}
                           </span>
                         </td>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>${sub.amount}</td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>£{sub.amount}</td>
                         <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
                           {sub.nextBilling?.toDate?.()?.toLocaleDateString() || 'N/A'}
                         </td>
@@ -503,19 +503,19 @@ function Admin({ user }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.8rem', color: '#28a745', margin: '0 0 5px 0' }}>
-                    ${analytics.monthlyRevenue?.toFixed(2)}
+                    £{analytics.monthlyRevenue?.toFixed(2)}
                   </h3>
                   <p style={{ margin: 0, color: '#666' }}>Monthly Recurring Revenue</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.8rem', color: '#007bff', margin: '0 0 5px 0' }}>
-                    ${(analytics.monthlyRevenue * 12)?.toFixed(2)}
+                    £{(analytics.monthlyRevenue * 12)?.toFixed(2)}
                   </h3>
                   <p style={{ margin: 0, color: '#666' }}>Annual Recurring Revenue</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.8rem', color: '#ffc107', margin: '0 0 5px 0' }}>
-                    ${(analytics.monthlyRevenue / (analytics.activeSubscriptions || 1))?.toFixed(2)}
+                    £{(analytics.monthlyRevenue / (analytics.activeSubscriptions || 1))?.toFixed(2)}
                   </h3>
                   <p style={{ margin: 0, color: '#666' }}>Average Revenue Per User</p>
                 </div>
