@@ -371,101 +371,103 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
     z-index: 10000;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     backdrop-filter: blur(4px);
+    overflow: hidden;
   `;
 
   const popup = document.createElement('div');
   popup.style.cssText = `
     background: white;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-    max-width: 550px;
-    width: 90%;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    max-width: 420px;
+    width: 85%;
+    max-height: 80vh;
     text-align: center;
-    border: 3px solid #667eea;
+    border: 2px solid #667eea;
+    overflow-y: auto;
+    position: relative;
   `;
 
   popup.innerHTML = `
-    <div style="font-size: 56px; margin-bottom: 20px;">📧📎</div>
-    <h2 style="color: #333; margin-bottom: 15px; font-size: 1.8rem;">Email ${type.charAt(0).toUpperCase() + type.slice(1)}</h2>
-    <p style="color: #666; margin-bottom: 25px; line-height: 1.7; font-size: 1.1rem;">
-      <strong>Important:</strong> Make sure to download the PDF first, then we'll open your email client with a pre-filled message ready for you to attach the file.
+    <div style="font-size: 36px; margin-bottom: 12px;">📧📎</div>
+    <h2 style="color: #333; margin-bottom: 10px; font-size: 1.4rem;">Email ${type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+    <p style="color: #666; margin-bottom: 15px; line-height: 1.5; font-size: 0.95rem;">
+      <strong>Important:</strong> Download the PDF first, then we'll open your email client.
     </p>
     
-    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; text-align: left; border-left: 4px solid #667eea;">
-      <h4 style="margin: 0 0 12px 0; color: #555; font-size: 1.1rem;">📋 Steps to follow:</h4>
-      <ol style="margin: 0; padding-left: 25px; color: #666; line-height: 1.6;">
-        <li><strong>Download PDF:</strong> Click "Download PDF" button below</li>
-        <li><strong>Ready to email:</strong> Click "Done - Open Email" when PDF is downloaded</li>
-        <li><strong>Attach file:</strong> In your email client, attach the downloaded PDF</li>
-        <li><strong>Send email:</strong> Review the pre-filled message and send</li>
+    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; border-left: 3px solid #667eea;">
+      <h4 style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem;">📋 Steps:</h4>
+      <ol style="margin: 0; padding-left: 20px; color: #666; line-height: 1.4; font-size: 0.85rem;">
+        <li>Click "Download PDF" below</li>
+        <li>Click "Done - Open Email"</li>
+        <li>Attach the downloaded PDF</li>
+        <li>Send the email</li>
       </ol>
     </div>
 
-    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
-      <p style="margin: 0; color: #856404; font-size: 0.95rem;">
-        <strong>💡 Tip:</strong> The PDF will download as: ${type}_${documentNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf
+    <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #ffc107;">
+      <p style="margin: 0; color: #856404; font-size: 0.8rem;">
+        <strong>💡 File:</strong> ${type}_${documentNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf
       </p>
     </div>
     
-    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
       <button id="downloadBtn" style="
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
         border: none;
-        padding: 14px 24px;
-        border-radius: 10px;
-        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 12px;
         font-weight: bold;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        min-width: 140px;
-      ">📄 Download PDF</button>
+        transition: transform 0.2s ease;
+        min-width: 110px;
+      ">📄 Download</button>
       
       <button id="doneBtn" style="
         background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
         color: white;
         border: none;
-        padding: 14px 24px;
-        border-radius: 10px;
-        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 12px;
         font-weight: bold;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-        min-width: 140px;
-      ">✅ Done - Open Email</button>
+        transition: transform 0.2s ease;
+        min-width: 110px;
+      ">✅ Open Email</button>
       
       <button id="cancelBtn" style="
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         color: white;
         border: none;
-        padding: 14px 24px;
-        border-radius: 10px;
-        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 12px;
         font-weight: bold;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-        min-width: 140px;
-      ">↩️ Go Back</button>
+        transition: transform 0.2s ease;
+        min-width: 110px;
+      ">↩️ Cancel</button>
     </div>
   `;
 
   modal.appendChild(popup);
   document.body.appendChild(modal);
 
+  // Prevent body scrolling when modal is open
+  document.body.style.overflow = 'hidden';
+
   // Add hover effects
   const buttons = popup.querySelectorAll('button');
   buttons.forEach(button => {
     button.addEventListener('mouseenter', () => {
-      button.style.transform = 'translateY(-2px)';
-      button.style.boxShadow = button.style.boxShadow.replace('0 4px 15px', '0 8px 25px');
+      button.style.transform = 'translateY(-1px)';
     });
     button.addEventListener('mouseleave', () => {
       button.style.transform = 'translateY(0)';
-      button.style.boxShadow = button.style.boxShadow.replace('0 8px 25px', '0 4px 15px');
     });
   });
 
@@ -475,23 +477,26 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
     // Update button to show it's been clicked
     const downloadBtn = popup.querySelector('#downloadBtn');
     downloadBtn.style.background = 'linear-gradient(135deg, #155724 0%, #1e7e34 100%)';
-    downloadBtn.innerHTML = '✅ PDF Downloaded';
+    downloadBtn.innerHTML = '✅ Downloaded';
     downloadBtn.disabled = true;
     downloadBtn.style.cursor = 'not-allowed';
   });
 
   popup.querySelector('#doneBtn').addEventListener('click', () => {
+    document.body.style.overflow = 'auto'; // Restore scrolling
     modal.remove();
     onEmailReady();
   });
 
   popup.querySelector('#cancelBtn').addEventListener('click', () => {
+    document.body.style.overflow = 'auto'; // Restore scrolling
     modal.remove();
   });
 
   // Close on background click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
+      document.body.style.overflow = 'auto'; // Restore scrolling
       modal.remove();
     }
   });
