@@ -31,6 +31,10 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  const handleLogin = (user) => {
+    setUser(user);
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -54,7 +58,7 @@ function App() {
         <Routes>
           <Route path="/" element={!user ? <Home /> : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+          <Route path="/register" element={!user ? <Register onRegister={handleLogin} /> : <Navigate to="/dashboard" />} />
           {user && (
             <>
               <Route path="/dashboard" element={<Dashboard user={user} />} />
