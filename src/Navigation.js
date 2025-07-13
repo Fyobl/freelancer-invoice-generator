@@ -48,7 +48,8 @@ function Navigation({ user }) {
   ];
 
   // Add admin menu item if user is admin
-  if (user?.email === 'admin@yourdomain.com') { // Change this to your admin email
+  const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
+  if (adminEmails.includes(user?.email)) {
     menuItems.push({ path: '/admin', label: 'Admin Portal', icon: '⚡' });
   }
 

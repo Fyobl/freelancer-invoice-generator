@@ -14,7 +14,8 @@ function Admin({ user }) {
   const [showUserModal, setShowUserModal] = useState(false);
 
   // Check if current user is admin
-  const isAdmin = user?.email === 'admin@yourdomain.com'; // Change this to your admin email
+  const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
+  const isAdmin = adminEmails.includes(user?.email);
 
   useEffect(() => {
     if (isAdmin) {
