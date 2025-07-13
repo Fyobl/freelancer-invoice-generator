@@ -355,8 +355,8 @@ const replaceTemplateVariables = (template, data) => {
     .replace(/{companyName}/g, data.companyName || '');
 };
 
-// Show popup with manual attachment instructions
-const showEmailInstructions = (type, documentNumber) => {
+// Show popup with manual attachment instructions and action buttons
+const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady) => {
   const modal = document.createElement('div');
   modal.style.cssText = `
     position: fixed;
@@ -364,54 +364,130 @@ const showEmailInstructions = (type, documentNumber) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 10000;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    backdrop-filter: blur(4px);
   `;
 
   const popup = document.createElement('div');
   popup.style.cssText = `
     background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    max-width: 500px;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+    max-width: 550px;
     width: 90%;
     text-align: center;
+    border: 3px solid #667eea;
   `;
 
   popup.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 20px;">📧</div>
-    <h2 style="color: #333; margin-bottom: 15px;">Email Instructions</h2>
-    <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
-      Your email client will open with a pre-filled message. You'll need to manually attach the ${type} PDF (${documentNumber}) to the email before sending.
+    <div style="font-size: 56px; margin-bottom: 20px;">📧📎</div>
+    <h2 style="color: #333; margin-bottom: 15px; font-size: 1.8rem;">Email ${type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+    <p style="color: #666; margin-bottom: 25px; line-height: 1.7; font-size: 1.1rem;">
+      <strong>Important:</strong> Make sure to download the PDF first, then we'll open your email client with a pre-filled message ready for you to attach the file.
     </p>
-    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
-      <h4 style="margin: 0 0 10px 0; color: #555;">Steps:</h4>
-      <ol style="margin: 0; padding-left: 20px; color: #666;">
-        <li>Download the PDF first using the "📄 PDF" button</li>
-        <li>Click "📧 Email" to open your email client</li>
-        <li>Attach the downloaded PDF to the email</li>
-        <li>Send the email</li>
+    
+    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; text-align: left; border-left: 4px solid #667eea;">
+      <h4 style="margin: 0 0 12px 0; color: #555; font-size: 1.1rem;">📋 Steps to follow:</h4>
+      <ol style="margin: 0; padding-left: 25px; color: #666; line-height: 1.6;">
+        <li><strong>Download PDF:</strong> Click "Download PDF" button below</li>
+        <li><strong>Ready to email:</strong> Click "Done - Open Email" when PDF is downloaded</li>
+        <li><strong>Attach file:</strong> In your email client, attach the downloaded PDF</li>
+        <li><strong>Send email:</strong> Review the pre-filled message and send</li>
       </ol>
     </div>
-    <button onclick="this.parentElement.parentElement.remove()" style="
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-    ">Got it!</button>
+
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
+      <p style="margin: 0; color: #856404; font-size: 0.95rem;">
+        <strong>💡 Tip:</strong> The PDF will download as: ${type}_${documentNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf
+      </p>
+    </div>
+    
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+      <button id="downloadBtn" style="
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        min-width: 140px;
+      ">📄 Download PDF</button>
+      
+      <button id="doneBtn" style="
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        min-width: 140px;
+      ">✅ Done - Open Email</button>
+      
+      <button id="cancelBtn" style="
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        color: white;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        min-width: 140px;
+      ">↩️ Go Back</button>
+    </div>
   `;
 
   modal.appendChild(popup);
   document.body.appendChild(modal);
+
+  // Add hover effects
+  const buttons = popup.querySelectorAll('button');
+  buttons.forEach(button => {
+    button.addEventListener('mouseenter', () => {
+      button.style.transform = 'translateY(-2px)';
+      button.style.boxShadow = button.style.boxShadow.replace('0 4px 15px', '0 8px 25px');
+    });
+    button.addEventListener('mouseleave', () => {
+      button.style.transform = 'translateY(0)';
+      button.style.boxShadow = button.style.boxShadow.replace('0 8px 25px', '0 4px 15px');
+    });
+  });
+
+  // Event listeners for buttons
+  popup.querySelector('#downloadBtn').addEventListener('click', () => {
+    onDownloadPDF();
+    // Update button to show it's been clicked
+    const downloadBtn = popup.querySelector('#downloadBtn');
+    downloadBtn.style.background = 'linear-gradient(135deg, #155724 0%, #1e7e34 100%)';
+    downloadBtn.innerHTML = '✅ PDF Downloaded';
+    downloadBtn.disabled = true;
+    downloadBtn.style.cursor = 'not-allowed';
+  });
+
+  popup.querySelector('#doneBtn').addEventListener('click', () => {
+    modal.remove();
+    onEmailReady();
+  });
+
+  popup.querySelector('#cancelBtn').addEventListener('click', () => {
+    modal.remove();
+  });
 
   // Close on background click
   modal.addEventListener('click', (e) => {
@@ -461,14 +537,26 @@ Best regards,
     const finalSubject = replaceTemplateVariables(subject, templateData);
     const finalBody = replaceTemplateVariables(body, templateData);
 
-    // Show instructions popup
-    showEmailInstructions('invoice', invoice.invoiceNumber);
+    // Function to download PDF
+    const downloadPDF = async () => {
+      try {
+        const doc = await generateInvoicePDF(invoice, companySettings);
+        const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        doc.save(fileName);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
+      }
+    };
 
-    // Create mailto link
-    const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-    
-    // Open email client
-    window.location.href = mailtoLink;
+    // Function to open email client
+    const openEmailClient = () => {
+      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+      window.location.href = mailtoLink;
+    };
+
+    // Show instructions popup with callback functions
+    showEmailInstructions('invoice', invoice.invoiceNumber, downloadPDF, openEmailClient);
 
   } catch (error) {
     console.error('Error creating email:', error);
@@ -516,14 +604,26 @@ Best regards,
     const finalSubject = replaceTemplateVariables(subject, templateData);
     const finalBody = replaceTemplateVariables(body, templateData);
 
-    // Show instructions popup
-    showEmailInstructions('quote', quote.quoteNumber);
+    // Function to download PDF
+    const downloadPDF = async () => {
+      try {
+        const doc = await generateQuotePDF(quote, companySettings);
+        const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        doc.save(fileName);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
+      }
+    };
 
-    // Create mailto link
-    const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-    
-    // Open email client
-    window.location.href = mailtoLink;
+    // Function to open email client
+    const openEmailClient = () => {
+      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+      window.location.href = mailtoLink;
+    };
+
+    // Show instructions popup with callback functions
+    showEmailInstructions('quote', quote.quoteNumber, downloadPDF, openEmailClient);
 
   } catch (error) {
     console.error('Error creating email:', error);
