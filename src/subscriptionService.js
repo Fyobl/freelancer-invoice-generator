@@ -4,52 +4,42 @@ import { db } from './firebase.js';
 
 export const SUBSCRIPTION_PLANS = {
   trial: {
-    name: 'Trial',
+    name: 'Free Trial',
     price: 0,
-    duration: 14, // days
-    features: ['5 invoices per month', 'Basic templates', 'Email support'],
+    duration: 7, // days - default trial length
+    features: ['Limited access', 'Basic templates', 'Email support'],
     invoiceLimit: 5
   },
-  basic: {
-    name: 'Basic',
-    price: 9.99,
-    duration: 30, // days
-    features: ['50 invoices per month', 'All templates', 'Email support', 'Basic reports'],
-    invoiceLimit: 50
-  },
-  pro: {
-    name: 'Pro',
+  premium: {
+    name: 'Premium',
     price: 19.99,
     duration: 30, // days
-    features: ['Unlimited invoices', 'All templates', 'Priority support', 'Advanced reports', 'API access'],
-    invoiceLimit: -1 // unlimited
-  },
-  enterprise: {
-    name: 'Enterprise',
-    price: 49.99,
-    duration: 30, // days
-    features: ['Everything in Pro', 'Custom branding', 'Dedicated support', 'Custom integrations'],
+    features: ['Unlimited invoices', 'All templates', 'Priority support', 'Advanced reports', 'Full access'],
     invoiceLimit: -1 // unlimited
   }
 };
 
-export const createSubscription = async (userId, plan = 'trial') => {
+export const createSubscription = async (userId, plan = 'trial', trialDays = 7) => {
   try {
     const planDetails = SUBSCRIPTION_PLANS[plan];
     const startDate = new Date();
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + planDetails.duration);
+    
+    // Use custom trial days if provided for trial, otherwise use plan duration
+    const duration = plan === 'trial' ? trialDays : planDetails.duration;
+    endDate.setDate(endDate.getDate() + duration);
 
     const subscriptionData = {
       userId,
       plan,
-      status: 'active',
+      status: plan === 'trial' ? 'trial' : 'active',
       amount: planDetails.price,
       startDate: startDate,
       endDate: endDate,
       nextBilling: endDate,
       invoiceCount: 0,
       invoiceLimit: planDetails.invoiceLimit,
+      trialDays: plan === 'trial' ? trialDays : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -166,6 +156,31 @@ export const upgradeSubscription = async (userId, newPlan) => {
     return { success: true };
   } catch (error) {
     console.error('Error upgrading subscription:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const grantTrialFromAdmin = async (userId, trialDays) => {
+  try {
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + trialDays);
+
+    const updates = {
+      plan: 'trial',
+      status: 'trial',
+      amount: 0,
+      endDate: endDate,
+      nextBilling: endDate,
+      invoiceLimit: 5,
+      trialDays: trialDays,
+      invoiceCount: 0 // Reset invoice count for new trial
+    };
+
+    await updateSubscription(userId, updates);
+    return { success: true };
+  } catch (error) {
+    console.error('Error granting trial:', error);
     return { success: false, error: error.message };
   }
 };

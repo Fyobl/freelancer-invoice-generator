@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { auth, db } from './firebase.js';
+import { createSubscription } from './subscriptionService.js';
 
 function Register({ onRegister }) {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ function Register({ onRegister }) {
   const [phone, setPhone] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('trial');
 
   const register = async (e) => {
     e.preventDefault();
@@ -29,6 +31,9 @@ function Register({ onRegister }) {
         email,
         createdAt: new Date()
       });
+
+      // Create subscription based on selection
+      await createSubscription(userCred.user.uid, selectedPlan, 7);
       
       onRegister(userCred.user);
     } catch (err) {
@@ -258,6 +263,45 @@ function Register({ onRegister }) {
               e.target.style.transform = 'translateY(0)';
             }}
           />
+
+          <div style={{ margin: '20px 0' }}>
+            <h3 style={{ color: '#333', marginBottom: '15px', textAlign: 'center' }}>Choose Your Plan</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div 
+                onClick={() => setSelectedPlan('trial')}
+                style={{
+                  border: selectedPlan === 'trial' ? '3px solid #667eea' : '2px solid #e1e5e9',
+                  borderRadius: '10px',
+                  padding: '20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  background: selectedPlan === 'trial' ? '#f8f9ff' : 'white'
+                }}
+              >
+                <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Free Trial</h4>
+                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>$0</p>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>7 days free</p>
+              </div>
+
+              <div 
+                onClick={() => setSelectedPlan('premium')}
+                style={{
+                  border: selectedPlan === 'premium' ? '3px solid #667eea' : '2px solid #e1e5e9',
+                  borderRadius: '10px',
+                  padding: '20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  background: selectedPlan === 'premium' ? '#f8f9ff' : 'white'
+                }}
+              >
+                <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Premium</h4>
+                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>$19.99</p>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>per month</p>
+              </div>
+            </div>
+          </div>
           
           <button 
             type="submit" 

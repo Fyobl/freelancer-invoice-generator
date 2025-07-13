@@ -12,7 +12,6 @@ import Products from './Products.js';
 import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
-import EmailSettings from './EmailSettings.js';
 import Admin from './Admin.js';
 import Subscription from './Subscription.js';
 import Navigation from './Navigation.js';
@@ -63,7 +62,6 @@ function App() {
               <Route path="/products" element={<Products user={user} />} />
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
-              <Route path="/email-settings" element={<EmailSettings />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
               <Route path="/subscription" element={<Subscription user={user} />} />
               <Route path="/admin" element={<Admin user={user} />} />

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
+import { grantTrialFromAdmin } from './subscriptionService.js';
 
 function Admin({ user }) {
   const [users, setUsers] = useState([]);
@@ -12,6 +13,9 @@ function Admin({ user }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [trialUserId, setTrialUserId] = useState(null);
+  const [trialDays, setTrialDays] = useState(7);
 
   // Check if current user is admin
   const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
@@ -104,6 +108,25 @@ function Admin({ user }) {
         console.error('Error deleting user:', error);
         alert('Error deleting user');
       }
+    }
+  };
+
+  const grantTrial = (userId) => {
+    setTrialUserId(userId);
+    setShowTrialModal(true);
+  };
+
+  const confirmGrantTrial = async () => {
+    try {
+      await grantTrialFromAdmin(trialUserId, trialDays);
+      setShowTrialModal(false);
+      setTrialUserId(null);
+      setTrialDays(7);
+      fetchAdminData();
+      alert(`Trial granted successfully for ${trialDays} days`);
+    } catch (error) {
+      console.error('Error granting trial:', error);
+      alert('Error granting trial');
     }
   };
 
@@ -338,48 +361,69 @@ function Admin({ user }) {
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Name</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Email</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Company</th>
-                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Joined</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Plan</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(user => (
-                    <tr key={user.id}>
-                      <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.email}</td>
-                      <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.companyName}</td>
-                      <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
-                        {user.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
-                      </td>
-                      <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
-                        <button
-                          style={{
-                            ...buttonStyle,
-                            background: '#007bff',
-                            color: 'white'
-                          }}
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowUserModal(true);
-                          }}
-                        >
-                          View
-                        </button>
-                        <button
-                          style={{
-                            ...buttonStyle,
-                            background: '#dc3545',
-                            color: 'white'
-                          }}
-                          onClick={() => deleteUser(user.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {users.map(user => {
+                    const userSub = subscriptions.find(sub => sub.userId === user.id);
+                    return (
+                      <tr key={user.id}>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          {user.firstName} {user.lastName}
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.email}</td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.companyName}</td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            background: userSub?.plan === 'premium' ? '#d4edda' : '#fff3cd',
+                            color: userSub?.plan === 'premium' ? '#155724' : '#856404'
+                          }}>
+                            {userSub?.plan || 'trial'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          <button
+                            style={{
+                              ...buttonStyle,
+                              background: '#007bff',
+                              color: 'white'
+                            }}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUserModal(true);
+                            }}
+                          >
+                            View
+                          </button>
+                          <button
+                            style={{
+                              ...buttonStyle,
+                              background: '#28a745',
+                              color: 'white'
+                            }}
+                            onClick={() => grantTrial(user.id)}
+                          >
+                            Grant Trial
+                          </button>
+                          <button
+                            style={{
+                              ...buttonStyle,
+                              background: '#dc3545',
+                              color: 'white'
+                            }}
+                            onClick={() => deleteUser(user.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -557,6 +601,84 @@ function Admin({ user }) {
                   }}
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Trial Grant Modal */}
+        {showTrialModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              maxWidth: '400px',
+              width: '90%'
+            }}>
+              <h2 style={{ marginTop: 0, color: '#333' }}>🎁 Grant Trial Access</h2>
+              <p style={{ color: '#666', marginBottom: '20px' }}>
+                How many days of trial access would you like to grant?
+              </p>
+              
+              <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#555' }}>
+                Trial Days
+              </label>
+              <input
+                type="number"
+                value={trialDays}
+                onChange={(e) => setTrialDays(parseInt(e.target.value) || 1)}
+                min="1"
+                max="365"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  marginBottom: '20px',
+                  boxSizing: 'border-box'
+                }}
+              />
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  style={{
+                    ...buttonStyle,
+                    background: '#28a745',
+                    color: 'white',
+                    flex: 1
+                  }}
+                  onClick={confirmGrantTrial}
+                >
+                  Grant Trial
+                </button>
+                <button
+                  style={{
+                    ...buttonStyle,
+                    background: '#6c757d',
+                    color: 'white',
+                    flex: 1
+                  }}
+                  onClick={() => {
+                    setShowTrialModal(false);
+                    setTrialUserId(null);
+                    setTrialDays(7);
+                  }}
+                >
+                  Cancel
                 </button>
               </div>
             </div>
