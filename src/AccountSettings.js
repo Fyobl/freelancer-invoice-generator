@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { updatePassword, deleteUser } from 'firebase/auth';
+import { updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
@@ -56,21 +56,38 @@ function AccountSettings({ user }) {
   };
 
   const handleDeleteAccount = async () => {
+    if (!password || !confirmPassword) {
+      setErrorMessage("Please enter your password in both fields.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
       return;
     }
 
     try {
-      const credential = prompt("Please enter your password to confirm account deletion:");
-      if (credential) {
-        await deleteUser(user);
-        setSuccessMessage("Account deleted successfully.");
-      } else {
-        setErrorMessage("Deletion cancelled: Incorrect password provided.");
-      }
+      // Re-authenticate the user before deletion (required by Firebase)
+      const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+      
+      // Delete the user account
+      await deleteUser(user);
+      setSuccessMessage("Account deleted successfully. You will be logged out.");
+      
+      // Clear form
+      setPassword('');
+      setConfirmPassword('');
     } catch (error) {
-      setErrorMessage("Error deleting account: " + error.message);
+      console.error("Error deleting account:", error);
+      if (error.code === 'auth/wrong-password') {
+        setErrorMessage("Incorrect password provided.");
+      } else if (error.code === 'auth/too-many-requests') {
+        setErrorMessage("Too many failed attempts. Please try again later.");
+      } else {
+        setErrorMessage("Error deleting account: " + error.message);
+      }
     }
   };
 
