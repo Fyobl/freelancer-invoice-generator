@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase.js';
 import Home from './Home.js';
@@ -17,6 +17,17 @@ import Admin from './Admin.js';
 import Subscription from './Subscription.js';
 import Navigation from './Navigation.js';
 import './App.css';
+
+// Component to scroll to top when route changes
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -53,6 +64,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="App">
         {user && <Navigation user={user} />}
         <Routes>
