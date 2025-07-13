@@ -15,6 +15,13 @@ function Navigation({ user }) {
     }
   }, [user]);
 
+  // Cleanup: restore scrolling when component unmounts
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   const fetchUserData = async () => {
     if (!user) return;
     try {
@@ -32,7 +39,15 @@ function Navigation({ user }) {
   };
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    const newMenuState = !isMenuOpen;
+    setIsMenuOpen(newMenuState);
+    
+    // Prevent background scrolling when menu is open
+    if (newMenuState) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
   };
 
   const menuItems = [
@@ -156,14 +171,18 @@ function Navigation({ user }) {
         transition: 'left 0.3s ease',
         zIndex: 999,
         boxShadow: isMenuOpen ? '2px 0 5px rgba(0,0,0,0.1)' : 'none',
-        overflow: 'hidden'
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}>
         <div style={{ padding: '20px' }}>
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                document.body.style.overflow = 'auto';
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -211,7 +230,10 @@ function Navigation({ user }) {
       {/* Overlay when menu is open */}
       {isMenuOpen && (
         <div
-          onClick={() => setIsMenuOpen(false)}
+          onClick={() => {
+            setIsMenuOpen(false);
+            document.body.style.overflow = 'auto';
+          }}
           style={{
             position: 'fixed',
             top: '60px',
