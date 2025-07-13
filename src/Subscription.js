@@ -155,7 +155,7 @@ function Subscription({ user }) {
             <div style={{ border: '2px solid #007bff', borderRadius: '10px', padding: '20px', marginBottom: '30px' }}>
               <h3 style={{ color: '#007bff', margin: '0 0 15px 0' }}>{premiumPlan.name}</h3>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333', marginBottom: '15px' }}>
-                ${premiumPlan.price}/month
+                £{premiumPlan.price}/month
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, textAlign: 'left' }}>
                 {premiumPlan.features.map((feature, index) => (
@@ -224,7 +224,7 @@ function Subscription({ user }) {
             </div>
             <div>
               <h3 style={{ color: '#28a745', margin: '0 0 5px 0' }}>
-                ${subscription?.amount || 0}/month
+                £{subscription?.amount || 0}/month
               </h3>
               <p style={{ margin: 0, color: '#666' }}>Monthly Cost</p>
             </div>
@@ -258,7 +258,7 @@ function Subscription({ user }) {
                 {premiumPlan.name}
               </h3>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0 0 20px 0', color: '#333' }}>
-                ${premiumPlan.price}
+                £{premiumPlan.price}
                 <span style={{ fontSize: '1rem', fontWeight: 'normal' }}>/month</span>
               </div>
 

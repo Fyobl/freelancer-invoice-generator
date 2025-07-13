@@ -12,7 +12,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   premium: {
     name: 'Premium',
-    price: 19.99,
+    price: 16.99,
     duration: 30, // days
     features: ['Unlimited invoices', 'All templates', 'Priority support', 'Advanced reports', 'Full access'],
     invoiceLimit: -1 // unlimited

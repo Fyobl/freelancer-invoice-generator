@@ -280,7 +280,7 @@ function Register({ onRegister }) {
                 }}
               >
                 <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Free Trial</h4>
-                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>$0</p>
+                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>£0</p>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>7 days free</p>
               </div>
 
@@ -297,7 +297,7 @@ function Register({ onRegister }) {
                 }}
               >
                 <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Premium</h4>
-                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>$19.99</p>
+                <p style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>£16.99</p>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>per month</p>
               </div>
             </div>
