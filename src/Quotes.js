@@ -233,15 +233,30 @@ function Quotes({ user }) {
     }
   };
 
-  const deleteQuote = async (id) => {
-    if (window.confirm('Are you sure you want to delete this quote?')) {
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, quoteId: null, quoteName: '' });
+
+  const handleDeleteQuote = (quote) => {
+    setDeleteConfirmation({ 
+      show: true, 
+      quoteId: quote.id, 
+      quoteName: quote.quoteNumber 
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmation.quoteId) {
       try {
-        await deleteDoc(doc(db, 'quotes', id));
+        await deleteDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
         fetchQuotes();
       } catch (error) {
         console.error('Error deleting quote:', error);
       }
     }
+    setDeleteConfirmation({ show: false, quoteId: null, quoteName: '' });
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ show: false, quoteId: null, quoteName: '' });
   };
 
   const filteredQuotes = quotes.filter(quote => {
@@ -686,7 +701,7 @@ function Quotes({ user }) {
                       📧 Email Quote
                     </button>
                     <button
-                      onClick={() => deleteQuote(quote.id)}
+                      onClick={() => handleDeleteQuote(quote)}
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
@@ -704,6 +719,81 @@ function Quotes({ user }) {
           )}
         </div>
 
+        {/* Custom Delete Confirmation Popup */}
+        {deleteConfirmation.show && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            backdropFilter: 'blur(4px)'
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              border: '2px solid #dc3545'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '15px' }}>⚠️</div>
+              <h2 style={{ color: '#333', marginBottom: '15px', fontSize: '1.4rem' }}>
+                Confirm Deletion
+              </h2>
+              <p style={{ color: '#666', marginBottom: '25px', lineHeight: '1.5' }}>
+                Are you sure you want to delete quote <strong>{deleteConfirmation.quoteName}</strong>?
+                <br />This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  onClick={confirmDelete}
+                  style={{
+                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  🗑️ Delete Quote
+                </button>
+                <button
+                  onClick={cancelDelete}
+                  style={{
+                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  ↩️ Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

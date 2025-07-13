@@ -36,6 +36,7 @@ function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, invoiceId: null, invoiceName: '' });
 
   const user = auth.currentUser;
 
@@ -328,11 +329,28 @@ function Dashboard() {
     ));
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      await deleteDoc(doc(db, 'invoices', id));
-      setInvoices(prev => prev.filter(inv => inv.id !== id));
+  const deleteInvoice = async (id) => {
+    await deleteDoc(doc(db, 'invoices', id));
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
+  };
+
+  const handleDelete = (invoice) => {
+    setDeleteConfirmation({ 
+      show: true, 
+      invoiceId: invoice.id, 
+      invoiceName: invoice.invoiceNumber 
+    });
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmation.invoiceId) {
+      deleteInvoice(deleteConfirmation.invoiceId);
     }
+    setDeleteConfirmation({ show: false, invoiceId: null, invoiceName: '' });
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ show: false, invoiceId: null, invoiceName: '' });
   };
 
   const handleClientSelect = (clientId) => {
@@ -735,7 +753,7 @@ function Dashboard() {
                             📧 Email
                           </button>
                           <button
-                            onClick={() => handleDelete(inv.id)}
+                            onClick={() => handleDelete(inv)}
                             style={{ 
                               padding: '8px 15px', 
                               background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
@@ -759,6 +777,56 @@ function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Popup */}
+      {deleteConfirmation.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ marginBottom: '15px', color: '#333' }}>Confirm Delete</h2>
+            <p style={{ marginBottom: '20px', color: '#666' }}>
+              Are you sure you want to delete invoice <strong>{deleteConfirmation.invoiceName}</strong>?
+            </p>
+            <button onClick={confirmDelete} style={{
+              padding: '10px 20px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              marginRight: '10px'
+            }}>
+              Yes, Delete
+            </button>
+            <button onClick={cancelDelete} style={{
+              padding: '10px 20px',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
