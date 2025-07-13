@@ -117,7 +117,7 @@ function Home() {
           lineHeight: '1.4',
           textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
         }}>
-          Professional Invoice Generation Made Simple
+          Professional Invoice & Quote Management System
         </h2>
         
         <p style={{ 
@@ -128,8 +128,8 @@ function Home() {
           lineHeight: '1.6',
           opacity: '0.9'
         }}>
-          Create, manage, and send professional invoices in minutes. 
-          Perfect for freelancers, small businesses, and entrepreneurs.
+          Create, manage, and track professional invoices and quotes with ease. 
+          Perfect for freelancers, small businesses, and growing companies.
         </p>
         
         <div>
@@ -145,7 +145,7 @@ function Home() {
               e.target.style.boxShadow = '0 8px 20px rgba(40, 167, 69, 0.3)';
             }}
           >
-            Get Started Free
+            Start 7-Day Free Trial
           </Link>
           
           <Link 
@@ -210,7 +210,7 @@ function Home() {
           marginBottom: '60px',
           textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
         }}>
-          Everything You Need to Run Your Business
+          Everything You Need to Manage Your Business
         </h2>
         
         <div style={{ 
@@ -230,13 +230,34 @@ function Home() {
               e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
             }}
           >
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📄</div>
+            <h3 style={{ fontSize: '24px', marginBottom: '15px', color: '#2c3e50' }}>
+              Invoice Management
+            </h3>
+            <p style={{ lineHeight: '1.6', color: '#666' }}>
+              Create professional invoices with customizable templates. 
+              Track payment status and send automated reminders.
+            </p>
+          </div>
+          
+          <div 
+            style={featureCardStyle}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-10px)';
+              e.currentTarget.style.boxShadow = '0 35px 70px rgba(0,0,0,0.2)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
+            }}
+          >
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>💰</div>
             <h3 style={{ fontSize: '24px', marginBottom: '15px', color: '#2c3e50' }}>
               Quote Management
             </h3>
             <p style={{ lineHeight: '1.6', color: '#666' }}>
               Create professional quotes and convert them to invoices seamlessly. 
-              Track quote status and follow up with clients.
+              Track quote status and follow up with clients effortlessly.
             </p>
           </div>
           
@@ -257,28 +278,7 @@ function Home() {
             </h3>
             <p style={{ lineHeight: '1.6', color: '#666' }}>
               Keep all your client information organized. Store contact details, 
-              billing addresses, and payment history in one place.
-            </p>
-          </div>
-          
-          <div 
-            style={featureCardStyle}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-10px)';
-              e.currentTarget.style.boxShadow = '0 35px 70px rgba(0,0,0,0.2)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
-            }}
-          >
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📦</div>
-            <h3 style={{ fontSize: '24px', marginBottom: '15px', color: '#2c3e50' }}>
-              Product Catalog
-            </h3>
-            <p style={{ lineHeight: '1.6', color: '#666' }}>
-              Build a comprehensive product and service catalog. 
-              Add descriptions, pricing, and VAT rates for quick invoice creation.
+              billing addresses, and payment history in one secure place.
             </p>
           </div>
         </div>
@@ -302,8 +302,8 @@ function Home() {
               Email Integration
             </h3>
             <p style={{ lineHeight: '1.6', opacity: '0.9' }}>
-              Connect your own email account to send invoices directly from your business email. 
-              Supports Gmail, Outlook, and custom SMTP configurations.
+              Send invoices and quotes directly via email with customizable templates. 
+              Professional communication that builds trust with your clients.
             </p>
           </div>
           
@@ -314,19 +314,92 @@ function Home() {
             </h3>
             <p style={{ lineHeight: '1.6', opacity: '0.9' }}>
               Get insights into your business performance with detailed reports. 
-              Track revenue, outstanding payments, and client activity.
+              Track revenue, outstanding payments, and client activity patterns.
             </p>
           </div>
           
           <div style={benefitStyle}>
             <h3 style={{ fontSize: '22px', marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ marginRight: '15px', fontSize: '28px' }}>📦</span>
+              Product Catalog
+            </h3>
+            <p style={{ lineHeight: '1.6', opacity: '0.9' }}>
+              Build a comprehensive product and service catalog with pricing and VAT rates. 
+              Create invoices faster with pre-configured items.
+            </p>
+          </div>
+
+          <div style={benefitStyle}>
+            <h3 style={{ fontSize: '22px', marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
               <span style={{ marginRight: '15px', fontSize: '28px' }}>⚙️</span>
-              Customizable Settings
+              Company Branding
             </h3>
             <p style={{ lineHeight: '1.6', opacity: '0.9' }}>
               Personalize your invoices with your company logo, colors, and branding. 
-              Set up payment terms and default tax rates.
+              Set up payment terms and maintain a professional appearance.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section style={sectionStyle}>
+        <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '36px', 
+          marginBottom: '50px',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+        }}>
+          Simple, Transparent Pricing
+        </h2>
+        
+        <div style={{ 
+          maxWidth: '400px', 
+          margin: '0 auto',
+          background: 'rgba(255,255,255,0.95)',
+          padding: '40px',
+          borderRadius: '20px',
+          textAlign: 'center',
+          color: '#333',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>💳</div>
+          <h3 style={{ fontSize: '28px', marginBottom: '20px', color: '#2c3e50' }}>
+            Pro Subscription
+          </h3>
+          <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#28a745', marginBottom: '10px' }}>
+            £9.99/month
+          </div>
+          <p style={{ color: '#666', marginBottom: '30px' }}>
+            Everything you need to manage your invoicing business
+          </p>
+          
+          <ul style={{ 
+            textAlign: 'left', 
+            listStyle: 'none', 
+            padding: 0, 
+            marginBottom: '30px',
+            color: '#555' 
+          }}>
+            <li style={{ marginBottom: '10px' }}>✅ Unlimited Invoices & Quotes</li>
+            <li style={{ marginBottom: '10px' }}>✅ Client Management</li>
+            <li style={{ marginBottom: '10px' }}>✅ Product Catalog</li>
+            <li style={{ marginBottom: '10px' }}>✅ Email Integration</li>
+            <li style={{ marginBottom: '10px' }}>✅ Business Reports</li>
+            <li style={{ marginBottom: '10px' }}>✅ Company Branding</li>
+            <li style={{ marginBottom: '10px' }}>✅ PDF Generation</li>
+          </ul>
+
+          <div style={{ 
+            background: '#f8f9fa', 
+            padding: '15px', 
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#666',
+            marginBottom: '20px'
+          }}>
+            🎯 <strong>7-Day Free Trial</strong><br/>
+            No credit card required to start
           </div>
         </div>
       </section>
@@ -344,7 +417,7 @@ function Home() {
           marginBottom: '20px',
           textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
         }}>
-          Ready to Streamline Your Invoicing?
+          Ready to Streamline Your Business?
         </h2>
         <p style={{ 
           fontSize: '18px', 
@@ -353,7 +426,7 @@ function Home() {
           margin: '0 auto 40px',
           opacity: '0.9'
         }}>
-          Join thousands of professionals who trust Easy Invoice for their billing needs.
+          Join professionals who trust Easy Invoice for their billing needs. Start your free trial today!
         </p>
         
         <Link 
@@ -368,7 +441,7 @@ function Home() {
             e.target.style.boxShadow = '0 8px 20px rgba(40, 167, 69, 0.3)';
           }}
         >
-          Start Your Free Account
+          Start Your 7-Day Free Trial
         </Link>
       </section>
     </div>
