@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
+import { sendQuoteViaEmail } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
@@ -672,6 +673,18 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
+                    <button
+                      onClick={() => sendQuoteEmail(quote)}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                        fontSize: '12px',
+                        padding: '8px 16px',
+                        marginRight: '5px'
+                      }}
+                    >
+                      📧 Email Quote
+                    </button>
                     <button
                       onClick={() => deleteQuote(quote.id)}
                       style={{

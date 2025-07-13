@@ -12,6 +12,7 @@ import Products from './Products.js';
 import Reports from './Reports.js';
 import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
+import EmailSettings from './EmailSettings.js';
 import Navigation from './Navigation.js';
 import './App.css';
 
