@@ -15,6 +15,7 @@ import {
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 import { generateInvoicePDF, sendInvoiceViaEmail } from './emailService.js';
+import { incrementInvoiceCount, checkSubscriptionStatus } from './subscriptionService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -295,6 +296,30 @@ function Dashboard() {
   };
 
   const handleAddInvoice = async () => {
+    // Check subscription status and limits first
+    const subscriptionCheck = await checkSubscriptionStatus(user.uid);
+    if (!subscriptionCheck.success) {
+      alert('Error checking subscription status. Please try again.');
+      return;
+    }
+
+    if (subscriptionCheck.expired) {
+      alert('Your subscription has expired. Please upgrade to continue creating invoices.');
+      return;
+    }
+
+    // Check invoice limit
+    const incrementResult = await incrementInvoiceCount(user.uid);
+    if (!incrementResult.success) {
+      if (incrementResult.limitReached) {
+        alert('You have reached your invoice limit for this billing period. Please upgrade your subscription to create more invoices.');
+        return;
+      } else {
+        alert('Error checking invoice limits. Please try again.');
+        return;
+      }
+    }
+
     if (!clientName || !amount) return;
 
     const invoiceNumber = `INV-${String(nextInvoiceNumber).padStart(4, '0')}`;

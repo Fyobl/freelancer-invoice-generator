@@ -43,8 +43,14 @@ function Navigation({ user }) {
     { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/company-settings', label: 'Company Settings', icon: '⚙️' },
     { path: '/account-settings', label: 'Account Settings', icon: '👤' },
-    { path: '/email-settings', label: 'Email Settings', icon: '📧' }
+    { path: '/subscription', label: 'Subscription', icon: '💳' },
+    { path: '/email-settings', label: 'Email Settings', icon: '📧' },
   ];
+
+  // Add admin menu item if user is admin
+  if (user?.email === 'admin@yourdomain.com') { // Change this to your admin email
+    menuItems.push({ path: '/admin', label: 'Admin Portal', icon: '⚡' });
+  }
 
   return (
     <>
