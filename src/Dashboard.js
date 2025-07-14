@@ -369,9 +369,31 @@ function Dashboard() {
     });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirmation.invoiceId) {
-      deleteInvoice(deleteConfirmation.invoiceId);
+      try {
+        // Get the invoice data before deleting
+        const invoiceDoc = await getDoc(doc(db, 'invoices', deleteConfirmation.invoiceId));
+        if (invoiceDoc.exists()) {
+          const invoiceData = invoiceDoc.data();
+
+          // Move to recycle bin
+          await addDoc(collection(db, 'recycleBin'), {
+            ...invoiceData,
+            originalId: deleteConfirmation.invoiceId,
+            originalCollection: 'invoices',
+            deletedAt: serverTimestamp(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            userId: user.uid
+          });
+
+          // Delete from original collection
+          await deleteDoc(doc(db, 'invoices', deleteConfirmation.invoiceId));
+        }
+        fetchInvoices();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
     }
     setDeleteConfirmation({ show: false, invoiceId: null, invoiceName: '' });
   };

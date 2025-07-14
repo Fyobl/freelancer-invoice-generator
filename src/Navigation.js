@@ -41,7 +41,7 @@ function Navigation({ user }) {
   const toggleMenu = () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
-    
+
     // Prevent background scrolling when menu is open
     if (newMenuState) {
       document.body.style.overflow = 'hidden';
@@ -60,6 +60,7 @@ function Navigation({ user }) {
     { path: '/account-settings', label: 'Account Settings', icon: '👤' },
     { path: '/subscription', label: 'Subscription', icon: '💳' },
     { path: '/email-settings', label: 'Email Settings', icon: '📧' },
+    { path: '/recycle-bin', label: 'Recycle Bin', icon: '🗑️' },
   ];
 
   // Add admin menu item if user is admin

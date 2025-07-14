@@ -309,7 +309,24 @@ function Quotes({ user }) {
   const confirmDelete = async () => {
     if (deleteConfirmation.quoteId) {
       try {
-        await deleteDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
+        // Get the quote data before deleting
+        const quoteDoc = await getDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
+        if (quoteDoc.exists()) {
+          const quoteData = quoteDoc.data();
+          
+          // Move to recycle bin
+          await addDoc(collection(db, 'recycleBin'), {
+            ...quoteData,
+            originalId: deleteConfirmation.quoteId,
+            originalCollection: 'quotes',
+            deletedAt: serverTimestamp(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            userId: user.uid
+          });
+          
+          // Delete from original collection
+          await deleteDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
+        }
         fetchQuotes();
       } catch (error) {
         console.error('Error deleting quote:', error);

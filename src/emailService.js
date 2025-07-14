@@ -352,7 +352,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
-    currentY = 65;
+    currentY = 55;
 
     // Subtle divider line
     doc.setDrawColor(229, 231, 235);
@@ -935,7 +935,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
-    currentY = 65;
+    currentY = 55;
 
     // Subtle divider line
     doc.setDrawColor(229, 231, 235);
