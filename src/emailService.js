@@ -5,6 +5,124 @@ import { db, auth } from './firebase.js';
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
 
+// PDF Theme Configuration
+const PDF_THEME = {
+  colors: {
+    primary: [99, 102, 241],        // Purple accent
+    secondary: [75, 85, 99],        // Gray text
+    dark: [17, 24, 39],            // Dark text
+    light: [107, 114, 128],        // Light gray
+    background: [250, 251, 252],    // Light background
+    border: [229, 231, 235]         // Border color
+  },
+  fonts: {
+    title: { size: 20, weight: 'bold' },
+    heading: { size: 14, weight: 'bold' },
+    normal: { size: 10, weight: 'normal' },
+    small: { size: 8, weight: 'normal' },
+    tiny: { size: 7, weight: 'normal' }
+  },
+  spacing: {
+    headerHeight: 50,
+    contentStart: 63,
+    sectionGap: 15,
+    footerOffset: 15
+  }
+};
+
+// Shared PDF header function for consistent design
+const addPDFHeader = (doc, companySettings, documentType) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Modern minimal header with subtle background
+  doc.setFillColor(250, 251, 252);
+  doc.rect(0, 0, pageWidth, 50, 'F');
+
+  // Accent line at top
+  doc.setFillColor(99, 102, 241);
+  doc.rect(0, 0, pageWidth, 3, 'F');
+
+  // Company logo (larger and better positioned)
+  if (companySettings && companySettings.logo) {
+    try {
+      doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
+    } catch (error) {
+      console.log('Error adding logo to PDF:', error);
+    }
+  }
+
+  // Company name in header (top right)
+  doc.setTextColor(17, 24, 39);
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
+
+  // Document type title in header (centered)
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text(documentType, pageWidth / 2, 25, { align: 'center' });
+
+  // Company details (top right, below company name)
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(75, 85, 99);
+  let companyY = 26;
+
+  const fullAddress = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean).join(', ');
+  if (fullAddress) {
+    doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
+    companyY += 6;
+  }
+  if (companySettings?.email) {
+    doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
+    companyY += 6;
+  }
+  if (companySettings?.phone) {
+    doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
+  }
+
+  // Subtle divider line
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(1);
+  doc.line(20, 55, pageWidth - 20, 55);
+
+  return 63; // Return the Y position where content should start
+};
+
+// Shared PDF footer function for consistent design
+const addPDFFooter = (doc, companySettings, currentY, thankYouMessage = 'Thank you for your business!') => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Modern footer with clean layout
+  const footerY = Math.max(currentY + 15, 250);
+
+  // Subtle divider
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.5);
+  doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
+
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(107, 114, 128);
+
+  let footerText = [];
+  if (companySettings?.companyNumber) {
+    footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+  }
+  if (companySettings?.vatNumber) {
+    footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+  }
+
+  if (footerText.length > 0) {
+    doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
+  }
+
+  doc.setTextColor(99, 102, 241);
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.text(thankYouMessage, pageWidth / 2, footerY + 8, { align: 'center' });
+};
+
 const generateInvoicePDF = async (invoice, companySettings) => {
   try {
     console.log('Starting invoice PDF generation');
@@ -20,62 +138,8 @@ const generateInvoicePDF = async (invoice, companySettings) => {
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = 20;
-
-    // Modern minimal header with subtle background
-    doc.setFillColor(250, 251, 252);
-    doc.rect(0, 0, pageWidth, 50, 'F');
-
-    // Accent line at top
-    doc.setFillColor(99, 102, 241);
-    doc.rect(0, 0, pageWidth, 3, 'F');
-
-    // Company logo (larger and better positioned)
-    if (companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
-      }
-    }
-
-    // Company name and INVOICE title in header
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-
-    // INVOICE title in header (centered)
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('INVOICE', pageWidth / 2, 25, { align: 'center' });
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(75, 85, 99);
-    let companyY = 26;
-
-    const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
-    if (fullAddress) {
-      doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings.email) {
-      doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings.phone) {
-      doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
-    }
-
-    currentY = 55;
-
-    // Subtle divider line
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    doc.line(20, currentY, pageWidth - 20, currentY);
-
-    currentY += 8;
+    
+    let currentY = addPDFHeader(doc, companySettings, 'INVOICE');
 
     // Bill To section with modern card design - moved to top
     doc.setFillColor(255, 255, 255);
@@ -281,34 +345,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
       currentY += 25;
     }
 
-    // Modern footer with clean layout
-    const footerY = Math.max(currentY + 15, 250);
-
-    // Subtle divider
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.5);
-    doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(107, 114, 128);
-
-    let footerText = [];
-    if (companySettings.companyNumber) {
-      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
-    }
-    if (companySettings.vatNumber) {
-      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
-    }
-
-    if (footerText.length > 0) {
-      doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
-    }
-
-    doc.setTextColor(99, 102, 241);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.text('Thank you for your business!', pageWidth / 2, footerY + 8, { align: 'center' });
+    addPDFFooter(doc, companySettings, currentY);
 
     console.log('PDF generation completed successfully');
     return doc;
@@ -325,62 +362,8 @@ const generateQuotePDF = async (quote, companySettings) => {
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = 20;
-
-    // Modern minimal header with subtle background
-    doc.setFillColor(250, 251, 252);
-    doc.rect(0, 0, pageWidth, 50, 'F');
-
-    // Accent line at top
-    doc.setFillColor(99, 102, 241);
-    doc.rect(0, 0, pageWidth, 3, 'F');
-
-    // Company logo (larger and better positioned)
-    if (companySettings && companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
-      }
-    }
-
-    // Company name and QUOTE title in header
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-
-    // QUOTE title in header (centered)
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('QUOTE', pageWidth / 2, 25, { align: 'center' });
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(75, 85, 99);
-    let companyY = 26;
-
-    const fullAddress = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean).join(', ');
-    if (fullAddress) {
-      doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings?.email) {
-      doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings?.phone) {
-      doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
-    }
-
-    currentY = 55;
-
-    // Subtle divider line
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    doc.line(20, currentY, pageWidth - 20, currentY);
-
-    currentY += 8;
+    
+    let currentY = addPDFHeader(doc, companySettings, 'QUOTE');
 
     // Quote To section with modern card design - moved to top
     doc.setFillColor(255, 255, 255);
@@ -554,35 +537,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       doc.text(notes, 25, currentY + 14);
       currentY += 25;
     }
-
-    // Modern footer with clean layout
-    const footerY = Math.max(currentY + 15, 250);
-
-    // Subtle divider
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.5);
-    doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(107, 114, 128);
-
-    let footerText = [];
-    if (companySettings.companyNumber) {
-      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
-    }
-    if (companySettings.vatNumber) {
-      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
-    }
-
-    if (footerText.length > 0) {
-      doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
-    }
-
-    doc.setTextColor(99, 102, 241);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.text('Thank you for considering our services!', pageWidth / 2, footerY + 8, { align: 'center' });
+    addPDFFooter(doc, companySettings, currentY, 'Thank you for considering our services!');
 
     console.log('PDF generation completed successfully');
     return doc;
@@ -595,375 +550,13 @@ const generateQuotePDF = async (quote, companySettings) => {
   }
 };
 
-// Get email settings from Firestore
-const getEmailSettings = async () => {
-  try {
-    const user = auth.currentUser;
-    if (!user) return null;
-
-    const settingsDoc = await getDoc(doc(db, 'emailSettings', user.uid));
-    return settingsDoc.exists() ? settingsDoc.data() : null;
-  } catch (error) {
-    console.error('Error fetching email settings:', error);
-    return null;
-  }
-};
-
-// Replace template variables
-const replaceTemplateVariables = (template, data) => {
-  return template
-    .replace(/{invoiceNumber}/g, data.invoiceNumber || '')
-    .replace(/{quoteNumber}/g, data.quoteNumber || '')
-    .replace(/{clientName}/g, data.clientName || '')
-    .replace(/{totalAmount}/g, data.totalAmount || '')
-    .replace(/{dueDate}/g, data.dueDate || '')
-    .replace(/{validUntil}/g, data.validUntil || '')
-    .replace(/{senderName}/g, data.senderName || '')
-    .replace(/{companyName}/g, data.companyName || '');
-};
-
-// Show popup with manual attachment instructions and action buttons
-const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady) => {
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    backdrop-filter: blur(4px);
-    overflow: hidden;
-  `;
-
-  const popup = document.createElement('div');
-  popup.style.cssText = `
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    max-width: 420px;
-    width: 85%;
-    max-height: 80vh;
-    text-align: center;
-    border: 2px solid #667eea;
-    overflow-y: auto;
-    position: relative;
-  `;
-
-  popup.innerHTML = `
-    <div style="font-size: 36px; margin-bottom: 12px;">📧📎</div>
-    <h2 style="color: #333; margin-bottom: 10px; font-size: 1.4rem;">Email ${type.charAt(0).toUpperCase() + type.slice(1)}</h2>
-    <p style="color: #666; margin-bottom: 15px; line-height: 1.5; font-size: 0.95rem;">
-      <strong>Important:</strong> Download the PDF first, then we'll open your email client.
-    </p>
-
-    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; border-left: 3px solid #667eea;">
-      <h4 style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem;">📋 Steps:</h4>
-      <ol<previous_generation> style="margin: 0; padding-left: 20px; color: #666; line-height: 1.4; font-size: 0.85rem;">
-        <li>Click "Download PDF" below</li>
-        <li>Click "Done - Open Email"</li>
-        <li>Attach the downloaded PDF</li>
-        <li>Send the email</li>
-      </ol>
-    </div>
-
-    <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #ffc107;">
-      <p style="margin: 0; color: #856404; font-size: 0.8rem;">
-        <strong>💡 File:</strong> ${type}_${documentNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf
-      </p>
-    </div>
-
-    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-      <button id="downloadBtn" style="
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        min-width: 110px;
-      ">📄 Download</button>
-
-      <button id="doneBtn" style="
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        min-width: 110px;
-      ">✅ Open Email</button>
-
-      <button id="cancelBtn" style="
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        min-width: 110px;
-      ">↩️ Cancel</button>
-    </div>
-  `;
-
-  modal.appendChild(popup);
-  document.body.appendChild(modal);
-
-  // Prevent body scrolling when modal is open
-  document.body.style.overflow = 'hidden';
-
-  // Add hover effects
-  const buttons = popup.querySelectorAll('button');
-  buttons.forEach(button => {
-    button.addEventListener('mouseenter', () => {
-      button.style.transform = 'translateY(-1px)';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = 'translateY(0)';
-    });
-  });
-
-  // Event listeners for buttons
-  popup.querySelector('#downloadBtn').addEventListener('click', () => {
-    onDownloadPDF();
-    // Update button to show it's been clicked
-    const downloadBtn = popup.querySelector('#downloadBtn');
-    downloadBtn.style.background = 'linear-gradient(135deg, #155724 0%, #1e7e34 100%)';
-    downloadBtn.innerHTML = '✅ Downloaded';
-    downloadBtn.disabled = true;
-    downloadBtn.style.cursor = 'not-allowed';
-  });
-
-  popup.querySelector('#doneBtn').addEventListener('click', () => {
-    document.body.style.overflow = 'auto'; // Restore scrolling
-    modal.remove();
-    onEmailReady();
-  });
-
-  popup.querySelector('#cancelBtn').addEventListener('click', () => {
-    document.body.style.overflow = 'auto'; // Restore scrolling
-    modal.remove();
-  });
-
-  // Close on background click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      document.body.style.overflow = 'auto'; // Restore scrolling
-      modal.remove();
-    }
-  });
-};
-
-// Send invoice via email (mailto)
-const sendInvoiceViaEmail = async (invoice, companySettings, recipientEmail) => {
-  try {
-    // Get email settings
-    const emailSettings = await getEmailSettings();
-
-    // Calculate total amount
-    const amount = parseFloat(invoice.amount) || 0;
-    const vatRate = parseFloat(invoice.vat) || 0;
-    const vatAmount = amount * (vatRate / 100);
-    const totalAmount = amount + vatAmount;
-
-    // Prepare template data
-    const templateData = {
-      invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName,
-      totalAmount: totalAmount.toFixed(2),
-      dueDate: invoice.dueDate,
-      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
-      companyName: companySettings?.companyName || 'Your Company'
-    };
-
-    // Get templates
-    const subject = emailSettings?.invoiceSubject || 'Invoice {invoiceNumber} from {companyName}';
-    const body = emailSettings?.invoiceTemplate || `Dear {clientName},
-
-Please find attached invoice {invoiceNumber} for the amount of £{totalAmount}.
-
-Payment is due by {dueDate}.
-
-Thank you for your business!
-
-Best regards,
-{senderName}
-{companyName}`;
-
-    // Replace variables
-    const finalSubject = replaceTemplateVariables(subject, templateData);
-    const finalBody = replaceTemplateVariables(body, templateData);
-
-    // Function to download PDF
-    const downloadPDF = async () => {
-      try {
-        const doc = await generateInvoicePDF(invoice, companySettings);
-        const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        doc.save(fileName);
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-      }
-    };
-
-    // Function to open email client
-    const openEmailClient = () => {
-      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-      window.location.href = mailtoLink;
-    };
-
-    // Show instructions popup with callback functions
-    showEmailInstructions('invoice', invoice.invoiceNumber, downloadPDF, openEmailClient);
-
-  } catch (error) {
-    console.error('Error creating email:', error);
-    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
-  }
-};
-
-// Send quote via email (mailto)
-const sendQuoteViaEmail = async (quote, companySettings, recipientEmail) => {
-  try {
-    // Get email settings
-    const emailSettings = await getEmailSettings();
-
-    // Calculate total amount
-    const amount = parseFloat(quote.amount) || 0;
-    const vatRate = parseFloat(quote.vat) || 0;
-    const vatAmount = amount * (vatRate / 100);
-    const totalAmount = amount + vatAmount;
-
-    // Prepare template data
-    const templateData = {
-      quoteNumber: quote.quoteNumber,
-      clientName: quote.clientName,
-      totalAmount: totalAmount.toFixed(2),
-      validUntil: quote.validUntil,
-      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
-      companyName: companySettings?.companyName || 'Your Company'
-    };
-
-    // Get templates
-    const subject = emailSettings?.quoteSubject || 'Quote {quoteNumber} from {companyName}';
-    const body = emailSettings?.quoteTemplate || `Dear {clientName},
-
-Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
-
-This quote is valid until {validUntil}.
-
-We look forward to working with you!
-
-Best regards,
-{senderName}
-{companyName}`;
-
-    // Replace variables
-    const finalSubject = replaceTemplateVariables(subject, templateData);
-    const finalBody = replaceTemplateVariables(body, templateData);
-
-    // Function to download PDF
-    const downloadPDF = async () => {
-      try {
-        const doc = await generateQuotePDF(quote, companySettings);
-        const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        doc.save(fileName);
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-      }
-    };
-
-    // Function to open email client
-    const openEmailClient = () => {
-      const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-      window.location.href = mailtoLink;
-    };
-
-    // Show instructions popup with callback functions
-    showEmailInstructions('quote', quote.quoteNumber, downloadPDF, openEmailClient);
-
-  } catch (error) {
-    console.error('Error creating email:', error);
-    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
-  }
-};
-
 // Generate client statement PDF
 const generateStatementPDF = async (client, invoices, companySettings, period = 'full') => {
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = 20;
-
-    // Modern minimal header with subtle background
-    doc.setFillColor(250, 251, 252);
-    doc.rect(0, 0, pageWidth, 50, 'F');
-
-    // Accent line at top
-    doc.setFillColor(99, 102, 241);
-    doc.rect(0, 0, pageWidth, 3, 'F');
-
-    // Company logo (larger and better positioned)
-    if (companySettings && companySettings.logo) {
-      try {
-        doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
-      } catch (error) {
-        console.log('Error adding logo to PDF:', error);
-      }
-    }
-
-    // Company name and STATEMENT title in header
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-
-    // STATEMENT title in header (centered)
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('STATEMENT', pageWidth / 2, 25, { align: 'center' });
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(75, 85, 99);
-    let companyY = 26;
-
-    const fullAddress = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean).join(', ');
-    if (fullAddress) {
-      doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings?.email) {
-      doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
-      companyY += 6;
-    }
-    if (companySettings?.phone) {
-      doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
-    }
-
-    currentY = 55;
-
-    // Subtle divider line
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    doc.line(20, currentY, pageWidth - 20, currentY);
-
-    currentY += 8;
+    
+    let currentY = addPDFHeader(doc, companySettings, 'STATEMENT');
 
     // Statement To section with modern card design - moved to top
     doc.setFillColor(255, 255, 255);
@@ -1054,8 +647,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text('Total Amount:', totalsStartX + 10, currentY + 6);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(17, 24, 39);
+    doc.setFont(undefined, 'bold');doc.setTextColor(17, 24, 39);
     doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
 
     // Paid Amount row
@@ -1151,34 +743,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
       currentY += 10;
     });
 
-    // Modern footer with clean layout
-    const footerY = Math.max(currentY + 15, 250);
-
-    // Subtle divider
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.5);
-    doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(107, 114, 128);
-
-    let footerText = [];
-    if (companySettings.companyNumber) {
-      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
-    }
-    if (companySettings.vatNumber) {
-      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
-    }
-
-    if (footerText.length > 0) {
-      doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
-    }
-
-    doc.setTextColor(99, 102, 241);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.text('Thank you for your business!', pageWidth / 2, footerY + 8, { align: 'center' });
+    addPDFFooter(doc, companySettings, currentY);
 
     console.log('Client statement PDF generation completed successfully');
     return doc;
