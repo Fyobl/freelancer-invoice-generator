@@ -365,13 +365,13 @@ function Home() {
         }}>
           <div style={{ fontSize: '48px', marginBottom: '20px' }}>💳</div>
           <h3 style={{ fontSize: '28px', marginBottom: '20px', color: '#2c3e50' }}>
-            Pro Subscription
+            Easy Invoice Subscription
           </h3>
           <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#28a745', marginBottom: '10px' }}>
             £9.99/month
           </div>
           <p style={{ color: '#666', marginBottom: '30px' }}>
-            Everything you need to manage your invoicing business
+            Subscribe to unlock all Easy Invoice features
           </p>
           
           <ul style={{ 

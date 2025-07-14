@@ -177,7 +177,7 @@ function Subscription({ user }) {
                 marginBottom: '15px'
               }}
             >
-              {upgrading ? 'Processing...' : 'Upgrade Now'}
+              {upgrading ? 'Processing...' : 'Subscribe Now'}
             </button>
 
             <button
@@ -250,7 +250,7 @@ function Subscription({ user }) {
         {currentPlan === 'trial' && (
           <div style={cardStyle}>
             <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
-              🚀 Upgrade to Premium
+              🚀 Subscribe to Easy Invoice
             </h2>
 
             <div style={{ border: '2px solid #007bff', borderRadius: '15px', padding: '25px', textAlign: 'center' }}>
@@ -289,7 +289,7 @@ function Subscription({ user }) {
                   opacity: upgrading ? 0.7 : 1
                 }}
               >
-                {upgrading ? 'Upgrading...' : 'Upgrade to Premium'}
+                {upgrading ? 'Processing...' : 'Subscribe Now'}
               </button>
             </div>
           </div>
@@ -299,10 +299,10 @@ function Subscription({ user }) {
         {currentPlan === 'premium' && (
           <div style={cardStyle}>
             <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
-              ✨ Premium Member
+              ✨ Active Subscriber
             </h2>
             <p style={{ color: '#666', lineHeight: 1.6 }}>
-              You're enjoying all premium features! Your subscription will automatically renew on <strong>{endDate.toLocaleDateString()}</strong>.
+              You're enjoying all Easy Invoice features! Your subscription will automatically renew on <strong>{endDate.toLocaleDateString()}</strong>.
             </p>
 
             <div style={{ marginTop: '20px', padding: '20px', background: '#d4edda', borderRadius: '10px', border: '1px solid #c3e6cb' }}>

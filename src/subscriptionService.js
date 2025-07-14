@@ -1,4 +1,3 @@
-
 import { doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase.js';
 
@@ -6,16 +5,30 @@ export const SUBSCRIPTION_PLANS = {
   trial: {
     name: 'Free Trial',
     price: 0,
-    duration: 7, // days - default trial length
-    features: ['Limited access', 'Basic templates', 'Email support'],
-    invoiceLimit: 5
+    duration: 7, // days
+    invoiceLimit: 5,
+    features: [
+      '5 invoices per trial',
+      'Basic invoice templates',
+      'Client management',
+      'Email integration'
+    ]
   },
   premium: {
-    name: 'Premium',
-    price: 16.99,
-    duration: 30, // days
-    features: ['Unlimited invoices', 'All templates', 'Priority support', 'Advanced reports', 'Full access'],
-    invoiceLimit: -1 // unlimited
+    name: 'Easy Invoice Subscription',
+    price: 9.99,
+    duration: 30, // days (monthly)
+    invoiceLimit: -1, // unlimited
+    features: [
+      'Unlimited invoices',
+      'Professional templates',
+      'Advanced client management',
+      'Email integration',
+      'Business reports',
+      'Product catalog',
+      'Company branding',
+      'Priority support'
+    ]
   }
 };
 
@@ -24,7 +37,7 @@ export const createSubscription = async (userId, plan = 'trial', trialDays = 7) 
     const planDetails = SUBSCRIPTION_PLANS[plan];
     const startDate = new Date();
     const endDate = new Date(startDate);
-    
+
     // Use custom trial days if provided for trial, otherwise use plan duration
     const duration = plan === 'trial' ? trialDays : planDetails.duration;
     endDate.setDate(endDate.getDate() + duration);
