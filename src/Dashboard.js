@@ -398,41 +398,55 @@ function Dashboard() {
     // Add product to selected products
     setSelectedProducts(prev => {
       const existingProduct = prev.find(p => p.id === id);
+      let newProducts;
       if (existingProduct) {
         // If the product exists, increment the quantity
-        return prev.map(p =>
+        newProducts = prev.map(p =>
           p.id === id ? { ...p, quantity: (p.quantity || 1) + 1 } : p
         );
       } else {
         // If the product doesn't exist, add it with a quantity of 1
-        return [...prev, { ...product, quantity: 1 }];
+        newProducts = [...prev, { ...product, quantity: 1 }];
       }
+
+      // Calculate total amount and average VAT
+      const totalAmount = newProducts.reduce((sum, p) => sum + (p.price * (p.quantity || 1)), 0);
+      const totalVat = newProducts.reduce((sum, p) => sum + ((p.vat || 0) * (p.quantity || 1)), 0);
+      const avgVat = newProducts.length > 0 ? totalVat / newProducts.reduce((sum, p) => sum + (p.quantity || 1), 0) : 0;
+
+      // Update amount and VAT fields
+      setAmount(totalAmount.toString());
+      setVat(avgVat.toString());
+
+      return newProducts;
     });
     setSelectedProductId('');
   };
 
   const removeProduct = (productId) => {
-    setSelectedProducts(prev => prev.map(p => {
-      if (p.id === productId) {
-        const newQuantity = p.quantity - 1;
-        if (newQuantity <= 0) {
-          return null; // Remove the product if quantity is 0
-        } else {
-          return { ...p, quantity: newQuantity }; // Decrease the quantity
+    setSelectedProducts(prev => {
+      const newProducts = prev.map(p => {
+        if (p.id === productId) {
+          const newQuantity = p.quantity - 1;
+          if (newQuantity <= 0) {
+            return null; // Remove the product if quantity is 0
+          } else {
+            return { ...p, quantity: newQuantity }; // Decrease the quantity
+          }
         }
-      }
-      return p;
-    }).filter(p => p !== null));
+        return p;
+      }).filter(p => p !== null);
 
-    // Recalculate amount and VAT
-    const remainingProducts = selectedProducts.filter(p => p.id !== productId);
-    const newAmount = remainingProducts.reduce((sum, p) => sum + (p.price * p.quantity || 0), 0);
-    const avgVat = remainingProducts.length > 0
-      ? remainingProducts.reduce((sum, p) => sum + (p.vat * p.quantity || 0), 0) / remainingProducts.length
-      : 0;
+      // Recalculate amount and VAT
+      const totalAmount = newProducts.reduce((sum, p) => sum + (p.price * (p.quantity || 1)), 0);
+      const totalVat = newProducts.reduce((sum, p) => sum + ((p.vat || 0) * (p.quantity || 1)), 0);
+      const avgVat = newProducts.length > 0 ? totalVat / newProducts.reduce((sum, p) => sum + (p.quantity || 1), 0) : 0;
 
-    setAmount(newAmount.toString());
-    setVat(avgVat.toString());
+      setAmount(totalAmount.toString());
+      setVat(avgVat.toString());
+
+      return newProducts;
+    });
   };
 
 
@@ -636,12 +650,11 @@ function Dashboard() {
                         <button
                           onClick={() => removeProduct(product.id)}
                           style={{
-                            padding: '8px 15px',
+                            padding: '4px 8px',
                             background: '#dc3545',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            padding: '4px 8px',
                             cursor: 'pointer',
                             fontSize: '12px',
                             fontWeight: 'bold'
