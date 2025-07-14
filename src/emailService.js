@@ -64,7 +64,26 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setLineWidth(1);
     doc.line(20, currentY, pageWidth - 20, currentY);
 
-    currentY += 15;
+    currentY += 8;
+
+    // Bill To section with modern card design - moved to top
+    doc.setFillColor(255, 255, 255);
+    doc.rect(20, currentY, pageWidth - 40, 20, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(1);
+    doc.rect(20, currentY, pageWidth - 40, 20);
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(99, 102, 241);
+    doc.text('BILL TO: ', 25, currentY + 13);
+    
+    // Client name in black
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(invoice.clientName, 55, currentY + 13);
+
+    currentY += 28;
 
     // Invoice details in clean grid layout - reduced height
     doc.setFillColor(249, 250, 251);
@@ -112,25 +131,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     }
     doc.text(invoice.status, rightCenterX + 10, currentY + 18, { align: 'center' });
 
-    currentY += 34;
-
-    // Bill To section with modern card design
-    doc.setFillColor(255, 255, 255);
-    doc.rect(20, currentY, pageWidth - 40, 25, 'F');
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    doc.rect(20, currentY, pageWidth - 40, 25);
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(99, 102, 241);
-    doc.text(`BILL TO: ${invoice.clientName}`, 25, currentY + 15);
-    
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(11);
-
-    currentY += 35;
+    currentY += 32;
 
     // Items section with modern table design
     doc.setFillColor(17, 24, 39);
