@@ -29,6 +29,7 @@ function Dashboard() {
   const [products, setProducts] = useState([]);
   const [clients, setClients] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [template, setTemplate] = useState('standard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -335,6 +336,7 @@ function Dashboard() {
       notes,
       template,
       productId: selectedProductId || null,
+      selectedProducts: selectedProducts || [],
       createdAt: serverTimestamp(),
       invoiceNumber
     };
@@ -392,9 +394,40 @@ function Dashboard() {
   const handleProductSelect = (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    setSelectedProductId(id);
-    setAmount(product.price || '');
-    setVat(product.vat || '');
+    
+    // Check if product is already selected
+    const isAlreadySelected = selectedProducts.some(p => p.id === id);
+    if (isAlreadySelected) {
+      alert('This product is already selected');
+      return;
+    }
+    
+    // Add product to selected products
+    setSelectedProducts(prev => [...prev, product]);
+    setSelectedProductId('');
+    
+    // Update amount and VAT based on selected products
+    const newAmount = selectedProducts.reduce((sum, p) => sum + (p.price || 0), 0) + (product.price || 0);
+    const avgVat = selectedProducts.length > 0 
+      ? (selectedProducts.reduce((sum, p) => sum + (p.vat || 0), 0) + (product.vat || 0)) / (selectedProducts.length + 1)
+      : (product.vat || 0);
+    
+    setAmount(newAmount.toString());
+    setVat(avgVat.toString());
+  };
+
+  const removeProduct = (productId) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
+    
+    // Recalculate amount and VAT
+    const remainingProducts = selectedProducts.filter(p => p.id !== productId);
+    const newAmount = remainingProducts.reduce((sum, p) => sum + (p.price || 0), 0);
+    const avgVat = remainingProducts.length > 0 
+      ? remainingProducts.reduce((sum, p) => sum + (p.vat || 0), 0) / remainingProducts.length
+      : 0;
+    
+    setAmount(newAmount.toString());
+    setVat(avgVat.toString());
   };
 
   const resetForm = () => {
@@ -406,6 +439,7 @@ function Dashboard() {
     setStatus('Unpaid');
     setNotes('');
     setSelectedProductId('');
+    setSelectedProducts([]);
   };
 
   const downloadPDF = async (invoice) => {
@@ -557,13 +591,62 @@ function Dashboard() {
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
-                <option value="">Select a product</option>
+                <option value="">Select a product to add</option>
                 {products.map(prod => (
                   <option key={prod.id} value={prod.id}>
                     {prod.name} - £{Number(prod.price).toFixed(2)}
                   </option>
                 ))}
               </select>
+
+              {/* Selected Products Display */}
+              {selectedProducts.length > 0 && (
+                <div style={{ marginTop: '15px', marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+                    Selected Products:
+                  </label>
+                  <div style={{ 
+                    background: '#f8f9fa', 
+                    border: '2px solid #e1e5e9', 
+                    borderRadius: '8px', 
+                    padding: '10px',
+                    maxHeight: '120px',
+                    overflowY: 'auto'
+                  }}>
+                    {selectedProducts.map(product => (
+                      <div key={product.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '8px',
+                        background: 'white',
+                        margin: '5px 0',
+                        borderRadius: '6px',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        <span style={{ color: '#333', fontWeight: '500' }}>
+                          {product.name} - £{Number(product.price).toFixed(2)}
+                        </span>
+                        <button
+                          onClick={() => removeProduct(product.id)}
+                          style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Amount (£) *
@@ -632,6 +715,9 @@ function Dashboard() {
               >
                 <option value="standard">Standard</option>
                 <option value="professional">Professional</option>
+                <option value="modern">Modern</option>
+                <option value="classic">Classic</option>
+                <option value="minimal">Minimal</option>
               </select>
             </div>
           </div>
