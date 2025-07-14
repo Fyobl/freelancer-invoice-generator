@@ -264,6 +264,11 @@ function Quotes({ user }) {
                          quote.quoteNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || quote.status === filterStatus;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Sort by quote number (extract numeric part)
+    const numA = parseInt(a.quoteNumber?.replace('QUO-', '') || '0');
+    const numB = parseInt(b.quoteNumber?.replace('QUO-', '') || '0');
+    return numA - numB;
   });
 
   const sendQuoteEmail = async (quote) => {

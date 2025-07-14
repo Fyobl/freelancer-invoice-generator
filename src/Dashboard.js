@@ -454,6 +454,11 @@ function Dashboard() {
                          invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Sort by invoice number (extract numeric part)
+    const numA = parseInt(a.invoiceNumber?.replace('INV-', '') || '0');
+    const numB = parseInt(b.invoiceNumber?.replace('INV-', '') || '0');
+    return numA - numB;
   });
 
   return (
