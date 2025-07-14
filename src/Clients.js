@@ -301,6 +301,7 @@ function Clients() {
   const downloadClientStatement = async (client, period) => {
     try {
       const clientInvoices = getClientInvoices(client.id, period);
+
       if (clientInvoices.length === 0) {
         alert(`No invoices found for ${client.name} in the selected period.`);
         return;
