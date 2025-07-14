@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
@@ -170,10 +169,10 @@ const addWatermark = (doc, watermarkSettings) => {
 
   // Save current graphics state
   const currentAlpha = doc.internal.getGState();
-  
+
   // Set transparency
   doc.setGState(new doc.GState({ opacity: watermarkSettings.opacity || 0.1 }));
-  
+
   // Add rotated watermark text
   doc.text(
     watermarkSettings.text || 'DRAFT',
@@ -210,7 +209,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
 
     // Invoice details section
     currentY += 10;
-    
+
     // Bill To card
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...pdfSettings.colors.border);
@@ -248,7 +247,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
       doc.setTextColor(...pdfSettings.colors.secondary);
       doc.setFont(undefined, 'normal');
       doc.text(item.label, metaX, currentY + 12);
-      
+
       // Status color coding
       if (item.label === 'Status') {
         if (item.value === 'Paid') {
@@ -261,7 +260,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
       } else {
         doc.setTextColor(...pdfSettings.colors.dark);
       }
-      
+
       doc.setFont(undefined, 'bold');
       doc.text(item.value, metaX, currentY + 20);
       metaX += metaWidth;
@@ -419,7 +418,7 @@ const generateQuotePDF = async (quote, companySettings) => {
 
     // Quote details section
     currentY += 10;
-    
+
     // Quote To card
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...pdfSettings.colors.border);
@@ -457,7 +456,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       doc.setTextColor(...pdfSettings.colors.secondary);
       doc.setFont(undefined, 'normal');
       doc.text(item.label, metaX, currentY + 12);
-      
+
       // Status color coding
       if (item.label === 'Status') {
         if (item.value === 'Accepted') {
@@ -470,7 +469,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       } else {
         doc.setTextColor(...pdfSettings.colors.dark);
       }
-      
+
       doc.setFont(undefined, 'bold');
       doc.text(item.value, metaX, currentY + 20);
       metaX += metaWidth;
@@ -598,7 +597,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
 
     // Statement details section
     currentY += 10;
-    
+
     // Statement For card
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...pdfSettings.colors.border);
@@ -661,7 +660,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
 
     summaryItems.forEach((item, index) => {
       const isEven = index % 2 === 0;
-      doc.setFillColor(isEven ? ...pdfSettings.colors.background : 255, 255, 255);
+      doc.setFillColor(...(isEven ? pdfSettings.colors.background : [255, 255, 255]));
       doc.rect(20, currentY, pageWidth - 40, 10, 'F');
 
       doc.setFontSize(pdfSettings.fonts.small.size);
@@ -717,8 +716,8 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
         doc.setTextColor(239, 68, 68);
       } else {
         doc.setTextColor(245, 158, 11);
-      }
-      doc.text(invoice.status || 'Unpaid', 150, currentY + 7);
+      }```text
+doc.text(invoice.status || 'Unpaid', 150, currentY + 7);
 
       doc.setTextColor(...pdfSettings.colors.dark);
       doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 25, currentY + 7, { align: 'right' });
