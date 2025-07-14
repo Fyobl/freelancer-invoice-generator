@@ -60,6 +60,7 @@ function Navigation({ user }) {
     { path: '/account-settings', label: 'Account Settings', icon: '👤' },
     { path: '/subscription', label: 'Subscription', icon: '💳' },
     { path: '/email-settings', label: 'Email Settings', icon: '📧' },
+    { path: '/pdf-settings', label: 'PDF Settings', icon: '🎨' },
     { path: '/recycle-bin', label: 'Recycle Bin', icon: '🗑️' },
   ];
 
