@@ -150,7 +150,7 @@ function Navigation({ user }) {
             backgroundClip: 'text',
             letterSpacing: '0.5px'
           }}>
-            Easy Invoice
+            Eazee Invoice
           </span>
         </div>
 

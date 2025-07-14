@@ -462,7 +462,7 @@ function Dashboard() {
       <div style={contentStyle}>
         <div style={headerStyle}>
           <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
-            📊 Dashboard
+            📄 Eazee Invoice Dashboard
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
             Welcome back, {userData?.firstName || user?.email?.split('@')[0]}! Here's your business overview.
@@ -780,7 +780,7 @@ function Dashboard() {
                           <button
                             onClick={() => handleDelete(inv)}
                             style={{ 
-                              padding: '8px 15px', 
+                              padding: ''8px 15px', 
                               background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
                               color: 'white', 
                               border: 'none', 

@@ -11,6 +11,7 @@ function Reports() {
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [dateRange, setDateRange] = useState('all');
+  const [selectedClient, setSelectedClient] = useState('');
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +26,7 @@ function Reports() {
 
   useEffect(() => {
     calculateStats();
-  }, [invoices, dateRange]);
+  }, [invoices, dateRange, selectedClient]);
 
   const fetchData = async () => {
     // Fetch invoices
@@ -62,6 +63,11 @@ function Reports() {
   const calculateStats = () => {
     let filteredInvoices = invoices;
 
+    // Filter by selected client
+    if (selectedClient) {
+      filteredInvoices = filteredInvoices.filter(inv => inv.clientName === selectedClient);
+    }
+
     // Filter by date range
     if (dateRange !== 'all') {
       const now = new Date();
@@ -82,7 +88,7 @@ function Reports() {
           break;
       }
 
-      filteredInvoices = invoices.filter(inv => {
+      filteredInvoices = filteredInvoices.filter(inv => {
         const invDate = inv.createdAt?.toDate() || new Date(inv.dueDate);
         return invDate >= cutoffDate;
       });
@@ -151,7 +157,13 @@ function Reports() {
                         dateRange === 'month' ? 'Last Month' :
                         dateRange === 'quarter' ? 'Last Quarter' : 'Last Year';
       doc.text(`Report Period: ${periodText}`, 20, currentY);
-      currentY += 20;
+      currentY += 10;
+      
+      if (selectedClient) {
+        doc.text(`Client Filter: ${selectedClient}`, 20, currentY);
+        currentY += 10;
+      }
+      currentY += 10;
 
       // Revenue Overview
       doc.setFontSize(16);
@@ -359,7 +371,7 @@ function Reports() {
 
         {/* Date Filter and Download */}
         <div style={filterStyle}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '20px', alignItems: 'end' }}>
             <div>
               <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📅 Time Period</h3>
               <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
@@ -374,6 +386,24 @@ function Reports() {
                   <option value="month">Last Month</option>
                   <option value="quarter">Last Quarter</option>
                   <option value="year">Last Year</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>👤 Customer Filter</h3>
+              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
+                Select customer (optional):
+                <select 
+                  value={selectedClient} 
+                  onChange={(e) => setSelectedClient(e.target.value)}
+                  style={selectStyle}
+                >
+                  <option value="">All Customers</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.name}>
+                      {client.name}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
