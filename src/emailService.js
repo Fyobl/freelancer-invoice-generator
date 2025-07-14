@@ -1262,7 +1262,6 @@ Best regards,
 };
 
 export { 
-  generateInvoicePDF, 
   generateQuotePDF, 
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
