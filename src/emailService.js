@@ -5,7 +5,7 @@ import { db, auth } from './firebase.js';
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
 
-export const generateInvoicePDF = async (invoice, companySettings) => {
+const generateInvoicePDF = async (invoice, companySettings) => {
   try {
     console.log('Starting invoice PDF generation');
 
@@ -1262,6 +1262,7 @@ Best regards,
 };
 
 export { 
+  generateInvoicePDF,
   generateQuotePDF, 
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
