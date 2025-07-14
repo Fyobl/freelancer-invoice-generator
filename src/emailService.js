@@ -716,8 +716,8 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
         doc.setTextColor(239, 68, 68);
       } else {
         doc.setTextColor(245, 158, 11);
-      }```text
-doc.text(invoice.status || 'Unpaid', 150, currentY + 7);
+      }
+      doc.text(invoice.status || 'Unpaid', 150, currentY + 7);
 
       doc.setTextColor(...pdfSettings.colors.dark);
       doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 25, currentY + 7, { align: 'right' });
