@@ -699,7 +699,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
       }
 
       const isEven = index % 2 === 0;
-      doc.setFillColor(isEven ? ...pdfSettings.colors.background : 255, 255, 255);
+      doc.setFillColor(...(isEven ? pdfSettings.colors.background : [255, 255, 255]));
       doc.rect(20, currentY, pageWidth - 40, 10, 'F');
 
       doc.setFontSize(pdfSettings.fonts.tiny.size);
