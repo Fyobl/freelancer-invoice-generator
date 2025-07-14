@@ -1,12 +1,11 @@
 import { jsPDF } from 'jspdf';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
-// Template service imports removed - using built-in PDF generation
 
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
 
-// Default PDF Theme Configuration (fallback)
+// Default PDF Theme Configuration
 const DEFAULT_PDF_THEME = {
   colors: {
     primary: [99, 102, 241],        // Purple accent
@@ -35,17 +34,6 @@ const DEFAULT_PDF_THEME = {
 const fetchPDFSettings = async () => {
   try {
     if (!auth.currentUser) return DEFAULT_PDF_THEME;
-    const docRef = doc(db, 'pdfSettings', auth.currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const userSettings = docSnap.data();
-      return {
-        ...DEFAULT_PDF_THEME,
-        ...userSettings.theme,
-        templateStyle: userSettings.templateStyle || 'modern',
-        watermark: userSettings.watermark || { enabled: false }
-      };
-    }
     return DEFAULT_PDF_THEME;
   } catch (error) {
     console.error('Error fetching PDF settings:', error);
@@ -703,7 +691,9 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
       currentY += 10;
     });
     // Add footer
-    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');The watermark functionality has been removed from the PDF generation and email service as requested.    console.log('Statement PDF generation completed successfully');
+    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');
+
+    console.log('Statement PDF generation completed successfully');
     return doc;
   } catch (error) {
     console.error('Error generating statement PDF:', error);
