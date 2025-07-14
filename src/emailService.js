@@ -52,8 +52,8 @@ const fetchPDFSettings = async () => {
   }
 };
 
-// Modern PDF Header
-const addModernPDFHeader = (doc, companySettings, documentType, theme) => {
+// Universal PDF Header - Works for all document types
+const drawHeader = (doc, companySettings, documentType, theme) => {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Gradient background for header
@@ -64,10 +64,21 @@ const addModernPDFHeader = (doc, companySettings, documentType, theme) => {
   doc.setFillColor(...theme.colors.primary);
   doc.rect(0, 0, pageWidth, 4, 'F');
 
-  // Company logo (if available)
+  // Company logo (if available) - positioned based on PDF settings
   if (companySettings && companySettings.logo) {
     try {
-      doc.addImage(companySettings.logo, 'JPEG', 20, 12, 60, 30);
+      const logoWidth = theme.logo?.maxWidth || 60;
+      const logoHeight = theme.logo?.maxHeight || 30;
+      let logoX = 20; // default to left
+      
+      // Position logo based on settings
+      if (theme.logo?.positioning === 'top-center') {
+        logoX = (pageWidth - logoWidth) / 2;
+      } else if (theme.logo?.positioning === 'top-right') {
+        logoX = pageWidth - logoWidth - 20;
+      }
+      
+      doc.addImage(companySettings.logo, 'JPEG', logoX, 12, logoWidth, logoHeight);
     } catch (error) {
       console.log('Error adding logo to PDF:', error);
     }
@@ -83,7 +94,7 @@ const addModernPDFHeader = (doc, companySettings, documentType, theme) => {
   doc.setTextColor(...theme.colors.dark);
   doc.setFontSize(theme.fonts.heading.size);
   doc.setFont(undefined, theme.fonts.heading.weight);
-  doc.text(companySettings?.name || 'Your Company', pageWidth - 20, 18, { align: 'right' });
+  doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
 
   // Company contact details
   doc.setFontSize(theme.fonts.small.size);
@@ -101,7 +112,12 @@ const addModernPDFHeader = (doc, companySettings, documentType, theme) => {
   }
 
   // Address line
-  const addressParts = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean);
+  const addressParts = [
+    companySettings?.address, 
+    companySettings?.city, 
+    companySettings?.postcode
+  ].filter(Boolean);
+  
   if (addressParts.length > 0) {
     doc.text(addressParts.join(', '), pageWidth - 20, detailY, { align: 'right' });
   }
@@ -114,8 +130,8 @@ const addModernPDFHeader = (doc, companySettings, documentType, theme) => {
   return theme.spacing.contentStart;
 };
 
-// Modern PDF Footer
-const addModernPDFFooter = (doc, companySettings, currentY, theme, thankYouMessage) => {
+// Universal PDF Footer - Works for all document types
+const drawFooter = (doc, companySettings, currentY, theme, thankYouMessage) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerY = Math.max(currentY + theme.spacing.footerOffset, pageHeight - 40);
@@ -205,7 +221,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     addWatermark(doc, pdfSettings.watermark);
 
     // Add header
-    let currentY = addModernPDFHeader(doc, companySettings, 'INVOICE', pdfSettings);
+    let currentY = drawHeader(doc, companySettings, 'INVOICE', pdfSettings);
 
     // Invoice details section
     currentY += 10;
@@ -389,7 +405,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     }
 
     // Add footer
-    addModernPDFFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your business!');
+    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your business!');
 
     console.log('PDF generation completed successfully');
     return doc;
@@ -414,7 +430,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     addWatermark(doc, pdfSettings.watermark);
 
     // Add header
-    let currentY = addModernPDFHeader(doc, companySettings, 'QUOTE', pdfSettings);
+    let currentY = drawHeader(doc, companySettings, 'QUOTE', pdfSettings);
 
     // Quote details section
     currentY += 10;
@@ -572,7 +588,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     }
 
     // Add footer
-    addModernPDFFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for considering our services!');
+    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for considering our services!');
 
     console.log('Quote PDF generation completed successfully');
     return doc;
@@ -593,7 +609,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     addWatermark(doc, pdfSettings.watermark);
 
     // Add header
-    let currentY = addModernPDFHeader(doc, companySettings, 'STATEMENT', pdfSettings);
+    let currentY = drawHeader(doc, companySettings, 'STATEMENT', pdfSettings);
 
     // Statement details section
     currentY += 10;
@@ -726,7 +742,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     });
 
     // Add footer
-    addModernPDFFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');
+    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');
 
     console.log('Statement PDF generation completed successfully');
     return doc;
@@ -1006,5 +1022,7 @@ export {
   generateStatementPDF,
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
-  sendClientStatementViaEmail
+  sendClientStatementViaEmail,
+  drawHeader,
+  drawFooter
 };
