@@ -753,6 +753,222 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
   }
 };
 
+// Helper function to get email settings from Firestore
+const getEmailSettings = async () => {
+  try {
+    if (!auth.currentUser) return null;
+    const docRef = doc(db, 'emailSettings', auth.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? docSnap.data() : null;
+  } catch (error) {
+    console.error('Error fetching email settings:', error);
+    return null;
+  }
+};
+
+// Helper function to replace template variables
+const replaceTemplateVariables = (template, data) => {
+  let result = template;
+  Object.keys(data).forEach(key => {
+    const regex = new RegExp(`\\{${key}\\}`, 'g');
+    result = result.replace(regex, data[key] || '');
+  });
+  return result;
+};
+
+// Helper function to show email instructions
+const showEmailInstructions = (type, fileName, downloadCallback, emailCallback) => {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+
+  modal.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; text-align: center;">
+      <h3 style="margin-top: 0; color: #333;">📧 Send ${type.charAt(0).toUpperCase() + type.slice(1)} via Email</h3>
+      <p style="margin: 20px 0; color: #666; line-height: 1.5;">
+        To send this ${type} via email:
+      </p>
+      <ol style="text-align: left; color: #666; line-height: 1.6; margin: 20px 0;">
+        <li>Click "Download PDF" to save the ${type}</li>
+        <li>Click "Open Email" to create a pre-filled email</li>
+        <li>Attach the downloaded PDF to your email</li>
+        <li>Send the email</li>
+      </ol>
+      <div style="margin: 25px 0;">
+        <button onclick="downloadPDF()" style="background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 8px; margin: 5px; cursor: pointer; font-size: 14px;">
+          📥 Download PDF
+        </button>
+        <button onclick="openEmail()" style="background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 8px; margin: 5px; cursor: pointer; font-size: 14px;">
+          📧 Open Email
+        </button>
+      </div>
+      <button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+        Close
+      </button>
+    </div>
+  `;
+
+  // Add functions to global scope for the modal
+  window.downloadPDF = downloadCallback;
+  window.openEmail = emailCallback;
+  window.closeModal = () => {
+    document.body.removeChild(modal);
+    delete window.downloadPDF;
+    delete window.openEmail;
+    delete window.closeModal;
+  };
+
+  document.body.appendChild(modal);
+};
+
+// Send invoice via email
+const sendInvoiceViaEmail = async (invoice, companySettings) => {
+  try {
+    // Get email settings
+    const emailSettings = await getEmailSettings();
+
+    // Calculate total amount
+    const totalAmount = invoice.selectedProducts && invoice.selectedProducts.length > 0 
+      ? invoice.selectedProducts.reduce((sum, product) => sum + ((product.price || 0) * (product.quantity || 1)), 0)
+      : parseFloat(invoice.amount) || 0;
+
+    // Add VAT if applicable
+    const vatRate = parseFloat(invoice.vat) || 0;
+    const vatAmount = totalAmount * (vatRate / 100);
+    const finalAmount = totalAmount + vatAmount;
+
+    // Prepare template data
+    const templateData = {
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName,
+      totalAmount: finalAmount.toFixed(2),
+      dueDate: invoice.dueDate || 'Upon receipt',
+      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
+      companyName: companySettings?.companyName || 'Your Company'
+    };
+
+    // Get templates (use default if no custom template exists)
+    const subject = emailSettings?.invoiceSubject || 'Invoice {invoiceNumber} from {companyName}';
+    const body = emailSettings?.invoiceTemplate || `Dear {clientName},
+
+Please find attached invoice {invoiceNumber} for the amount of £{totalAmount}.
+
+Payment is due by {dueDate}.
+
+Thank you for your business!
+
+Best regards,
+{senderName}
+{companyName}`;
+
+    // Replace variables
+    const finalSubject = replaceTemplateVariables(subject, templateData);
+    const finalBody = replaceTemplateVariables(body, templateData);
+
+    // Function to download PDF
+    const downloadPDF = async () => {
+      try {
+        const doc = await generateInvoicePDF(invoice, companySettings);
+        const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        doc.save(fileName);
+      } catch (error) {
+        console.error('Error generating invoice PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
+      }
+    };
+
+    // Function to open email client
+    const openEmailClient = () => {
+      const mailtoLink = `mailto:${invoice.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+      window.location.href = mailtoLink;
+    };
+
+    // Show instructions popup with callback functions
+    showEmailInstructions('invoice', invoice.invoiceNumber, downloadPDF, openEmailClient);
+
+  } catch (error) {
+    console.error('Error creating invoice email:', error);
+    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
+  }
+};
+
+// Send quote via email
+const sendQuoteViaEmail = async (quote, companySettings) => {
+  try {
+    // Get email settings
+    const emailSettings = await getEmailSettings();
+
+    // Calculate total amount
+    const subtotal = parseFloat(quote.amount) || 0;
+    const vatRate = parseFloat(quote.vat) || 0;
+    const vatAmount = subtotal * (vatRate / 100);
+    const totalAmount = subtotal + vatAmount;
+
+    // Prepare template data
+    const templateData = {
+      quoteNumber: quote.quoteNumber,
+      clientName: quote.clientName,
+      totalAmount: totalAmount.toFixed(2),
+      validUntil: quote.validUntil || 'Upon acceptance',
+      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
+      companyName: companySettings?.companyName || 'Your Company'
+    };
+
+    // Get templates (use default if no custom template exists)
+    const subject = emailSettings?.quoteSubject || 'Quote {quoteNumber} from {companyName}';
+    const body = emailSettings?.quoteTemplate || `Dear {clientName},
+
+Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
+
+This quote is valid until {validUntil}.
+
+We look forward to working with you!
+
+Best regards,
+{senderName}
+{companyName}`;
+
+    // Replace variables
+    const finalSubject = replaceTemplateVariables(subject, templateData);
+    const finalBody = replaceTemplateVariables(body, templateData);
+
+    // Function to download PDF
+    const downloadPDF = async () => {
+      try {
+        const doc = await generateQuotePDF(quote, companySettings);
+        const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        doc.save(fileName);
+      } catch (error) {
+        console.error('Error generating quote PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
+      }
+    };
+
+    // Function to open email client
+    const openEmailClient = () => {
+      const mailtoLink = `mailto:${quote.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+      window.location.href = mailtoLink;
+    };
+
+    // Show instructions popup with callback functions
+    showEmailInstructions('quote', quote.quoteNumber, downloadPDF, openEmailClient);
+
+  } catch (error) {
+    console.error('Error creating quote email:', error);
+    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
+  }
+};
+
 // Send client statement via email
 const sendClientStatementViaEmail = async (client, invoices, companySettings, period = 'full') => {
   try {
