@@ -422,6 +422,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       throw new Error('Quote data is required');
     }
 
+    console.log('Quote PDF - Company settings received:', companySettings);
     const pdfSettings = await fetchPDFSettings();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -429,7 +430,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     // Add watermark if enabled
     addWatermark(doc, pdfSettings.watermark);
 
-    // Add header
+    // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'QUOTE', pdfSettings);
 
     // Quote details section
@@ -601,6 +602,7 @@ const generateQuotePDF = async (quote, companySettings) => {
 // Statement PDF Template
 const generateStatementPDF = async (client, invoices, companySettings, period = 'full') => {
   try {
+    console.log('Statement PDF - Company settings received:', companySettings);
     const pdfSettings = await fetchPDFSettings();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -608,7 +610,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     // Add watermark if enabled
     addWatermark(doc, pdfSettings.watermark);
 
-    // Add header
+    // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'STATEMENT', pdfSettings);
 
     // Statement details section
