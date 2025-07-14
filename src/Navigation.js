@@ -61,6 +61,8 @@ function Navigation({ user }) {
     { path: '/subscription', label: 'Subscription', icon: '💳' },
     { path: '/email-settings', label: 'Email Settings', icon: '📧' },
     { path: '/recycle-bin', label: 'Recycle Bin', icon: '🗑️' },
+    { path: '/pdf-preview', label: 'PDF Designs', icon: '🖼️' }, // Added PDF Preview Link
+
   ];
 
   // Add admin menu item if user is admin
