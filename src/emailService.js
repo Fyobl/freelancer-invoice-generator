@@ -173,38 +173,6 @@ const drawFooter = (doc, companySettings, currentY, theme, thankYouMessage) => {
   }
 };
 
-// Add watermark if enabled
-const addWatermark = (doc, watermarkSettings) => {
-  if (watermarkSettings && watermarkSettings.enabled) {
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    doc.setTextColor(watermarkSettings.color || '#cccccc');
-    doc.setFontSize(watermarkSettings.fontSize || 60);
-    doc.setFont(undefined, 'bold');
-
-    // Save current graphics state
-    const currentAlpha = doc.internal.getGState();
-
-    // Set transparency
-    doc.setGState(new doc.GState({ opacity: watermarkSettings.opacity || 0.1 }));
-
-    // Add rotated watermark text
-    doc.text(
-      watermarkSettings.text || 'DRAFT',
-      pageWidth / 2,
-      pageHeight / 2,
-      {
-        align: 'center',
-        angle: 45
-      }
-    );
-
-    // Restore graphics state
-    doc.setGState(currentAlpha);
-  }
-};
-
 // Invoice PDF Template
 const generateInvoicePDF = async (invoice, companySettings) => {
   try {
@@ -217,9 +185,6 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     const pdfSettings = await fetchPDFSettings();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Add watermark if enabled
-    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header
     let currentY = drawHeader(doc, companySettings, 'INVOICE', pdfSettings);
@@ -409,11 +374,6 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your business!');
 
     console.log('PDF generation completed successfully');
-    
-    // Add watermark if enabled
-    if (companySettings.watermark && companySettings.watermark.enabled) {
-      addWatermark(doc, companySettings.watermark);
-    }
 
     return doc;
   } catch (error) {
@@ -433,9 +393,6 @@ const generateQuotePDF = async (quote, companySettings) => {
     const pdfSettings = await fetchPDFSettings();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Add watermark if enabled
-    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'QUOTE', pdfSettings);
@@ -599,10 +556,6 @@ const generateQuotePDF = async (quote, companySettings) => {
     drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for considering our services!');
 
     console.log('Quote PDF generation completed successfully');
-    // Add watermark if enabled
-    if (companySettings.watermark && companySettings.watermark.enabled) {
-      addWatermark(doc, companySettings.watermark);
-    }
     return doc;
   } catch (error) {
     console.error('Error generating quote PDF:', error);
@@ -617,9 +570,6 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     const pdfSettings = await fetchPDFSettings();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Add watermark if enabled
-    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'STATEMENT', pdfSettings);
@@ -723,9 +673,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     invoices.forEach((invoice, index) => {
       if (currentY > 250) {
         doc.addPage();
-        addWatermark(doc, pdfSettings.watermark);
-        currentY = ```text
-30;
+        currentY = 30;
       }
 
       const isEven = index % 2 === 0;
@@ -754,14 +702,8 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
 
       currentY += 10;
     });
-     // Add watermark
-    if (companySettings.watermark && companySettings.watermark.enabled) {
-      addWatermark(doc, companySettings.watermark);
-    }
     // Add footer
-    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');
-
-    console.log('Statement PDF generation completed successfully');
+    drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');The watermark functionality has been removed from the PDF generation and email service as requested.    console.log('Statement PDF generation completed successfully');
     return doc;
   } catch (error) {
     console.error('Error generating statement PDF:', error);

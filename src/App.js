@@ -4,7 +4,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import Navigation from './Navigation';
 import { createDefaultTemplates } from './pdfTemplateService';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';
