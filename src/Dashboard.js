@@ -27,6 +27,7 @@ function Dashboard() {
   const [notes, setNotes] = useState('');
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
+  const [clients, setClients] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [template, setTemplate] = useState('standard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -771,7 +772,7 @@ function Dashboard() {
                               padding: '8px 15px', 
                               background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', 
                               color: 'white', 
-                              border: 'none', 
+                                                            border: 'none', 
                               borderRadius: '6px',                               marginRight: '8px',
                               fontSize: '12px',
                               fontWeight: 'bold',
