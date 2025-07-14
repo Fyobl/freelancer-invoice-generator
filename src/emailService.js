@@ -123,6 +123,40 @@ const addPDFFooter = (doc, companySettings, currentY, thankYouMessage = 'Thank y
   doc.text(thankYouMessage, pageWidth / 2, footerY + 8, { align: 'center' });
 };
 
+// Shared PDF footer function with theme configuration
+const addThemedPDFFooter = (doc, companySettings, currentY, theme = PDF_THEME, thankYouMessage = 'Thank you for your business!') => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const footerY = Math.max(currentY + theme.spacing.footerOffset, 250);
+
+    // Divider line
+    doc.setDrawColor(...theme.colors.border);
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
+
+    // Footer text
+    doc.setFontSize(theme.fonts.tiny.size);
+    doc.setFont(undefined, theme.fonts.tiny.weight);
+    doc.setTextColor(...theme.colors.light);
+
+    let footerText = [];
+    if (companySettings?.companyNumber) {
+        footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+    }
+    if (companySettings?.vatNumber) {
+        footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+    }
+
+    if (footerText.length > 0) {
+        doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
+    }
+
+    // Thank you message
+    doc.setTextColor(...theme.colors.primary);
+    doc.setFontSize(theme.fonts.small.size);
+    doc.setFont(undefined, theme.fonts.small.weight);
+    doc.text(thankYouMessage, pageWidth / 2, footerY + 8, { align: 'center' });
+};
+
 const generateInvoicePDF = async (invoice, companySettings) => {
   try {
     console.log('Starting invoice PDF generation');
@@ -138,7 +172,8 @@ const generateInvoicePDF = async (invoice, companySettings) => {
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+    const theme = PDF_THEME;
+
     let currentY = addPDFHeader(doc, companySettings, 'INVOICE');
 
     // Bill To section with modern card design - moved to top
@@ -345,7 +380,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
       currentY += 25;
     }
 
-    addPDFFooter(doc, companySettings, currentY);
+    addThemedPDFFooter(doc, companySettings, currentY, theme, 'Thank you for your business!');
 
     console.log('PDF generation completed successfully');
     return doc;
@@ -362,7 +397,8 @@ const generateQuotePDF = async (quote, companySettings) => {
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+    const theme = PDF_THEME;
+
     let currentY = addPDFHeader(doc, companySettings, 'QUOTE');
 
     // Quote To section with modern card design - moved to top
@@ -537,7 +573,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       doc.text(notes, 25, currentY + 14);
       currentY += 25;
     }
-    addPDFFooter(doc, companySettings, currentY, 'Thank you for considering our services!');
+    addThemedPDFFooter(doc, companySettings, currentY, theme, 'Thank you for considering our services!');
 
     console.log('PDF generation completed successfully');
     return doc;
@@ -555,7 +591,8 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+    const theme = PDF_THEME;
+
     let currentY = addPDFHeader(doc, companySettings, 'STATEMENT');
 
     // Statement To section with modern card design - moved to top
@@ -743,7 +780,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
       currentY += 10;
     });
 
-    addPDFFooter(doc, companySettings, currentY);
+    addThemedPDFFooter(doc, companySettings, currentY, theme, 'Thank you for your continued business!');
 
     console.log('Client statement PDF generation completed successfully');
     return doc;
