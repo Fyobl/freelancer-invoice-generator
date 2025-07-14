@@ -308,9 +308,9 @@ function Clients() {
       }
 
       console.log('Starting statement PDF generation');
-      // Use new template system
-      const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
-      const doc = await generateStatementPDFFromTemplate(client, clientInvoices, companySettings, period);
+      // Use simple PDF generation
+      const { generateStatementPDF } = await import('./simplePdfService.js');
+      const doc = generateStatementPDF(client, clientInvoices, companySettings, period);
 
       const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
       console.log('PDF generation completed successfully');

@@ -242,8 +242,8 @@ Best regards,
     const downloadPDF = async () => {
       try {
         console.log('Starting invoice PDF generation');
-        const { generateInvoicePDFFromTemplate } = await import('./pdfTemplateService.js');
-        const doc = await generateInvoicePDFFromTemplate(invoice, companySettings);
+        const { generateInvoicePDF } = await import('./simplePdfService.js');
+        const doc = generateInvoicePDF(invoice, companySettings);
         const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         console.log('PDF generation completed successfully');
         doc.save(fileName);
@@ -304,8 +304,8 @@ Best regards,
     const downloadPDF = async () => {
       try {
         console.log('Starting quote PDF generation');
-        const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
-        const doc = await generateQuotePDFFromTemplate(quote, companySettings);
+        const { generateQuotePDF } = await import('./simplePdfService.js');
+        const doc = generateQuotePDF(quote, companySettings);
         const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         console.log('PDF generation completed successfully');
         doc.save(fileName);
@@ -372,8 +372,8 @@ Best regards,
     const downloadPDF = async () => {
       try {
         console.log('Starting statement PDF generation');
-        const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
-        const doc = await generateStatementPDFFromTemplate(client, invoices, companySettings, period);
+        const { generateStatementPDF } = await import('./simplePdfService.js');
+        const doc = generateStatementPDF(client, invoices, companySettings, period);
         const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
         console.log('PDF generation completed successfully');
         doc.save(fileName);

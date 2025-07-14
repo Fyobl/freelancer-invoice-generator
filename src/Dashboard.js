@@ -489,9 +489,9 @@ function Dashboard() {
       console.log('Starting PDF download for invoice:', invoice.invoiceNumber);
       console.log('Starting invoice PDF generation');
 
-      // Use new template system
-      const { generateInvoicePDFFromTemplate } = await import('./pdfTemplateService.js');
-      const doc = await generateInvoicePDFFromTemplate(invoice, companySettings);
+      // Use simple PDF generation
+      const { generateInvoicePDF } = await import('./simplePdfService.js');
+      const doc = generateInvoicePDF(invoice, companySettings);
 
       // Download the PDF
       const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;

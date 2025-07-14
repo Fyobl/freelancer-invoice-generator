@@ -374,9 +374,9 @@ function Quotes({ user }) {
       console.log('Starting PDF download for quote:', quote.quoteNumber);
       console.log('Starting quote PDF generation');
 
-      // Use new template system
-      const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
-      const doc = await generateQuotePDFFromTemplate(quote, companySettings);
+      // Use simple PDF generation
+      const { generateQuotePDF } = await import('./simplePdfService.js');
+      const doc = generateQuotePDF(quote, companySettings);
 
       // Download the PDF
       const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
