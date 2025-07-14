@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
-import Navigation from './Navigation';
-import { createDefaultTemplates } from './pdfTemplateService';
+import { auth } from './firebase.js';
+import Navigation from './Navigation.js';
+import { createDefaultTemplates } from './pdfTemplateService.js';
 import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';

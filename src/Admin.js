@@ -4,7 +4,7 @@ import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, 
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 import { grantTrialFromAdmin } from './subscriptionService.js';
-import PDFTemplateCreator from './PDFTemplateCreator.js';
+
 
 function Admin({ user }) {
   const [users, setUsers] = useState([]);
@@ -353,12 +353,7 @@ function Admin({ user }) {
           >
             📈 Analytics
           </button>
-          <button
-            style={tabButtonStyle(activeTab === 'pdfTemplates')}
-            onClick={() => setActiveTab('pdfTemplates')}
-          >
-            🎨 PDF Templates
-          </button>
+          
         </div>
 
         {/* Dashboard Tab */}
@@ -677,12 +672,7 @@ function Admin({ user }) {
           </div>
         )}
 
-        {/* PDF Templates Tab */}
-        {activeTab === 'pdfTemplates' && (
-          <div style={{ margin: '-25px', padding: '0' }}>
-            <PDFTemplateCreator user={user} />
-          </div>
-        )}
+        
 
         {/* User Detail Modal */}
         {showUserModal && selectedUser && (
