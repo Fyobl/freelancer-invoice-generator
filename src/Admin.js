@@ -513,8 +513,8 @@ function Admin({ user }) {
                           <button
                             style={{
                               ...buttonStyle,
-                              background: '#28a745',
-                              color: 'white'
+                              background: '#ffc107',
+                              color: 'black'
                             }}
                             onClick={() => grantSubscription(user.id)}
                           >
@@ -576,7 +576,7 @@ function Admin({ user }) {
                         <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
                           {user?.firstName} {user?.lastName}
                         </td>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{sub.plan}</td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{sub.plan === 'premium' ? 'Subscribed' : sub.plan}</td>
                         <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
                           <span style={{
                             padding: '4px 8px',
