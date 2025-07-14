@@ -14,7 +14,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     // Modern minimal header with subtle background
     doc.setFillColor(250, 251, 252);
     doc.rect(0, 0, pageWidth, 50, 'F');
-    
+
     // Accent line at top
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 0, pageWidth, 3, 'F');
@@ -33,7 +33,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-    
+
     // INVOICE title in header (centered)
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
@@ -43,7 +43,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     let companyY = 26;
-    
+
     const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
       doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
@@ -77,7 +77,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont(undefined, 'bold');
     doc.setTextColor(99, 102, 241);
     doc.text('BILL TO: ', 25, currentY + 13);
-    
+
     // Client name in black
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
@@ -95,13 +95,13 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    
+
     // Left column - centered in left half
     const leftCenterX = 20 + (pageWidth - 40) / 4;
     doc.text(`Invoice Number: ${invoice.invoiceNumber}`, leftCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text(`Issue Date: ${new Date().toLocaleDateString()}`, leftCenterX, currentY + 18, { align: 'center' });
@@ -115,12 +115,12 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.text(`Due Date: ${invoice.dueDate || 'Upon receipt'}`, rightCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text('Status: ', rightCenterX, currentY + 18, { align: 'center' });
     doc.setFont(undefined, 'bold');
-    
+
     // Status with color coding
     if (invoice.status === 'Paid') {
       doc.setTextColor(34, 197, 94);
@@ -136,7 +136,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     // Items section with modern table design
     doc.setFillColor(17, 24, 39);
     doc.rect(20, currentY, pageWidth - 40, 12, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -152,30 +152,30 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     if (invoice.selectedProducts && invoice.selectedProducts.length > 0) {
       invoice.selectedProducts.forEach((product, index) => {
         const bgColor = index % 2 === 0 ? 249 : 255;
-        doc.setFillColor(bgColor, bgColor === 249 ? 250 : 255, bgColor === 249 ? 251 : 255);
+        doc.setFillColor(bgColor, bgColor === 249 ? 250 : 255);
         doc.rect(20, currentY, pageWidth - 40, 10, 'F');
-        
+
         doc.setFontSize(8);
         doc.setFont(undefined, 'normal');
         doc.text(product.name, 25, currentY + 7);
         doc.text(String(product.quantity || 1), pageWidth - 120, currentY + 7, { align: 'center' });
         doc.text(`£${(product.price || 0).toFixed(2)}`, pageWidth - 80, currentY + 7, { align: 'center' });
         doc.text(`£${((product.price || 0) * (product.quantity || 1)).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
-        
+
         currentY += 10;
       });
     } else {
       // Single service line
       doc.setFillColor(249, 250, 251);
       doc.rect(20, currentY, pageWidth - 40, 10, 'F');
-      
+
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       doc.text('Professional Services', 25, currentY + 7);
       doc.text('1', pageWidth - 120, currentY + 7, { align: 'center' });
       doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 80, currentY + 7, { align: 'center' });
       doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
-      
+
       currentY += 10;
     }
 
@@ -262,12 +262,12 @@ const generateInvoicePDF = async (invoice, companySettings) => {
 
     // Modern footer with clean layout
     const footerY = Math.max(currentY + 15, 250);
-    
+
     // Subtle divider
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.5);
     doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-    
+
     doc.setFontSize(7);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(107, 114, 128);
@@ -309,7 +309,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     // Modern minimal header with subtle background
     doc.setFillColor(250, 251, 252);
     doc.rect(0, 0, pageWidth, 50, 'F');
-    
+
     // Accent line at top
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 0, pageWidth, 3, 'F');
@@ -328,7 +328,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-    
+
     // QUOTE title in header (centered)
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
@@ -338,7 +338,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     let companyY = 26;
-    
+
     const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
       doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
@@ -352,7 +352,7 @@ const generateQuotePDF = async (quote, companySettings) => {
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
-    currentY = 55;
+    currentY = 65;
 
     // Subtle divider line
     doc.setDrawColor(229, 231, 235);
@@ -372,7 +372,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setFont(undefined, 'bold');
     doc.setTextColor(99, 102, 241);
     doc.text('QUOTE TO: ', 25, currentY + 13);
-    
+
     // Client name in black
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
@@ -390,13 +390,13 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    
+
     // Left column - centered in left half
     const leftCenterX = 20 + (pageWidth - 40) / 4;
     doc.text(`Quote Number: ${quote.quoteNumber}`, leftCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text(`Issue Date: ${new Date().toLocaleDateString()}`, leftCenterX, currentY + 18, { align: 'center' });
@@ -410,12 +410,12 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.text(`Valid Until: ${quote.validUntil || 'Upon acceptance'}`, rightCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text('Status: ', rightCenterX, currentY + 18, { align: 'center' });
     doc.setFont(undefined, 'bold');
-    
+
     // Status with color coding
     if (quote.status === 'Accepted') {
       doc.setTextColor(34, 197, 94);
@@ -431,7 +431,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     // Items section with modern table design
     doc.setFillColor(17, 24, 39);
     doc.rect(20, currentY, pageWidth - 40, 12, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -446,14 +446,14 @@ const generateQuotePDF = async (quote, companySettings) => {
     // Service line
     doc.setFillColor(249, 250, 251);
     doc.rect(20, currentY, pageWidth - 40, 10, 'F');
-    
+
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.text(quote.productName || 'Professional Services', 25, currentY + 7);
     doc.text('1', pageWidth - 120, currentY + 7, { align: 'center' });
     doc.text(`£${Number(quote.amount).toFixed(2)}`, pageWidth - 80, currentY + 7, { align: 'center' });
     doc.text(`£${Number(quote.amount).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
-    
+
     currentY += 10;
 
     // Calculate totals
@@ -536,12 +536,12 @@ const generateQuotePDF = async (quote, companySettings) => {
 
     // Modern footer with clean layout
     const footerY = Math.max(currentY + 15, 250);
-    
+
     // Subtle divider
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.5);
     doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-    
+
     doc.setFontSize(7);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(107, 114, 128);
@@ -892,7 +892,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     // Modern minimal header with subtle background
     doc.setFillColor(250, 251, 252);
     doc.rect(0, 0, pageWidth, 50, 'F');
-    
+
     // Accent line at top
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 0, pageWidth, 3, 'F');
@@ -911,7 +911,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
-    
+
     // STATEMENT title in header (centered)
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
@@ -921,7 +921,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     let companyY = 26;
-    
+
     const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
       doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
@@ -935,7 +935,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
-    currentY = 55;
+    currentY = 65;
 
     // Subtle divider line
     doc.setDrawColor(229, 231, 235);
@@ -955,7 +955,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setFont(undefined, 'bold');
     doc.setTextColor(99, 102, 241);
     doc.text('STATEMENT FOR: ', 25, currentY + 13);
-    
+
     // Client name in black
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
@@ -973,13 +973,13 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    
+
     // Left column - centered in left half
     const leftCenterX = 20 + (pageWidth - 40) / 4;
     doc.text(`Period: ${period === 'full' ? 'All Time' : period}`, leftCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, leftCenterX, currentY + 18, { align: 'center' });
@@ -993,7 +993,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.text(`Total Invoices: ${invoices.length}`, rightCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    
+
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     if (client.email) {
@@ -1083,7 +1083,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     // Invoices table header
     doc.setFillColor(17, 24, 39);
     doc.rect(20, currentY, pageWidth - 40, 12, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -1106,7 +1106,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
       const bgColor = index % 2 === 0 ? 249 : 255;
       doc.setFillColor(bgColor, bgColor === 249 ? 250 : 255, bgColor === 249 ? 251 : 255);
       doc.rect(20, currentY, pageWidth - 40, 10, 'F');
-      
+
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       doc.setTextColor(17, 24, 39);
@@ -1123,7 +1123,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
         doc.setTextColor(245, 158, 11);
       }
       doc.text(invoice.status || 'Unpaid', 155, currentY + 7);
-      
+
       doc.setTextColor(17, 24, 39);
       doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
 
@@ -1132,12 +1132,12 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
 
     // Modern footer with clean layout
     const footerY = Math.max(currentY + 15, 250);
-    
+
     // Subtle divider
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.5);
     doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
-    
+
     doc.setFontSize(7);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(107, 114, 128);

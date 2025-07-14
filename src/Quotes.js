@@ -24,6 +24,7 @@ function Quotes({ user }) {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientName, setClientName] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [amount, setAmount] = useState('');
   const [vat, setVat] = useState('');
   const [validUntil, setValidUntil] = useState('');
@@ -125,30 +126,90 @@ function Quotes({ user }) {
 
   const handleProductSelect = (productId) => {
     setSelectedProductId(productId);
-    if (productId) {
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        setAmount(product.price.toString());
-        setVat(product.vat.toString());
+  };
+
+  const addProductToQuote = (productId) => {
+    if (!productId) return;
+    
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      const existingProductIndex = selectedProducts.findIndex(p => p.id === productId);
+      
+      if (existingProductIndex >= 0) {
+        // Increase quantity if product already exists
+        const updatedProducts = [...selectedProducts];
+        updatedProducts[existingProductIndex].quantity += 1;
+        setSelectedProducts(updatedProducts);
+      } else {
+        // Add new product
+        setSelectedProducts([...selectedProducts, {
+          ...product,
+          quantity: 1
+        }]);
       }
-    } else {
-      setAmount('');
-      setVat('');
+      
+      // Calculate totals
+      calculateQuoteTotals([...selectedProducts, { ...product, quantity: 1 }]);
+      setSelectedProductId('');
     }
   };
 
-  const addQuote = async () => {
-    if (!clientName.trim() || !amount.trim()) {
-      alert('Please fill in client name and amount');
+  const removeProductFromQuote = (productIndex) => {
+    const updatedProducts = selectedProducts.filter((_, index) => index !== productIndex);
+    setSelectedProducts(updatedProducts);
+    calculateQuoteTotals(updatedProducts);
+  };
+
+  const updateProductQuantity = (productIndex, quantity) => {
+    if (quantity <= 0) {
+      removeProductFromQuote(productIndex);
+      return;
+    }
+    
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[productIndex].quantity = quantity;
+    setSelectedProducts(updatedProducts);
+    calculateQuoteTotals(updatedProducts);
+  };
+
+  const calculateQuoteTotals = (products) => {
+    if (products.length === 0) {
+      setAmount('');
+      setVat('');
       return;
     }
 
-    const parsedAmount = parseFloat(amount);
-    const parsedVat = parseFloat(vat) || 0;
+    const subtotal = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+    const avgVatRate = products.reduce((sum, product) => sum + product.vat, 0) / products.length;
+    
+    setAmount(subtotal.toFixed(2));
+    setVat(avgVatRate.toFixed(1));
+  };
 
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert('Amount must be a valid positive number');
+  const addQuote = async () => {
+    if (!clientName.trim()) {
+      alert('Please fill in client name');
       return;
+    }
+
+    if (selectedProducts.length === 0 && !amount.trim()) {
+      alert('Please select products or enter an amount');
+      return;
+    }
+
+    let finalAmount, finalVat;
+    
+    if (selectedProducts.length > 0) {
+      finalAmount = selectedProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+      finalVat = selectedProducts.reduce((sum, product) => sum + product.vat, 0) / selectedProducts.length;
+    } else {
+      finalAmount = parseFloat(amount);
+      finalVat = parseFloat(vat) || 0;
+      
+      if (isNaN(finalAmount) || finalAmount <= 0) {
+        alert('Amount must be a valid positive number');
+        return;
+      }
     }
 
     const quoteNumber = `QUO-${String(nextQuoteNumber).padStart(4, '0')}`;
@@ -159,12 +220,13 @@ function Quotes({ user }) {
         quoteNumber,
         clientName: clientName.trim(),
         clientId: selectedClientId || null,
-        amount: parsedAmount,
-        vat: parsedVat,
+        amount: finalAmount,
+        vat: finalVat,
         validUntil: validUntilDate,
         notes: notes.trim(),
         status: 'Pending',
         userId: user.uid,
+        selectedProducts: selectedProducts.length > 0 ? selectedProducts : null,
         createdAt: serverTimestamp()
       });
 
@@ -172,6 +234,7 @@ function Quotes({ user }) {
       setClientName('');
       setSelectedClientId('');
       setSelectedProductId('');
+      setSelectedProducts([]);
       setAmount('');
       setVat('');
       setValidUntil('');
@@ -482,20 +545,106 @@ function Quotes({ user }) {
               />
 
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                Select Product/Service
+                Add Product/Service
               </label>
-              <select
-                value={selectedProductId}
-                onChange={(e) => handleProductSelect(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="">Select product or enter manually</option>
-                {products.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} - £{product.price.toFixed(2)}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <select
+                  value={selectedProductId}
+                  onChange={(e) => handleProductSelect(e.target.value)}
+                  style={{ ...selectStyle, marginBottom: '0', flex: '1' }}
+                >
+                  <option value="">Select product to add</option>
+                  {products.map(product => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} - £{product.price.toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => addProductToQuote(selectedProductId)}
+                  disabled={!selectedProductId}
+                  style={{
+                    ...buttonStyle,
+                    marginRight: '0',
+                    marginBottom: '0',
+                    padding: '12px 20px',
+                    opacity: selectedProductId ? 1 : 0.5,
+                    cursor: selectedProductId ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  ➕ Add
+                </button>
+              </div>
+
+              {/* Selected Products Display */}
+              {selectedProducts.length > 0 && (
+                <div style={{
+                  background: '#f8f9fa',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '15px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#555', fontSize: '14px' }}>Selected Products:</h4>
+                  {selectedProducts.map((product, index) => (
+                    <div key={index} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: index < selectedProducts.length - 1 ? '1px solid #dee2e6' : 'none'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <strong>{product.name}</strong><br />
+                        <small style={{ color: '#666' }}>£{product.price.toFixed(2)} each</small>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          value={product.quantity}
+                          onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
+                          style={{
+                            width: '60px',
+                            padding: '4px 8px',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            textAlign: 'center'
+                          }}
+                        />
+                        <span style={{ minWidth: '60px', textAlign: 'right', fontWeight: 'bold' }}>
+                          £{(product.price * product.quantity).toFixed(2)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeProductFromQuote(index)}
+                          style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{
+                    marginTop: '10px',
+                    paddingTop: '10px',
+                    borderTop: '2px solid #dee2e6',
+                    textAlign: 'right',
+                    fontWeight: 'bold'
+                  }}>
+                    Total: £{selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
