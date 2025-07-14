@@ -889,107 +889,212 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     const pageWidth = doc.internal.pageSize.getWidth();
     let currentY = 20;
 
-    // Professional header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 40, 'F');
+    // Modern minimal header with subtle background
+    doc.setFillColor(250, 251, 252);
+    doc.rect(0, 0, pageWidth, 50, 'F');
+    
+    // Accent line at top
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, pageWidth, 3, 'F');
 
-    // Company logo
+    // Company logo (larger and better positioned)
     if (companySettings.logo) {
       try {
-        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 60, 30);
+        doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
       } catch (error) {
         console.log('Error adding logo to PDF:', error);
       }
     }
 
-    // Company name in header
-    doc.setTextColor(255, 255, 255);
+    // Company name and STATEMENT title in header
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
+    
+    // STATEMENT title in header (centered)
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+    doc.text('STATEMENT', pageWidth / 2, 25, { align: 'center' });
 
-    // Company details in header
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    let companyY = 26;
+    
     const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
-      doc.text(fullAddress, pageWidth - 20, 28, { align: 'right' });
+      doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
+      companyY += 6;
     }
     if (companySettings.email) {
-      doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
+      doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
+      companyY += 6;
+    }
+    if (companySettings.phone) {
+      doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
-    currentY = 60;
-    doc.setTextColor(0, 0, 0);
+    currentY = 55;
 
-    // Statement title
-    doc.setFontSize(24);
-    doc.setFont(undefined, 'bold');
-    doc.text('CLIENT STATEMENT', 20, currentY);
+    // Subtle divider line
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(1);
+    doc.line(20, currentY, pageWidth - 20, currentY);
 
-    // Statement details
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, 20, currentY + 15);
-    doc.text(`Period: ${period === 'full' ? 'All Time' : period}`, 20, currentY + 25);
-    doc.text(`Total Invoices: ${invoices.length}`, pageWidth - 120, currentY + 15);
+    currentY += 8;
 
-    currentY += 50;
+    // Statement To section with modern card design - moved to top
+    doc.setFillColor(255, 255, 255);
+    doc.rect(20, currentY, pageWidth - 40, 20, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(1);
+    doc.rect(20, currentY, pageWidth - 40, 20);
 
-    // Client details section
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 35, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 35);
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Client:', 25, currentY + 12);
-    doc.setFont(undefined, 'normal');
     doc.setFontSize(10);
-    doc.text(client.name, 25, currentY + 20);
-    if (client.email) doc.text(client.email, 25, currentY + 28);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(99, 102, 241);
+    doc.text('STATEMENT FOR: ', 25, currentY + 13);
+    
+    // Client name in black
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(client.name, 85, currentY + 13);
 
-    currentY += 55;
+    currentY += 28;
 
-    // Summary totals
+    // Statement details in clean grid layout - reduced height
+    doc.setFillColor(249, 250, 251);
+    doc.rect(20, currentY, pageWidth - 40, 24, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.5);
+    doc.rect(20, currentY, pageWidth - 40, 24);
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    
+    // Left column - centered in left half
+    const leftCenterX = 20 + (pageWidth - 40) / 4;
+    doc.text(`Period: ${period === 'full' ? 'All Time' : period}`, leftCenterX, currentY + 10, { align: 'center' });
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+    
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, leftCenterX, currentY + 18, { align: 'center' });
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+
+    // Right column - centered in right half
+    const rightCenterX = 20 + (3 * (pageWidth - 40)) / 4;
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text(`Total Invoices: ${invoices.length}`, rightCenterX, currentY + 10, { align: 'center' });
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+    
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    if (client.email) {
+      doc.text(`Email: ${client.email}`, rightCenterX, currentY + 18, { align: 'center' });
+    }
+
+    currentY += 32;
+
+    // Summary totals section
     const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const overdueAmount = invoices.filter(inv => inv.status === 'Overdue').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
 
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, pageWidth - 40, 45, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, currentY, pageWidth - 40, 45);
+    // Modern totals section with clean design
+    const totalsStartX = 20;
+    const totalsWidth = pageWidth - 40;
 
+    // Header row
+    doc.setFillColor(17, 24, 39);
+    doc.rect(totalsStartX, currentY, totalsWidth, 12, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text('Total Amount:', 25, currentY + 12);
-    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 100, currentY + 12);
-    doc.text('Paid:', 25, currentY + 22);
-    doc.text(`£${paidAmount.toFixed(2)}`, pageWidth - 100, currentY + 22);
-    doc.text('Unpaid:', 25, currentY + 32);
-    doc.text(`£${unpaidAmount.toFixed(2)}`, pageWidth - 100, currentY + 32);
-    doc.text('Overdue:', 25, currentY + 42);
-    doc.text(`£${overdueAmount.toFixed(2)}`, pageWidth - 100, currentY + 42);
+    doc.setFont(undefined, 'bold');
+    doc.text('ACCOUNT SUMMARY', totalsStartX + 10, currentY + 8);
 
-    currentY += 65;
+    currentY += 12;
+
+    // Total Amount row
+    doc.setFillColor(249, 250, 251);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.5);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9);
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text('Total Amount:', totalsStartX + 10, currentY + 6);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
+
+    // Paid Amount row
+    currentY += 9;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9);
+
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(34, 197, 94);
+    doc.text('Paid:', totalsStartX + 10, currentY + 6);
+    doc.setFont(undefined, 'bold');
+    doc.text(`£${paidAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
+
+    // Unpaid Amount row
+    currentY += 9;
+    doc.setFillColor(249, 250, 251);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.rect(totalsStartX, currentY, totalsWidth, 9);
+
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(245, 158, 11);
+    doc.text('Unpaid:', totalsStartX + 10, currentY + 6);
+    doc.setFont(undefined, 'bold');
+    doc.text(`£${unpaidAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
+
+    // Overdue Amount row (if any)
+    if (overdueAmount > 0) {
+      currentY += 9;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(totalsStartX, currentY, totalsWidth, 9, 'F');
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(totalsStartX, currentY, totalsWidth, 9);
+
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(239, 68, 68);
+      doc.text('Overdue:', totalsStartX + 10, currentY + 6);
+      doc.setFont(undefined, 'bold');
+      doc.text(`£${overdueAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
+    }
+
+    currentY += 20;
 
     // Invoices table header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+    doc.setFillColor(17, 24, 39);
+    doc.rect(20, currentY, pageWidth - 40, 12, 'F');
+    
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
-    doc.text('Invoice #', 25, currentY + 10);
-    doc.text('Date', 75, currentY + 10);
-    doc.text('Due Date', 115, currentY + 10);
-    doc.text('Status', 155, currentY + 10);
-    doc.text('Amount', pageWidth - 30, currentY + 10, { align: 'right' });
+    doc.text('INVOICE #', 25, currentY + 8);
+    doc.text('DATE', 75, currentY + 8);
+    doc.text('DUE DATE', 115, currentY + 8);
+    doc.text('STATUS', 155, currentY + 8);
+    doc.text('AMOUNT', pageWidth - 30, currentY + 8, { align: 'right' });
 
-    currentY += 15;
-    doc.setTextColor(0, 0, 0);
+    currentY += 12;
+    doc.setTextColor(17, 24, 39);
 
     // Invoice rows
     invoices.forEach((invoice, index) => {
@@ -998,35 +1103,44 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
         currentY = 20;
       }
 
-      const bgColor = index % 2 === 0 ? 255 : 248;
-      doc.setFillColor(bgColor, bgColor, bgColor);
-      doc.rect(20, currentY, pageWidth - 40, 12, 'F');
-      doc.setDrawColor(230, 230, 230);
-      doc.rect(20, currentY, pageWidth - 40, 12);
-
+      const bgColor = index % 2 === 0 ? 249 : 255;
+      doc.setFillColor(bgColor, bgColor === 249 ? 250 : 255, bgColor === 249 ? 251 : 255);
+      doc.rect(20, currentY, pageWidth - 40, 10, 'F');
+      
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
-      doc.text(invoice.invoiceNumber || 'N/A', 25, currentY + 8);
-      doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 75, currentY + 8);
-      doc.text(invoice.dueDate || 'N/A', 115, currentY + 8);
+      doc.setTextColor(17, 24, 39);
+      doc.text(invoice.invoiceNumber || 'N/A', 25, currentY + 7);
+      doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 75, currentY + 7);
+      doc.text(invoice.dueDate || 'N/A', 115, currentY + 7);
 
       // Status with color
-      const statusColor = invoice.status === 'Paid' ? [40, 167, 69] : 
-                         invoice.status === 'Overdue' ? [220, 53, 69] : [255, 193, 7];
-      doc.setTextColor(...statusColor);
-      doc.text(invoice.status || 'Unpaid', 155, currentY + 8);
-      doc.setTextColor(0, 0, 0);
+      if (invoice.status === 'Paid') {
+        doc.setTextColor(34, 197, 94);
+      } else if (invoice.status === 'Overdue') {
+        doc.setTextColor(239, 68, 68);
+      } else {
+        doc.setTextColor(245, 158, 11);
+      }
+      doc.text(invoice.status || 'Unpaid', 155, currentY + 7);
+      
+      doc.setTextColor(17, 24, 39);
+      doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
 
-      doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 30, currentY + 8, { align: 'right' });
-
-      currentY += 12;
+      currentY += 10;
     });
 
-    // Footer
-    const footerY = 280;
-    doc.setFontSize(8);
+    // Modern footer with clean layout
+    const footerY = Math.max(currentY + 15, 250);
+    
+    // Subtle divider
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY - 10, pageWidth - 20, footerY - 10);
+    
+    doc.setFontSize(7);
     doc.setFont(undefined, 'normal');
-    doc.setTextColor(128, 128, 128);
+    doc.setTextColor(107, 114, 128);
 
     let footerText = [];
     if (companySettings.companyNumber) {
@@ -1037,13 +1151,13 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     }
 
     if (footerText.length > 0) {
-      doc.text(footerText.join(' | '), pageWidth / 2, footerY, { align: 'center' });
+      doc.text(footerText.join(' • '), pageWidth / 2, footerY, { align: 'center' });
     }
 
-    doc.setTextColor(41, 128, 185);
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'italic');
-    doc.text('Thank you for your business!', pageWidth / 2, footerY + 10, { align: 'center' });
+    doc.setTextColor(99, 102, 241);
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text('Thank you for your business!', pageWidth / 2, footerY + 8, { align: 'center' });
 
     console.log('Client statement PDF generation completed successfully');
     return doc;
