@@ -16,6 +16,9 @@ function Admin({ user }) {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [trialUserId, setTrialUserId] = useState(null);
   const [trialDays, setTrialDays] = useState(7);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [subscriptionUserId, setSubscriptionUserId] = useState(null);
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState('');
 
   // Check if current user is admin
   const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
@@ -116,6 +119,15 @@ function Admin({ user }) {
     setShowTrialModal(true);
   };
 
+  const grantSubscription = (userId) => {
+    setSubscriptionUserId(userId);
+    // Set default end date to 30 days from now
+    const defaultEndDate = new Date();
+    defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+    setSubscriptionEndDate(defaultEndDate.toISOString().split('T')[0]);
+    setShowSubscriptionModal(true);
+  };
+
   const confirmGrantTrial = async () => {
     try {
       await grantTrialFromAdmin(trialUserId, trialDays);
@@ -127,6 +139,35 @@ function Admin({ user }) {
     } catch (error) {
       console.error('Error granting trial:', error);
       alert('Error granting trial');
+    }
+  };
+
+  const confirmGrantSubscription = async () => {
+    try {
+      const endDate = new Date(subscriptionEndDate);
+      const subscriptionRef = doc(db, 'subscriptions', subscriptionUserId);
+      
+      const subscriptionData = {
+        plan: 'premium',
+        status: 'active',
+        amount: 9.99,
+        endDate: endDate,
+        nextBilling: endDate,
+        invoiceLimit: -1, // unlimited
+        invoiceCount: 0,
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(subscriptionRef, subscriptionData);
+      
+      setShowSubscriptionModal(false);
+      setSubscriptionUserId(null);
+      setSubscriptionEndDate('');
+      fetchAdminData();
+      alert(`Subscription granted successfully until ${endDate.toLocaleDateString()}`);
+    } catch (error) {
+      console.error('Error granting subscription:', error);
+      alert('Error granting subscription');
     }
   };
 
@@ -413,6 +454,16 @@ function Admin({ user }) {
                           <button
                             style={{
                               ...buttonStyle,
+                              background: '#28a745',
+                              color: 'white'
+                            }}
+                            onClick={() => grantSubscription(user.id)}
+                          >
+                            Grant Subscription
+                          </button>
+                          <button
+                            style={{
+                              ...buttonStyle,
                               background: '#dc3545',
                               color: 'white'
                             }}
@@ -676,6 +727,98 @@ function Admin({ user }) {
                     setShowTrialModal(false);
                     setTrialUserId(null);
                     setTrialDays(7);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Grant Modal */}
+        {showSubscriptionModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              maxWidth: '450px',
+              width: '90%'
+            }}>
+              <h2 style={{ marginTop: 0, color: '#333' }}>💳 Grant Subscription Access</h2>
+              <p style={{ color: '#666', marginBottom: '20px' }}>
+                Select the end date for the subscription. The user will have full access until this date.
+              </p>
+              
+              <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#555' }}>
+                Subscription End Date
+              </label>
+              <input
+                type="date"
+                value={subscriptionEndDate}
+                onChange={(e) => setSubscriptionEndDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  marginBottom: '20px',
+                  boxSizing: 'border-box'
+                }}
+              />
+
+              <div style={{
+                background: '#f8f9fa',
+                padding: '15px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #e9ecef'
+              }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>Subscription Details:</h4>
+                <p style={{ margin: '0 0 5px 0', color: '#6c757d' }}>• Plan: Easy Invoice Subscription</p>
+                <p style={{ margin: '0 0 5px 0', color: '#6c757d' }}>• Price: £9.99/month</p>
+                <p style={{ margin: '0 0 5px 0', color: '#6c757d' }}>• Features: Unlimited invoices & all features</p>
+                <p style={{ margin: '0', color: '#6c757d' }}>• End Date: {subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString() : 'Not selected'}</p>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  style={{
+                    ...buttonStyle,
+                    background: '#007bff',
+                    color: 'white',
+                    flex: 1
+                  }}
+                  onClick={confirmGrantSubscription}
+                  disabled={!subscriptionEndDate}
+                >
+                  Grant Subscription
+                </button>
+                <button
+                  style={{
+                    ...buttonStyle,
+                    background: '#6c757d',
+                    color: 'white',
+                    flex: 1
+                  }}
+                  onClick={() => {
+                    setShowSubscriptionModal(false);
+                    setSubscriptionUserId(null);
+                    setSubscriptionEndDate('');
                   }}
                 >
                   Cancel
