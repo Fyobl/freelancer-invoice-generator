@@ -19,6 +19,8 @@ function Admin({ user }) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionUserId, setSubscriptionUserId] = useState(null);
   const [subscriptionEndDate, setSubscriptionEndDate] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Check if current user is admin
   const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
@@ -84,10 +86,12 @@ function Admin({ user }) {
       
       await updateDoc(subscriptionRef, updateData);
       fetchAdminData();
-      alert('Subscription updated successfully');
+      setSuccessMessage('Subscription updated successfully');
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error updating subscription:', error);
-      alert('Error updating subscription');
+      setSuccessMessage('Error updating subscription');
+      setShowSuccessModal(true);
     }
   };
 
@@ -106,10 +110,12 @@ function Admin({ user }) {
         await deleteDoc(doc(db, 'users', userId));
         await deleteDoc(doc(db, 'subscriptions', userId));
         fetchAdminData();
-        alert('User deleted successfully');
+        setSuccessMessage('User deleted successfully');
+        setShowSuccessModal(true);
       } catch (error) {
         console.error('Error deleting user:', error);
-        alert('Error deleting user');
+        setSuccessMessage('Error deleting user');
+        setShowSuccessModal(true);
       }
     }
   };
@@ -135,10 +141,12 @@ function Admin({ user }) {
       setTrialUserId(null);
       setTrialDays(7);
       fetchAdminData();
-      alert(`Trial granted successfully for ${trialDays} days`);
+      setSuccessMessage(`Trial granted successfully for ${trialDays} days`);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error granting trial:', error);
-      alert('Error granting trial');
+      setSuccessMessage('Error granting trial');
+      setShowSuccessModal(true);
     }
   };
 
@@ -164,10 +172,12 @@ function Admin({ user }) {
       setSubscriptionUserId(null);
       setSubscriptionEndDate('');
       fetchAdminData();
-      alert(`Subscription granted successfully until ${endDate.toLocaleDateString()}`);
+      setSuccessMessage(`Subscription granted successfully until ${endDate.toLocaleDateString()}`);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error granting subscription:', error);
-      alert('Error granting subscription');
+      setSuccessMessage('Error granting subscription');
+      setShowSuccessModal(true);
     }
   };
 
@@ -824,6 +834,67 @@ function Admin({ user }) {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success/Error Modal */}
+        {showSuccessModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '15px' }}>
+                {successMessage.includes('Error') ? '❌' : '✅'}
+              </div>
+              <h2 style={{ 
+                marginTop: 0, 
+                color: successMessage.includes('Error') ? '#dc3545' : '#28a745',
+                fontSize: '1.5rem',
+                marginBottom: '15px'
+              }}>
+                {successMessage.includes('Error') ? 'Error' : 'Success!'}
+              </h2>
+              <p style={{ 
+                color: '#666', 
+                marginBottom: '25px',
+                lineHeight: '1.5'
+              }}>
+                {successMessage}
+              </p>
+              
+              <button
+                style={{
+                  ...buttonStyle,
+                  background: successMessage.includes('Error') ? '#dc3545' : '#28a745',
+                  color: 'white',
+                  padding: '12px 30px',
+                  fontSize: '16px',
+                  width: '100%'
+                }}
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setSuccessMessage('');
+                }}
+              >
+                OK
+              </button>
             </div>
           </div>
         )}
