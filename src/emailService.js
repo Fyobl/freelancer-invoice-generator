@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
@@ -87,51 +86,75 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   doc.setTextColor(0, 0, 0);
 
   // Service line
-  doc.setFillColor(255, 255, 255);
-  doc.rect(20, currentY, pageWidth - 40, 15, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(20, currentY, pageWidth - 40, 15);
+  // Calculate totals
+    const subtotal = invoice.selectedProducts && invoice.selectedProducts.length > 0 
+      ? invoice.selectedProducts.reduce((sum, product) => sum + ((product.price || 0) * (product.quantity || 1)), 0)
+      : parseFloat(invoice.amount) || 0;
 
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text(invoice.productName || 'Service', 25, currentY + 10);
-  doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 60, currentY + 10, { align: 'right' });
+    const vatRate = parseFloat(invoice.vat) || 0;
+    const vatAmount = subtotal * (vatRate / 100);
+    const totalAmount = subtotal + vatAmount;
 
-  currentY += 35;
+    // Totals section with modern styling
+    currentY += 20;
+    const totalsStartX = pageWidth - 120;
+    const totalsWidth = 100;
 
-  // Totals section
-  const amount = parseFloat(invoice.amount) || 0;
-  const vatRate = parseFloat(invoice.vat) || 0;
-  const vatAmount = amount * (vatRate / 100);
-  const total = amount + vatAmount;
+    // Subtotal
+    doc.setFillColor(248, 250, 252);
+    doc.rect(totalsStartX, currentY, totalsWidth, 12, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(totalsStartX, currentY, totalsWidth, 12);
 
-  doc.setFillColor(248, 249, 250);
-  doc.rect(pageWidth - 120, currentY, 100, 45, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(pageWidth - 120, currentY, 100, 45);
-
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text('Subtotal:', pageWidth - 115, currentY + 10);
-  doc.text(`£${amount.toFixed(2)}`, pageWidth - 25, currentY + 10, { align: 'right' });
-
-  doc.text(`VAT (${vatRate}%):`, pageWidth - 115, currentY + 20);
-  doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 25, currentY + 20, { align: 'right' });
-
-  doc.setFont(undefined, 'bold');
-  doc.setFontSize(12);
-  doc.text('Total:', pageWidth - 115, currentY + 35);
-  doc.text(`£${total.toFixed(2)}`, pageWidth - 25, currentY + 35, { align: 'right' });
-
-  // Notes section
-  if (invoice.notes) {
-    currentY += 70;
     doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text('Notes:', 20, currentY);
     doc.setFont(undefined, 'normal');
-    doc.text(invoice.notes, 20, currentY + 10);
-  }
+    doc.text('Subtotal:', totalsStartX + 5, currentY + 8);
+    doc.text(`£${subtotal.toFixed(2)}`, pageWidth - 25, currentY + 8, { align: 'right' });
+
+    // VAT (if applicable)
+    if (vatRate > 0) {
+      currentY += 12;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(totalsStartX, currentY, totalsWidth, 12, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(totalsStartX, currentY, totalsWidth, 12);
+
+      doc.text(`VAT (${vatRate}%):`, totalsStartX + 5, currentY + 8);
+      doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 25, currentY + 8, { align: 'right' });
+    }
+
+    // Total
+    currentY += 12;
+    doc.setFillColor(67, 56, 202);
+    doc.rect(totalsStartX, currentY, totalsWidth, 15, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL:', totalsStartX + 5, currentY + 10);
+    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 25, currentY + 10, { align: 'right' });
+
+    doc.setTextColor(0, 0, 0);
+
+    // Notes section
+    if (invoice.notes) {
+      currentY += 35;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(20, currentY, pageWidth - 40, 30, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(20, currentY, pageWidth - 40, 30);
+
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(67, 56, 202);
+      doc.text('NOTES:', 25, currentY + 12);
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9);
+      const notes = doc.splitTextToSize(invoice.notes, pageWidth - 50);
+      doc.text(notes, 25, currentY + 20);
+    }
 
   // Footer
   const footerY = 250;
@@ -333,7 +356,7 @@ const getEmailSettings = async () => {
   try {
     const user = auth.currentUser;
     if (!user) return null;
-    
+
     const settingsDoc = await getDoc(doc(db, 'emailSettings', user.uid));
     return settingsDoc.exists() ? settingsDoc.data() : null;
   } catch (error) {
@@ -395,7 +418,7 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
     <p style="color: #666; margin-bottom: 15px; line-height: 1.5; font-size: 0.95rem;">
       <strong>Important:</strong> Download the PDF first, then we'll open your email client.
     </p>
-    
+
     <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; border-left: 3px solid #667eea;">
       <h4 style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem;">📋 Steps:</h4>
       <ol style="margin: 0; padding-left: 20px; color: #666; line-height: 1.4; font-size: 0.85rem;">
@@ -411,7 +434,7 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
         <strong>💡 File:</strong> ${type}_${documentNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf
       </p>
     </div>
-    
+
     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
       <button id="downloadBtn" style="
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -425,7 +448,7 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
         transition: transform 0.2s ease;
         min-width: 110px;
       ">📄 Download</button>
-      
+
       <button id="doneBtn" style="
         background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
         color: white;
@@ -438,7 +461,7 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
         transition: transform 0.2s ease;
         min-width: 110px;
       ">✅ Open Email</button>
-      
+
       <button id="cancelBtn" style="
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         color: white;
@@ -507,7 +530,7 @@ const sendInvoiceViaEmail = async (invoice, companySettings, recipientEmail) => 
   try {
     // Get email settings
     const emailSettings = await getEmailSettings();
-    
+
     // Calculate total amount
     const amount = parseFloat(invoice.amount) || 0;
     const vatRate = parseFloat(invoice.vat) || 0;
@@ -574,7 +597,7 @@ const sendQuoteViaEmail = async (quote, companySettings, recipientEmail) => {
   try {
     // Get email settings
     const emailSettings = await getEmailSettings();
-    
+
     // Calculate total amount
     const amount = parseFloat(quote.amount) || 0;
     const vatRate = parseFloat(quote.vat) || 0;
@@ -762,16 +785,16 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
       doc.text(invoice.invoiceNumber || 'N/A', 25, currentY + 8);
       doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 75, currentY + 8);
       doc.text(invoice.dueDate || 'N/A', 115, currentY + 8);
-      
+
       // Status with color
       const statusColor = invoice.status === 'Paid' ? [40, 167, 69] : 
                          invoice.status === 'Overdue' ? [220, 53, 69] : [255, 193, 7];
       doc.setTextColor(...statusColor);
       doc.text(invoice.status || 'Unpaid', 155, currentY + 8);
       doc.setTextColor(0, 0, 0);
-      
+
       doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 30, currentY + 8, { align: 'right' });
-      
+
       currentY += 12;
     });
 
@@ -811,7 +834,7 @@ const sendClientStatementViaEmail = async (client, invoices, companySettings, pe
   try {
     // Get email settings
     const emailSettings = await getEmailSettings();
-    
+
     // Calculate totals
     const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
