@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { sendQuoteViaEmail } from './emailService.js';
+import { sendQuoteViaEmail, generateQuotePDF } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
@@ -286,6 +286,25 @@ function Quotes({ user }) {
     } catch (error) {
       console.error('Error sending quote email:', error);
       alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
+
+  const downloadQuotePDF = async (quote) => {
+    try {
+      console.log('Starting PDF download for quote:', quote.quoteNumber);
+      const doc = await generateQuotePDF(quote, companySettings);
+      
+      // Download the PDF
+      const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      console.log('Attempting to save PDF with filename:', fileName);
+      doc.save(fileName);
+      console.log('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      console.error('Error details:', error.message, error.stack);
+      console.error('Quote data:', quote);
+      console.error('Company settings:', companySettings);
+      alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
     }
   };
 
@@ -704,6 +723,18 @@ function Quotes({ user }) {
                       }}
                     >
                       📧 Email Quote
+                    </button>
+                    <button
+                      onClick={() => downloadQuotePDF(quote)}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                        fontSize: '12px',
+                        padding: '8px 16px',
+                        marginRight: '5px'
+                      }}
+                    >
+                      📄 Download PDF
                     </button>
                     <button
                       onClick={() => handleDeleteQuote(quote)}

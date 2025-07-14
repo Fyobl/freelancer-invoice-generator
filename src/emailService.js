@@ -22,7 +22,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     // Company logo (larger and better positioned)
     if (companySettings.logo) {
       try {
-        doc.addImage(companySettings.logo, 'JPEG', 20, 10, 50, 30);
+        doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
       } catch (error) {
         console.log('Error adding logo to PDF:', error);
       }
@@ -316,7 +316,7 @@ const generateQuotePDF = async (quote, companySettings) => {
   // Company logo
   if (companySettings.logo) {
     try {
-      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 60, 30);
+      doc.addImage(companySettings.logo, 'JPEG', 15, 6, 80, 35);
     } catch (error) {
       console.log('Error adding logo to PDF:', error);
     }
