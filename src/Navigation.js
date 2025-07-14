@@ -251,4 +251,3 @@ function Navigation({ user }) {
 }
 
 export default Navigation;
-```

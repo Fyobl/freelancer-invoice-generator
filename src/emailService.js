@@ -219,7 +219,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Add watermark if enabled
-    addWatermark(doc, pdfSettings.watermark);
+    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header
     let currentY = drawHeader(doc, companySettings, 'INVOICE', pdfSettings);
@@ -429,7 +429,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Add watermark if enabled
-    addWatermark(doc, pdfSettings.watermark);
+    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'QUOTE', pdfSettings);
@@ -609,7 +609,7 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Add watermark if enabled
-    addWatermark(doc, pdfSettings.watermark);
+    addWatermark(doc, companySettings.watermark || { enabled: false });
 
     // Add header with company settings and logo
     let currentY = drawHeader(doc, companySettings, 'STATEMENT', pdfSettings);
