@@ -6,7 +6,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
-import { generateClientStatementPDF, sendClientStatementViaEmail } from './emailService.js';
+import { generateStatementPDF, sendClientStatementViaEmail } from './emailService.js';
 
 function Clients() {
   const [clients, setClients] = useState([]);
@@ -306,7 +306,7 @@ function Clients() {
         return;
       }
 
-      const doc = await generateClientStatementPDF(client, clientInvoices, companySettings, period);
+      const doc = await generateStatementPDF(client, clientInvoices, companySettings, period);
       const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
     } catch (error) {

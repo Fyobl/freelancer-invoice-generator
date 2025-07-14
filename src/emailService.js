@@ -904,7 +904,7 @@ Best regards,
 };
 
 // Generate client statement PDF
-const generateClientStatementPDF = async (client, invoices, companySettings, period = 'full') => {
+const generateStatementPDF = async (client, invoices, companySettings, period = 'full') => {
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1237,7 +1237,7 @@ Best regards,
     // Function to download PDF
     const downloadPDF = async () => {
       try {
-        const doc = await generateClientStatementPDF(client, invoices, companySettings, period);
+        const doc = await generateStatementPDF(client, invoices, companySettings, period);
         const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
       } catch (error) {
@@ -1262,9 +1262,10 @@ Best regards,
 };
 
 export { 
-  generateQuotePDF, 
+  generateInvoicePDF,
+  generateQuotePDF,
+  generateStatementPDF,
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
-  generateClientStatementPDF,
   sendClientStatementViaEmail
 };
