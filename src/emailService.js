@@ -1263,7 +1263,7 @@ Best regards,
 
 export { 
   generateInvoicePDF,
-  generateQuotePDF,
+  generateQuotePDF, 
   generateStatementPDF,
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
