@@ -6,6 +6,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
+import { generateClientStatementPDF, sendClientStatementViaEmail } from './emailService.js';
 
 function Clients() {
   const [clients, setClients] = useState([]);
@@ -17,6 +18,8 @@ function Clients() {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [userData, setUserData] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [companySettings, setCompanySettings] = useState({});
 
   const user = auth.currentUser;
 
@@ -24,6 +27,8 @@ function Clients() {
     if (user) {
       fetchClients();
       fetchUserData();
+      fetchInvoices();
+      fetchCompanySettings();
     }
   }, [user]);
 
@@ -47,6 +52,27 @@ function Clients() {
       ...doc.data()
     }));
     setClients(data);
+  };
+
+  const fetchInvoices = async () => {
+    const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setInvoices(data);
+  };
+
+  const fetchCompanySettings = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'companySettings', user.uid));
+      if (settingsDoc.exists()) {
+        setCompanySettings(settingsDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+    }
   };
 
   const addClient = async () => {
@@ -110,6 +136,159 @@ function Clients() {
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Get client invoices for statements
+  const getClientInvoices = (clientId, period = 'full') => {
+    let clientInvoices = invoices.filter(inv => inv.clientId === clientId);
+    
+    if (period !== 'full') {
+      const now = new Date();
+      const cutoffDate = new Date();
+      
+      switch (period) {
+        case 'month':
+          cutoffDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          cutoffDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          cutoffDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+      
+      clientInvoices = clientInvoices.filter(inv => {
+        const invDate = inv.createdAt?.toDate() || new Date(inv.dueDate);
+        return invDate >= cutoffDate;
+      });
+    }
+    
+    return clientInvoices;
+  };
+
+  // Download client statement PDF
+  const downloadClientStatement = async (client, period) => {
+    try {
+      const clientInvoices = getClientInvoices(client.id, period);
+      if (clientInvoices.length === 0) {
+        alert(`No invoices found for ${client.name} in the selected period.`);
+        return;
+      }
+
+      const doc = await generateClientStatementPDF(client, clientInvoices, companySettings, period);
+      const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error('Error generating client statement:', error);
+      alert('Error generating statement: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
+
+  // Email client statement
+  const emailClientStatement = async (client, period) => {
+    try {
+      if (!client.email) {
+        alert('This client does not have an email address on file.');
+        return;
+      }
+
+      const clientInvoices = getClientInvoices(client.id, period);
+      if (clientInvoices.length === 0) {
+        alert(`No invoices found for ${client.name} in the selected period.`);
+        return;
+      }
+
+      await sendClientStatementViaEmail(client, clientInvoices, companySettings, period);
+    } catch (error) {
+      console.error('Error sending statement email:', error);
+      alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
+
+  // Show statement options popup
+  const showStatementOptions = (client) => {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      backdrop-filter: blur(4px);
+    `;
+
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      max-width: 450px;
+      width: 90%;
+      text-align: center;
+      border: 2px solid #667eea;
+    `;
+
+    popup.innerHTML = `
+      <div style="font-size: 36px; margin-bottom: 15px;">📊📄</div>
+      <h2 style="color: #333; margin-bottom: 10px; font-size: 1.5rem;">Client Statement for ${client.name}</h2>
+      <p style="color: #666; margin-bottom: 25px; line-height: 1.5;">
+        Choose the period and action for the client statement.
+      </p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 10px 0; color: #555;">📥 Download PDF</h4>
+          <button onclick="downloadStatement('month')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Month</button>
+          <button onclick="downloadStatement('quarter')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Quarter</button>
+          <button onclick="downloadStatement('year')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Year</button>
+          <button onclick="downloadStatement('full')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Full History</button>
+        </div>
+        
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 10px 0; color: #555;">📧 Email Statement</h4>
+          <button onclick="emailStatement('month')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Month</button>
+          <button onclick="emailStatement('quarter')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Quarter</button>
+          <button onclick="emailStatement('year')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Year</button>
+          <button onclick="emailStatement('full')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Full History</button>
+        </div>
+      </div>
+      
+      <button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Close</button>
+    `;
+
+    modal.appendChild(popup);
+    document.body.appendChild(modal);
+
+    // Add global functions for the popup
+    window.downloadStatement = (period) => {
+      downloadClientStatement(client, period);
+    };
+
+    window.emailStatement = (period) => {
+      emailClientStatement(client, period);
+    };
+
+    window.closeModal = () => {
+      document.body.removeChild(modal);
+      delete window.downloadStatement;
+      delete window.emailStatement;
+      delete window.closeModal;
+    };
+
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        window.closeModal();
+      }
+    });
+  };
 
   // Styles
   const containerStyle = {
@@ -428,14 +607,14 @@ function Clients() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '120px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '140px' }}>
                       <button
                         onClick={() => editClient(client)}
                         style={{
                           ...buttonStyle,
                           background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                          fontSize: '12px',
-                          padding: '8px 16px',
+                          fontSize: '11px',
+                          padding: '6px 12px',
                           marginRight: 0
                         }}
                         onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
@@ -444,12 +623,26 @@ function Clients() {
                         ✏️ Edit
                       </button>
                       <button
+                        onClick={() => showStatementOptions(client)}
+                        style={{
+                          ...buttonStyle,
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          fontSize: '11px',
+                          padding: '6px 12px',
+                          marginRight: 0
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                      >
+                        📊 Statement
+                      </button>
+                      <button
                         onClick={() => deleteClient(client.id)}
                         style={{
                           ...buttonStyle,
                           background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                          fontSize: '12px',
-                          padding: '8px 16px',
+                          fontSize: '11px',
+                          padding: '6px 12px',
                           marginRight: 0
                         }}
                         onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}

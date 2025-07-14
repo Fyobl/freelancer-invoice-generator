@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   collection,
@@ -41,9 +40,31 @@ We look forward to working with you!
 Best regards,
 {senderName}
 {companyName}`,
+    statementSubject: 'Account Statement from {companyName}',
+    statementTemplate: `Dear {clientName},
+
+Please find attached your account statement for the period: {period}.
+
+Statement Summary:
+- Total Invoices: {totalInvoices}
+- Total Amount: £{totalAmount}
+- Paid Amount: £{paidAmount}
+- Outstanding Amount: £{unpaidAmount}
+
+If you have any questions about your account, please don't hesitate to contact us.
+
+Best regards,
+{senderName}
+{companyName}`,
     defaultSenderName: '',
     defaultSenderEmail: ''
   });
+
+  const { invoiceSubject, invoiceTemplate, quoteSubject, quoteTemplate, statementSubject, statementTemplate, defaultSenderName, defaultSenderEmail } = emailSettings;
+
+  const setEmailSetting = (key, value) => {
+    setEmailSettings(prev => ({ ...prev, [key]: value }));
+  };
 
   const [userData, setUserData] = useState(null);
   const [companySettings, setCompanySettings] = useState({});
@@ -122,6 +143,22 @@ Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
 This quote is valid until {validUntil}.
 
 We look forward to working with you!
+
+Best regards,
+{senderName}
+{companyName}`,
+      statementSubject: 'Account Statement from {companyName}',
+      statementTemplate: `Dear {clientName},
+
+Please find attached your account statement for the period: {period}.
+
+Statement Summary:
+- Total Invoices: {totalInvoices}
+- Total Amount: £{totalAmount}
+- Paid Amount: £{paidAmount}
+- Outstanding Amount: £{unpaidAmount}
+
+If you have any questions about your account, please don't hesitate to contact us.
 
 Best regards,
 {senderName}
@@ -206,7 +243,7 @@ Best regards,
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
             👤 Sender Information
           </h2>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
@@ -216,7 +253,7 @@ Best regards,
                 style={inputStyle}
                 placeholder="Your name"
                 value={emailSettings.defaultSenderName}
-                onChange={(e) => setEmailSettings(prev => ({ ...prev, defaultSenderName: e.target.value }))}
+                onChange={(e) => setEmailSetting('defaultSenderName', e.target.value)}
               />
             </div>
             <div>
@@ -228,7 +265,7 @@ Best regards,
                 type="email"
                 placeholder="your.email@example.com"
                 value={emailSettings.defaultSenderEmail}
-                onChange={(e) => setEmailSettings(prev => ({ ...prev, defaultSenderEmail: e.target.value }))}
+                onChange={(e) => setEmailSetting('defaultSenderEmail', e.target.value)}
               />
             </div>
           </div>
@@ -239,7 +276,7 @@ Best regards,
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
             📄 Invoice Email Template
           </h2>
-          
+
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
             Subject Line
           </label>
@@ -247,7 +284,7 @@ Best regards,
             style={inputStyle}
             placeholder="Email subject"
             value={emailSettings.invoiceSubject}
-            onChange={(e) => setEmailSettings(prev => ({ ...prev, invoiceSubject: e.target.value }))}
+            onChange={(e) => setEmailSetting('invoiceSubject', e.target.value)}
           />
 
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
@@ -257,7 +294,7 @@ Best regards,
             style={textareaStyle}
             placeholder="Email template body"
             value={emailSettings.invoiceTemplate}
-            onChange={(e) => setEmailSettings(prev => ({ ...prev, invoiceTemplate: e.target.value }))}
+            onChange={(e) => setEmailSetting('invoiceTemplate', e.target.value)}
           />
 
           <div style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', marginTop: '15px' }}>
@@ -278,7 +315,7 @@ Best regards,
           <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
             💰 Quote Email Template
           </h2>
-          
+
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
             Subject Line
           </label>
@@ -286,7 +323,7 @@ Best regards,
             style={inputStyle}
             placeholder="Email subject"
             value={emailSettings.quoteSubject}
-            onChange={(e) => setEmailSettings(prev => ({ ...prev, quoteSubject: e.target.value }))}
+            onChange={(e) => setEmailSetting('quoteSubject', e.target.value)}
           />
 
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
@@ -296,7 +333,7 @@ Best regards,
             style={textareaStyle}
             placeholder="Email template body"
             value={emailSettings.quoteTemplate}
-            onChange={(e) => setEmailSettings(prev => ({ ...prev, quoteTemplate: e.target.value }))}
+            onChange={(e) => setEmailSetting('quoteTemplate', e.target.value)}
           />
 
           <div style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', marginTop: '15px' }}>
@@ -308,6 +345,48 @@ Best regards,
               <span><code>{'{validUntil}'}</code> - Valid until date</span>
               <span><code>{'{senderName}'}</code> - Sender name</span>
               <span><code>{'{companyName}'}</code> - Company name</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Statement Template */}
+        <div style={cardStyle}>
+          <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
+            📊 Statement Email Template
+          </h2>
+
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+            Subject Line
+          </label>
+          <input
+            style={inputStyle}
+            placeholder="Email subject"
+            value={emailSettings.statementSubject}
+            onChange={(e) => setEmailSetting('statementSubject', e.target.value)}
+          />
+
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+            Email Body
+          </label>
+          <textarea
+            style={textareaStyle}
+            placeholder="Email template body"
+            value={emailSettings.statementTemplate}
+            onChange={(e) => setEmailSetting('statementTemplate', e.target.value)}
+          />
+
+          <div style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', marginTop: '15px' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#555' }}>Available Variables:</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px', color: '#666' }}>
+              <span><code>{'{clientName}'}</code> - Client name</span>
+              <span><code>{'{companyName}'}</code> - Company name</span>
+              <span><code>{'{period}'}</code> - Period</span>
+              <span><code>{'{totalInvoices}'}</code> - Total invoices</span>
+              <span><code>{'{totalAmount}'}</code> - Total amount</span>
+              <span><code>{'{paidAmount}'}</code> - Paid amount</span>
+              <span><code>{'{unpaidAmount}'}</code> - Unpaid amount</span>
+              <span><code>{'{statementDate}'}</code> - Statement date</span>
+              <span><code>{'{senderName}'}</code> - Sender name</span>
             </div>
           </div>
         </div>

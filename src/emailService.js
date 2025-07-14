@@ -636,9 +636,254 @@ Best regards,
   }
 };
 
+// Generate client statement PDF
+const generateClientStatementPDF = async (client, invoices, companySettings, period = 'full') => {
+  try {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let currentY = 20;
+
+    // Professional header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Company logo
+    if (companySettings.logo) {
+      try {
+        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+      } catch (error) {
+        console.log('Error adding logo to PDF:', error);
+      }
+    }
+
+    // Company name in header
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+
+    // Company details in header
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    if (companySettings.address) {
+      doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+    }
+    if (companySettings.email) {
+      doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
+    }
+
+    currentY = 60;
+    doc.setTextColor(0, 0, 0);
+
+    // Statement title
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('CLIENT STATEMENT', 20, currentY);
+
+    // Statement details
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, 20, currentY + 15);
+    doc.text(`Period: ${period === 'full' ? 'All Time' : period}`, 20, currentY + 25);
+    doc.text(`Total Invoices: ${invoices.length}`, pageWidth - 120, currentY + 15);
+
+    currentY += 50;
+
+    // Client details section
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, currentY, pageWidth - 40, 35, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, currentY, pageWidth - 40, 35);
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Client:', 25, currentY + 12);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(client.name, 25, currentY + 20);
+    if (client.email) doc.text(client.email, 25, currentY + 28);
+
+    currentY += 55;
+
+    // Summary totals
+    const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const overdueAmount = invoices.filter(inv => inv.status === 'Overdue').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, currentY, pageWidth - 40, 45, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, currentY, pageWidth - 40, 45);
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Total Amount:', 25, currentY + 12);
+    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 100, currentY + 12);
+    doc.text('Paid:', 25, currentY + 22);
+    doc.text(`£${paidAmount.toFixed(2)}`, pageWidth - 100, currentY + 22);
+    doc.text('Unpaid:', 25, currentY + 32);
+    doc.text(`£${unpaidAmount.toFixed(2)}`, pageWidth - 100, currentY + 32);
+    doc.text('Overdue:', 25, currentY + 42);
+    doc.text(`£${overdueAmount.toFixed(2)}`, pageWidth - 100, currentY + 42);
+
+    currentY += 65;
+
+    // Invoices table header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(20, currentY, pageWidth - 40, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    doc.text('Invoice #', 25, currentY + 10);
+    doc.text('Date', 75, currentY + 10);
+    doc.text('Due Date', 115, currentY + 10);
+    doc.text('Status', 155, currentY + 10);
+    doc.text('Amount', pageWidth - 30, currentY + 10, { align: 'right' });
+
+    currentY += 15;
+    doc.setTextColor(0, 0, 0);
+
+    // Invoice rows
+    invoices.forEach((invoice, index) => {
+      if (currentY > 250) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      const bgColor = index % 2 === 0 ? 255 : 248;
+      doc.setFillColor(bgColor, bgColor, bgColor);
+      doc.rect(20, currentY, pageWidth - 40, 12, 'F');
+      doc.setDrawColor(230, 230, 230);
+      doc.rect(20, currentY, pageWidth - 40, 12);
+
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.text(invoice.invoiceNumber || 'N/A', 25, currentY + 8);
+      doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 75, currentY + 8);
+      doc.text(invoice.dueDate || 'N/A', 115, currentY + 8);
+      
+      // Status with color
+      const statusColor = invoice.status === 'Paid' ? [40, 167, 69] : 
+                         invoice.status === 'Overdue' ? [220, 53, 69] : [255, 193, 7];
+      doc.setTextColor(...statusColor);
+      doc.text(invoice.status || 'Unpaid', 155, currentY + 8);
+      doc.setTextColor(0, 0, 0);
+      
+      doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, pageWidth - 30, currentY + 8, { align: 'right' });
+      
+      currentY += 12;
+    });
+
+    // Footer
+    const footerY = 280;
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(128, 128, 128);
+
+    let footerText = [];
+    if (companySettings.companyNumber) {
+      footerText.push(`Company Registration: ${companySettings.companyNumber}`);
+    }
+    if (companySettings.vatNumber) {
+      footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+    }
+
+    if (footerText.length > 0) {
+      doc.text(footerText.join(' | '), pageWidth / 2, footerY, { align: 'center' });
+    }
+
+    doc.setTextColor(41, 128, 185);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'italic');
+    doc.text('Thank you for your business!', pageWidth / 2, footerY + 10, { align: 'center' });
+
+    console.log('Client statement PDF generation completed successfully');
+    return doc;
+  } catch (error) {
+    console.error('Error generating client statement PDF:', error);
+    throw error;
+  }
+};
+
+// Send client statement via email
+const sendClientStatementViaEmail = async (client, invoices, companySettings, period = 'full') => {
+  try {
+    // Get email settings
+    const emailSettings = await getEmailSettings();
+    
+    // Calculate totals
+    const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
+    // Prepare template data
+    const templateData = {
+      clientName: client.name,
+      period: period === 'full' ? 'All Time' : period,
+      totalInvoices: invoices.length,
+      totalAmount: totalAmount.toFixed(2),
+      paidAmount: paidAmount.toFixed(2),
+      unpaidAmount: unpaidAmount.toFixed(2),
+      statementDate: new Date().toLocaleDateString(),
+      senderName: emailSettings?.defaultSenderName || companySettings?.contactName || 'Your Name',
+      companyName: companySettings?.companyName || 'Your Company'
+    };
+
+    // Get templates (use default if no custom template exists)
+    const subject = emailSettings?.statementSubject || 'Account Statement from {companyName}';
+    const body = emailSettings?.statementTemplate || `Dear {clientName},
+
+Please find attached your account statement for the period: {period}.
+
+Statement Summary:
+- Total Invoices: {totalInvoices}
+- Total Amount: £{totalAmount}
+- Paid Amount: £{paidAmount}
+- Outstanding Amount: £{unpaidAmount}
+
+If you have any questions about your account, please don't hesitate to contact us.
+
+Best regards,
+{senderName}
+{companyName}`;
+
+    // Replace variables
+    const finalSubject = replaceTemplateVariables(subject, templateData);
+    const finalBody = replaceTemplateVariables(body, templateData);
+
+    // Function to download PDF
+    const downloadPDF = async () => {
+      try {
+        const doc = await generateClientStatementPDF(client, invoices, companySettings, period);
+        const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+      } catch (error) {
+        console.error('Error generating statement PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
+      }
+    };
+
+    // Function to open email client
+    const openEmailClient = () => {
+      const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+      window.location.href = mailtoLink;
+    };
+
+    // Show instructions popup with callback functions
+    showEmailInstructions('statement', `${client.name}_${period}`, downloadPDF, openEmailClient);
+
+  } catch (error) {
+    console.error('Error creating statement email:', error);
+    alert('Error creating email: ' + (error.message || 'Unknown error occurred'));
+  }
+};
+
 export { 
   generateInvoicePDF, 
   generateQuotePDF, 
   sendInvoiceViaEmail, 
-  sendQuoteViaEmail 
+  sendQuoteViaEmail,
+  generateClientStatementPDF,
+  sendClientStatementViaEmail
 };
