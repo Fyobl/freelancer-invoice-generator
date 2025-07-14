@@ -66,12 +66,12 @@ const generateInvoicePDF = async (invoice, companySettings) => {
 
     currentY += 15;
 
-    // Invoice details in clean grid layout
+    // Invoice details in clean grid layout - extended height to fit all text
     doc.setFillColor(249, 250, 251);
-    doc.rect(20, currentY, pageWidth - 40, 25, 'F');
+    doc.rect(20, currentY, pageWidth - 40, 32, 'F');
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.5);
-    doc.rect(20, currentY, pageWidth - 40, 25);
+    doc.rect(20, currentY, pageWidth - 40, 32);
 
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
@@ -79,30 +79,30 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     
     // Left column - centered in left half
     const leftCenterX = 20 + (pageWidth - 40) / 4;
-    doc.text('Invoice Number:', leftCenterX, currentY + 8, { align: 'center' });
+    doc.text('Invoice Number:', leftCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(invoice.invoiceNumber, leftCenterX, currentY + 14, { align: 'center' });
+    doc.text(invoice.invoiceNumber, leftCenterX, currentY + 16, { align: 'center' });
     
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Issue Date:', leftCenterX, currentY + 20, { align: 'center' });
+    doc.text('Issue Date:', leftCenterX, currentY + 22, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(new Date().toLocaleDateString(), leftCenterX, currentY + 26, { align: 'center' });
+    doc.text(new Date().toLocaleDateString(), leftCenterX, currentY + 28, { align: 'center' });
 
     // Right column - centered in right half
     const rightCenterX = 20 + (3 * (pageWidth - 40)) / 4;
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Due Date:', rightCenterX, currentY + 8, { align: 'center' });
+    doc.text('Due Date:', rightCenterX, currentY + 10, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(invoice.dueDate || 'Upon receipt', rightCenterX, currentY + 14, { align: 'center' });
+    doc.text(invoice.dueDate || 'Upon receipt', rightCenterX, currentY + 16, { align: 'center' });
     
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Status:', rightCenterX, currentY + 20, { align: 'center' });
+    doc.text('Status:', rightCenterX, currentY + 22, { align: 'center' });
     doc.setFont(undefined, 'bold');
     
     // Status with color coding
@@ -113,9 +113,9 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     } else {
       doc.setTextColor(245, 158, 11);
     }
-    doc.text(invoice.status, rightCenterX, currentY + 26, { align: 'center' });
+    doc.text(invoice.status, rightCenterX, currentY + 28, { align: 'center' });
 
-    currentY += 35;
+    currentY += 42;
 
     // Bill To section with modern card design
     doc.setFillColor(255, 255, 255);
@@ -347,15 +347,46 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setFont(undefined, 'bold');
   doc.text('QUOTE', pageWidth / 2, currentY, { align: 'center' });
 
-  // Quote details
-  doc.setFontSize(12);
-  doc.setFont(undefined, 'normal');
-  doc.text(`Quote Number: ${quote.quoteNumber}`, 20, currentY + 15);
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, currentY + 25);
-  doc.text(`Valid Until: ${quote.validUntil}`, pageWidth - 120, currentY + 25);
-  doc.text(`Status: ${quote.status}`, pageWidth - 120, currentY + 35);
+  // Quote details in grey box layout
+  doc.setFillColor(249, 250, 251);
+  doc.rect(20, currentY + 10, pageWidth - 40, 32, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.5);
+  doc.rect(20, currentY + 10, pageWidth - 40, 32);
 
-  currentY += 60;
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(75, 85, 99);
+  
+  // Left column
+  doc.text('Quote Number:', 25, currentY + 20);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(quote.quoteNumber, 25, currentY + 26);
+  
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Date:', 25, currentY + 32);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(new Date().toLocaleDateString(), 25, currentY + 38);
+
+  // Right column
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Valid Until:', pageWidth - 120, currentY + 20);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(quote.validUntil, pageWidth - 120, currentY + 26);
+  
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Status:', pageWidth - 120, currentY + 32);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(quote.status, pageWidth - 120, currentY + 38);
+
+  currentY += 52;
 
   // Quote To section
   doc.setFillColor(248, 249, 250);
