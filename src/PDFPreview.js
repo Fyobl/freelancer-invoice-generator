@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { getDefaultTemplate } from './pdfTemplateService';
+import { getDefaultTemplate } from './pdfTemplateService.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db, auth } from './firebase.js';
 
 const PDFPreview = () => {
   const [templates, setTemplates] = useState({

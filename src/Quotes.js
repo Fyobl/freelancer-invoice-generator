@@ -130,11 +130,11 @@ function Quotes({ user }) {
 
   const addProductToQuote = (productId) => {
     if (!productId) return;
-    
+
     const product = products.find(p => p.id === productId);
     if (product) {
       const existingProductIndex = selectedProducts.findIndex(p => p.id === productId);
-      
+
       if (existingProductIndex >= 0) {
         // Increase quantity if product already exists
         const updatedProducts = [...selectedProducts];
@@ -147,7 +147,7 @@ function Quotes({ user }) {
           quantity: 1
         }]);
       }
-      
+
       // Calculate totals
       calculateQuoteTotals([...selectedProducts, { ...product, quantity: 1 }]);
       setSelectedProductId('');
@@ -165,7 +165,7 @@ function Quotes({ user }) {
       removeProductFromQuote(productIndex);
       return;
     }
-    
+
     const updatedProducts = [...selectedProducts];
     updatedProducts[productIndex].quantity = quantity;
     setSelectedProducts(updatedProducts);
@@ -181,7 +181,7 @@ function Quotes({ user }) {
 
     const subtotal = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
     const avgVatRate = products.reduce((sum, product) => sum + product.vat, 0) / products.length;
-    
+
     setAmount(subtotal.toFixed(2));
     setVat(avgVatRate.toFixed(1));
   };
@@ -198,14 +198,14 @@ function Quotes({ user }) {
     }
 
     let finalAmount, finalVat;
-    
+
     if (selectedProducts.length > 0) {
       finalAmount = selectedProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
       finalVat = selectedProducts.reduce((sum, product) => sum + product.vat, 0) / selectedProducts.length;
     } else {
       finalAmount = parseFloat(amount);
       finalVat = parseFloat(vat) || 0;
-      
+
       if (isNaN(finalAmount) || finalAmount <= 0) {
         alert('Amount must be a valid positive number');
         return;
@@ -313,7 +313,7 @@ function Quotes({ user }) {
         const quoteDoc = await getDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
         if (quoteDoc.exists()) {
           const quoteData = quoteDoc.data();
-          
+
           // Move to recycle bin
           await addDoc(collection(db, 'recycleBin'), {
             ...quoteData,
@@ -323,7 +323,7 @@ function Quotes({ user }) {
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
             userId: user.uid
           });
-          
+
           // Delete from original collection
           await deleteDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
         }
@@ -373,11 +373,11 @@ function Quotes({ user }) {
     try {
       console.log('Starting PDF download for quote:', quote.quoteNumber);
       console.log('Starting quote PDF generation');
-      
+
       // Use new template system
       const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
       const doc = await generateQuotePDFFromTemplate(quote, companySettings);
-      
+
       // Download the PDF
       const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       console.log('PDF generation completed successfully');
