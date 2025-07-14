@@ -394,41 +394,47 @@ function Dashboard() {
   const handleProductSelect = (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    
-    // Check if product is already selected
-    const isAlreadySelected = selectedProducts.some(p => p.id === id);
-    if (isAlreadySelected) {
-      alert('This product is already selected');
-      return;
-    }
-    
+
     // Add product to selected products
-    setSelectedProducts(prev => [...prev, product]);
+    setSelectedProducts(prev => {
+      const existingProduct = prev.find(p => p.id === id);
+      if (existingProduct) {
+        // If the product exists, increment the quantity
+        return prev.map(p =>
+          p.id === id ? { ...p, quantity: (p.quantity || 1) + 1 } : p
+        );
+      } else {
+        // If the product doesn't exist, add it with a quantity of 1
+        return [...prev, { ...product, quantity: 1 }];
+      }
+    });
     setSelectedProductId('');
-    
-    // Update amount and VAT based on selected products
-    const newAmount = selectedProducts.reduce((sum, p) => sum + (p.price || 0), 0) + (product.price || 0);
-    const avgVat = selectedProducts.length > 0 
-      ? (selectedProducts.reduce((sum, p) => sum + (p.vat || 0), 0) + (product.vat || 0)) / (selectedProducts.length + 1)
-      : (product.vat || 0);
-    
+  };
+
+  const removeProduct = (productId) => {
+    setSelectedProducts(prev => prev.map(p => {
+      if (p.id === productId) {
+        const newQuantity = p.quantity - 1;
+        if (newQuantity <= 0) {
+          return null; // Remove the product if quantity is 0
+        } else {
+          return { ...p, quantity: newQuantity }; // Decrease the quantity
+        }
+      }
+      return p;
+    }).filter(p => p !== null));
+
+    // Recalculate amount and VAT
+    const remainingProducts = selectedProducts.filter(p => p.id !== productId);
+    const newAmount = remainingProducts.reduce((sum, p) => sum + (p.price * p.quantity || 0), 0);
+    const avgVat = remainingProducts.length > 0
+      ? remainingProducts.reduce((sum, p) => sum + (p.vat * p.quantity || 0), 0) / remainingProducts.length
+      : 0;
+
     setAmount(newAmount.toString());
     setVat(avgVat.toString());
   };
 
-  const removeProduct = (productId) => {
-    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
-    
-    // Recalculate amount and VAT
-    const remainingProducts = selectedProducts.filter(p => p.id !== productId);
-    const newAmount = remainingProducts.reduce((sum, p) => sum + (p.price || 0), 0);
-    const avgVat = remainingProducts.length > 0 
-      ? remainingProducts.reduce((sum, p) => sum + (p.vat || 0), 0) / remainingProducts.length
-      : 0;
-    
-    setAmount(newAmount.toString());
-    setVat(avgVat.toString());
-  };
 
   const resetForm = () => {
     setClientName('');
@@ -605,18 +611,18 @@ function Dashboard() {
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                     Selected Products:
                   </label>
-                  <div style={{ 
-                    background: '#f8f9fa', 
-                    border: '2px solid #e1e5e9', 
-                    borderRadius: '8px', 
+                  <div style={{
+                    background: '#f8f9fa',
+                    border: '2px solid #e1e5e9',
+                    borderRadius: '8px',
                     padding: '10px',
                     maxHeight: '120px',
                     overflowY: 'auto'
                   }}>
                     {selectedProducts.map(product => (
-                      <div key={product.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                      <div key={product.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '8px',
                         background: 'white',
@@ -625,7 +631,7 @@ function Dashboard() {
                         border: '1px solid #dee2e6'
                       }}>
                         <span style={{ color: '#333', fontWeight: '500' }}>
-                          {product.name} - £{Number(product.price).toFixed(2)}
+                          {product.name} - £{Number(product.price).toFixed(2)} x {product.quantity}
                         </span>
                         <button
                           onClick={() => removeProduct(product.id)}
@@ -691,8 +697,8 @@ function Dashboard() {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Status
               </label>
-              <select 
-                value={status} 
+              <select
+                value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 style={selectStyle}
                 onFocus={(e) => e.target.style.borderColor = '#667eea'}
@@ -734,7 +740,7 @@ function Dashboard() {
             onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
           />
 
-          <button 
+          <button
             onClick={handleAddInvoice}
             style={buttonStyle}
             onMouseEnter={(e) => {
@@ -784,112 +790,112 @@ function Dashboard() {
               📄 No invoices found
             </h3>
             <p style={{ color: '#999', fontSize: '1.1rem' }}>
-              {searchTerm || filterStatus !== 'all' 
-                ? 'Try adjusting your search or filters' 
+              {searchTerm || filterStatus !== 'all'
+                ? 'Try adjusting your search or filters'
                 : 'Create your first invoice to get started!'}
             </p>
           </div>
         ) : (<div style={tableStyle}>
-            <div style={{ padding: '25px' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
-                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
-                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
+          <div style={{ padding: '25px' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                    <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
+                    <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
+                    <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
+                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
+                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
+                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((inv, index) => (
+                    <tr key={inv.id} style={{
+                      borderBottom: '1px solid #f1f3f4',
+                      backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
+                      transition: 'background-color 0.2s ease'
+                    }}>
+                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
+                      <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
+                      <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
+                        £{Number(inv.amount).toFixed(2)}
+                      </td>
+                      <td style={{ padding: '15px', textAlign: 'center' }}>
+                        <select
+                          value={inv.status}
+                          onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                          style={{
+                            padding: '6px 12px',
+                            background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
+                            border: '2px solid',
+                            borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            fontSize: '12px'
+                          }}
+                        >
+                          <option value="Unpaid">Unpaid</option>
+                          <option value="Paid">Paid</option>
+                          <option value="Overdue">Overdue</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
+                      <td style={{ padding: '15px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => downloadPDF(inv)}
+                          style={{
+                            padding: '8px 15px',
+                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            marginRight: '8px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📄 PDF
+                        </button>
+                        <button
+                          onClick={() => sendInvoiceEmail(inv)}
+                          style={{
+                            padding: '8px 15px',
+                            background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px', marginRight: '8px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📧 Email
+                        </button>
+                        <button
+                          onClick={() => handleDelete(inv)}
+                          style={{
+                            padding: '8px 15px',
+                            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInvoices.map((inv, index) => (
-                      <tr key={inv.id} style={{ 
-                        borderBottom: '1px solid #f1f3f4',
-                        backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
-                        transition: 'background-color 0.2s ease'
-                      }}>
-                        <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
-                        <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
-                        <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
-                          £{Number(inv.amount).toFixed(2)}
-                        </td>
-                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                          <select
-                            value={inv.status}
-                            onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                            style={{ 
-                              padding: '6px 12px', 
-                              background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                              border: '2px solid',
-                              borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
-                              borderRadius: '8px',
-                              fontWeight: 'bold',
-                              fontSize: '12px'
-                            }}
-                          >
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Overdue">Overdue</option>
-                          </select>
-                        </td>
-                        <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
-                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => downloadPDF(inv)}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              marginRight: '8px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            📄 PDF
-                          </button>
-                          <button
-                            onClick={() => sendInvoiceEmail(inv)}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px',                               marginRight: '8px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            📧 Email
-                          </button>
-                          <button
-                            onClick={() => handleDelete(inv)}
-                            style={{ 
-                              padding: '8px 15px', 
-                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
-                              color: 'white', 
-                              border: 'none', 
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
         )}
       </div>
 
