@@ -34,10 +34,10 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont(undefined, 'bold');
     doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
     
-    // INVOICE title in header
+    // INVOICE title in header (centered)
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text('INVOICE', 20, 25);
+    doc.text('INVOICE', pageWidth / 2, 25, { align: 'center' });
 
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
@@ -77,30 +77,32 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
     
-    // Left column
-    doc.text('Invoice Number:', 25, currentY + 8);
+    // Left column - centered in left half
+    const leftCenterX = 20 + (pageWidth - 40) / 4;
+    doc.text('Invoice Number:', leftCenterX, currentY + 8, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(invoice.invoiceNumber, 25, currentY + 14);
+    doc.text(invoice.invoiceNumber, leftCenterX, currentY + 14, { align: 'center' });
     
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Issue Date:', 25, currentY + 20);
+    doc.text('Issue Date:', leftCenterX, currentY + 20, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(new Date().toLocaleDateString(), 25, currentY + 26);
+    doc.text(new Date().toLocaleDateString(), leftCenterX, currentY + 26, { align: 'center' });
 
-    // Right column
+    // Right column - centered in right half
+    const rightCenterX = 20 + (3 * (pageWidth - 40)) / 4;
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Due Date:', pageWidth - 100, currentY + 8);
+    doc.text('Due Date:', rightCenterX, currentY + 8, { align: 'center' });
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(invoice.dueDate || 'Upon receipt', pageWidth - 100, currentY + 14);
+    doc.text(invoice.dueDate || 'Upon receipt', rightCenterX, currentY + 14, { align: 'center' });
     
     doc.setFont(undefined, 'normal');
     doc.setTextColor(75, 85, 99);
-    doc.text('Status:', pageWidth - 100, currentY + 20);
+    doc.text('Status:', rightCenterX, currentY + 20, { align: 'center' });
     doc.setFont(undefined, 'bold');
     
     // Status with color coding
@@ -111,7 +113,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     } else {
       doc.setTextColor(245, 158, 11);
     }
-    doc.text(invoice.status, pageWidth - 100, currentY + 26);
+    doc.text(invoice.status, rightCenterX, currentY + 26, { align: 'center' });
 
     currentY += 35;
 
@@ -207,7 +209,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.text('Subtotal:', totalsStartX + 5, currentY + 6);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(17, 24, 39);
-    doc.text(`£${subtotal.toFixed(2)}`, pageWidth - 20, currentY + 6, { align: 'right' });
+    doc.text(`£${subtotal.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
 
     // VAT row (if applicable)
     if (vatRate > 0) {
@@ -222,7 +224,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
       doc.text(`VAT (${vatRate}%):`, totalsStartX + 5, currentY + 6);
       doc.setFont(undefined, 'bold');
       doc.setTextColor(17, 24, 39);
-      doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 20, currentY + 6, { align: 'right' });
+      doc.text(`£${vatAmount.toFixed(2)}`, pageWidth - 30, currentY + 6, { align: 'right' });
     }
 
     // Total row with emphasis
@@ -235,7 +237,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.setFont(undefined, 'bold');
     doc.text('TOTAL:', totalsStartX + 5, currentY + 8);
     doc.setFontSize(11);
-    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 20, currentY + 8, { align: 'right' });
+    doc.text(`£${totalAmount.toFixed(2)}`, pageWidth - 30, currentY + 8, { align: 'right' });
 
     doc.setTextColor(17, 24, 39);
 
@@ -340,10 +342,10 @@ const generateQuotePDF = async (quote, companySettings) => {
   currentY = 60;
   doc.setTextColor(0, 0, 0);
 
-  // Quote title
+  // Quote title (centered)
   doc.setFontSize(24);
   doc.setFont(undefined, 'bold');
-  doc.text('QUOTE', 20, currentY);
+  doc.text('QUOTE', pageWidth / 2, currentY, { align: 'center' });
 
   // Quote details
   doc.setFontSize(12);
