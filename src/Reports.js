@@ -238,7 +238,6 @@ function Reports() {
       alert('Error generating PDF report: ' + (error.message || 'Unknown error occurred'));
     }
   };
-  };
 
   // Styles
   const containerStyle = {
