@@ -461,7 +461,7 @@ function Dashboard() {
       <Navigation user={user} userData={userData}/>
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
             📊 Dashboard
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>

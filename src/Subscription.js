@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
+import { signOut, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import Navigation from './Navigation.js';
 import { getUserSubscription, upgradeSubscription, checkSubscriptionStatus, SUBSCRIPTION_PLANS } from './subscriptionService.js';
-import { auth } from './firebase.js';
+import { auth, db } from './firebase.js';
+import { doc, updateDoc } from 'firebase/firestore';
 
 function Subscription({ user }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelPassword, setCancelPassword] = useState('');
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -54,6 +58,41 @@ function Subscription({ user }) {
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelPassword.trim()) {
+      alert('Please enter your password to confirm cancellation.');
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(user.email, cancelPassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // Cancel subscription
+      await updateDoc(doc(db, 'subscriptions', user.uid), {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        plan: 'trial'
+      });
+
+      alert('Subscription cancelled successfully. You will retain access until your billing period ends.');
+      setShowCancelModal(false);
+      setCancelPassword('');
+      fetchSubscription();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      if (error.code === 'auth/wrong-password') {
+        alert('Incorrect password. Please try again.');
+      } else {
+        alert('Error cancelling subscription: ' + error.message);
+      }
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -202,7 +241,7 @@ function Subscription({ user }) {
       <Navigation user={user} />
       <div style={contentStyle}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
             💳 Subscription
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
@@ -298,7 +337,7 @@ function Subscription({ user }) {
         {/* Premium Status */}
         {currentPlan === 'premium' && (
           <div style={cardStyle}>
-            <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
+            <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>
               ✨ Active Subscriber
             </h2>
             <p style={{ color: '#666', lineHeight: 1.6 }}>
@@ -310,6 +349,85 @@ function Subscription({ user }) {
               <p style={{ margin: 0, color: '#155724' }}>
                 Contact our support team for any questions or assistance.
               </p>
+            </div>
+
+            <div style={{ marginTop: '20px', padding: '20px', background: '#f8d7da', borderRadius: '10px', border: '1px solid #f5c6cb' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#721c24' }}>Cancel Subscription</h4>
+              <p style={{ margin: '0 0 15px 0', color: '#721c24' }}>
+                You can cancel your subscription at any time. You'll retain access until your current billing period ends.
+              </p>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                style={{
+                  ...buttonStyle,
+                  background: '#dc3545',
+                  color: 'white'
+                }}
+              >
+                Cancel Subscription
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Subscription Modal */}
+        {showCancelModal && (
+          <div style={expiredModalStyle}>
+            <div style={modalContentStyle}>
+              <h2 style={{ color: '#dc3545', marginBottom: '20px' }}>⚠️ Cancel Subscription</h2>
+              <p style={{ color: '#666', marginBottom: '20px', lineHeight: 1.6 }}>
+                Are you sure you want to cancel your subscription? You'll retain access until your current billing period ends on <strong>{endDate.toLocaleDateString()}</strong>.
+              </p>
+              
+              <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                  Enter your password to confirm:
+                </label>
+                <input
+                  type="password"
+                  value={cancelPassword}
+                  onChange={(e) => setCancelPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e1e5e9',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={cancelling}
+                  style={{
+                    ...buttonStyle,
+                    background: '#dc3545',
+                    color: 'white',
+                    flex: 1,
+                    opacity: cancelling ? 0.7 : 1
+                  }}
+                >
+                  {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelPassword('');
+                  }}
+                  style={{
+                    ...buttonStyle,
+                    background: '#6c757d',
+                    color: 'white',
+                    flex: 1
+                  }}
+                >
+                  Keep Subscription
+                </button>
+              </div>
             </div>
           </div>
         )}

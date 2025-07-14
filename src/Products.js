@@ -23,6 +23,7 @@ function Products({ user }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [expandedProducts, setExpandedProducts] = useState({});
 
   const fetchProducts = async () => {
     const q = query(collection(db, 'products'), where('userId', '==', user.uid));
@@ -263,7 +264,7 @@ function Products({ user }) {
       <Navigation user={user} />
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
             📦 Product Management
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
@@ -445,100 +446,161 @@ function Products({ user }) {
               <p>{searchTerm ? 'Try adjusting your search terms' : 'Add your first product to get started!'}</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gap: '10px' }}>
               {filteredAndSortedProducts.map(product => (
                 <div
                   key={product.id}
-                  style={productCardStyle}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.1)';
-                    e.currentTarget.style.borderColor = '#667eea';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = '#f8f9fa';
+                  style={{
+                    background: 'white',
+                    border: '2px solid #f8f9fa',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                    <h3 style={{ margin: 0, color: '#333', fontSize: '1.2rem' }}>{product.name}</h3>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          editProduct(product);
-                        }}
-                        style={{
-                          background: '#28a745',
-                          color: 'white',
-                          border: 'none',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteProduct(product.id);
-                        }}
-                        style={{
-                          background: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '15px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>
+                  {/* Product Header - Always Visible */}
+                  <div 
+                    style={{
+                      padding: '20px',
+                      background: expandedProducts[product.id] ? '#f8f9fa' : 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: expandedProducts[product.id] ? '1px solid #e9ecef' : 'none'
+                    }}
+                    onClick={() => setExpandedProducts(prev => ({
+                      ...prev,
+                      [product.id]: !prev[product.id]
+                    }))}
+                  >
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#333' }}>
+                        {product.name}
+                      </h4>
+                      <p style={{ margin: 0, color: '#667eea', fontSize: '1.1rem', fontWeight: 'bold' }}>
                         £{product.price.toFixed(2)}
-                      </span>
+                        {product.vat > 0 && (
+                          <span style={{ 
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            marginLeft: '8px'
+                          }}>
+                            (+{product.vat}% VAT)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {product.vat > 0 && (
                         <span style={{ 
-                          background: '#e9ecef', 
-                          padding: '4px 8px', 
-                          borderRadius: '12px', 
-                          fontSize: '12px',
+                          background: '#e9ecef',
                           color: '#495057',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
                           fontWeight: 'bold'
                         }}>
                           VAT: {product.vat}%
                         </span>
                       )}
+                      <span style={{ 
+                        fontSize: '1.2rem',
+                        color: '#667eea',
+                        transform: expandedProducts[product.id] ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease'
+                      }}>
+                        ▼
+                      </span>
                     </div>
-
-                    {product.vat > 0 && (
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        <strong>Total with VAT: £{(product.price * (1 + product.vat / 100)).toFixed(2)}</strong>
-                      </div>
-                    )}
                   </div>
 
-                  {product.description && (
-                    <p style={{ 
-                      margin: 0, 
-                      color: '#666', 
-                      fontSize: '0.9rem', 
-                      lineHeight: '1.4',
-                      background: '#f8f9fa',
-                      padding: '10px',
-                      borderRadius: '6px'
-                    }}>
-                      {product.description}
-                    </p>
+                  {/* Product Details - Collapsible */}
+                  {expandedProducts[product.id] && (
+                    <div style={{ padding: '20px', background: 'white' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ marginBottom: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>
+                                £{product.price.toFixed(2)}
+                              </span>
+                              {product.vat > 0 && (
+                                <span style={{ 
+                                  background: '#e9ecef', 
+                                  padding: '4px 8px', 
+                                  borderRadius: '12px', 
+                                  fontSize: '12px',
+                                  color: '#495057',
+                                  fontWeight: 'bold'
+                                }}>
+                                  VAT: {product.vat}%
+                                </span>
+                              )}
+                            </div>
+
+                            {product.vat > 0 && (
+                              <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                                <strong>Total with VAT: £{(product.price * (1 + product.vat / 100)).toFixed(2)}</strong>
+                              </div>
+                            )}
+                          </div>
+
+                          {product.description && (
+                            <p style={{ 
+                              margin: 0, 
+                              color: '#666', 
+                              fontSize: '0.9rem', 
+                              lineHeight: '1.4',
+                              background: '#f8f9fa',
+                              padding: '10px',
+                              borderRadius: '6px'
+                            }}>
+                              {product.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editProduct(product);
+                            }}
+                            style={{
+                              background: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteProduct(product.id);
+                            }}
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}

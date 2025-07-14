@@ -20,6 +20,7 @@ function Clients() {
   const [userData, setUserData] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [companySettings, setCompanySettings] = useState({});
+  const [expandedClients, setExpandedClients] = useState({});
 
   const user = auth.currentUser;
 
@@ -414,7 +415,7 @@ function Clients() {
       <Navigation user={user} />
       <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
             👥 Client Management
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
@@ -558,100 +559,143 @@ function Clients() {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'grid', gap: '10px' }}>
               {filteredClients.map(client => (
                 <div 
                   key={client.id} 
-                  style={clientCardStyle}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.1)';
-                    e.currentTarget.style.borderColor = '#667eea';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = '#f8f9fa';
+                  style={{
+                    background: 'white',
+                    border: '2px solid #f8f9fa',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
+                  {/* Client Header - Always Visible */}
+                  <div 
+                    style={{
+                      padding: '20px',
+                      background: expandedClients[client.id] ? '#f8f9fa' : 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: expandedClients[client.id] ? '1px solid #e9ecef' : 'none'
+                    }}
+                    onClick={() => setExpandedClients(prev => ({
+                      ...prev,
+                      [client.id]: !prev[client.id]
+                    }))}
+                  >
                     <div>
-                      <h4 style={{ margin: '0 0 15px 0', fontSize: '1.3rem', color: '#333' }}>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#333' }}>
                         {client.name}
                       </h4>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                        📧 {client.email}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ 
+                        background: '#e9ecef',
+                        color: '#495057',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        {getClientInvoices(client.id).length} invoices
+                      </span>
+                      <span style={{ 
+                        fontSize: '1.2rem',
+                        color: '#667eea',
+                        transform: expandedClients[client.id] ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease'
+                      }}>
+                        ▼
+                      </span>
+                    </div>
+                  </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {/* Client Details - Collapsible */}
+                  {expandedClients[client.id] && (
+                    <div style={{ padding: '20px', background: 'white' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'start' }}>
                         <div>
-                          <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                            <strong>📧 Email:</strong> {client.email}
-                          </p>
-                          {client.phone && (
-                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                              <strong>📱 Phone:</strong> {client.phone}
-                            </p>
-                          )}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                            <div>
+                              <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                                <strong>📧 Email:</strong> {client.email}
+                              </p>
+                              {client.phone && (
+                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                                  <strong>📱 Phone:</strong> {client.phone}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              {client.address && (
+                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                                  <strong>📍 Address:</strong> {client.address}
+                                </p>
+                              )}
+                              {client.notes && (
+                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                                  <strong>📝 Notes:</strong> {client.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <div>
-                          {client.address && (
-                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                              <strong>📍 Address:</strong> {client.address}
-                            </p>
-                          )}
-                          {client.notes && (
-                            <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                              <strong>📝 Notes:</strong> {client.notes}
-                            </p>
-                          )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '140px' }}>
+                          <button
+                            onClick={() => editClient(client)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                              fontSize: '11px',
+                              padding: '6px 12px',
+                              marginRight: 0
+                            }}
+                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => showStatementOptions(client)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              fontSize: '11px',
+                              padding: '6px 12px',
+                              marginRight: 0
+                            }}
+                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                          >
+                            📊 Statement
+                          </button>
+                          <button
+                            onClick={() => deleteClient(client.id)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                              fontSize: '11px',
+                              padding: '6px 12px',
+                              marginRight: 0
+                            }}
+                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                          >
+                            🗑️ Delete
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '140px' }}>
-                      <button
-                        onClick={() => editClient(client)}
-                        style={{
-                          ...buttonStyle,
-                          background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                          fontSize: '11px',
-                          padding: '6px 12px',
-                          marginRight: 0
-                        }}
-                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => showStatementOptions(client)}
-                        style={{
-                          ...buttonStyle,
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          fontSize: '11px',
-                          padding: '6px 12px',
-                          marginRight: 0
-                        }}
-                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                      >
-                        📊 Statement
-                      </button>
-                      <button
-                        onClick={() => deleteClient(client.id)}
-                        style={{
-                          ...buttonStyle,
-                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                          fontSize: '11px',
-                          padding: '6px 12px',
-                          marginRight: 0
-                        }}
-                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
@@ -20,6 +22,10 @@ function Reports() {
       fetchUserData();
     }
   }, [user]);
+
+  useEffect(() => {
+    calculateStats();
+  }, [invoices, dateRange]);
 
   const fetchData = async () => {
     // Fetch invoices
@@ -117,6 +123,121 @@ function Reports() {
       topClients,
       averageInvoiceValue: filteredInvoices.length > 0 ? totalRevenue / filteredInvoices.length : 0
     });
+  };
+
+  const generateReportPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let currentY = 20;
+
+      // Header
+      doc.setFillColor(41, 128, 185);
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont(undefined, 'bold');
+      doc.text('Business Report', pageWidth / 2, 25, { align: 'center' });
+
+      currentY = 60;
+      doc.setTextColor(0, 0, 0);
+
+      // Report period
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      const periodText = dateRange === 'all' ? 'All Time' : 
+                        dateRange === 'week' ? 'Last 7 Days' :
+                        dateRange === 'month' ? 'Last Month' :
+                        dateRange === 'quarter' ? 'Last Quarter' : 'Last Year';
+      doc.text(`Report Period: ${periodText}`, 20, currentY);
+      currentY += 20;
+
+      // Revenue Overview
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('Revenue Overview', 20, currentY);
+      currentY += 10;
+
+      const revenueData = [
+        ['Total Revenue', `£${stats.totalRevenue?.toFixed(2) || '0.00'}`],
+        ['Paid Revenue', `£${stats.paidRevenue?.toFixed(2) || '0.00'}`],
+        ['Unpaid Revenue', `£${stats.unpaidRevenue?.toFixed(2) || '0.00'}`],
+        ['Overdue Revenue', `£${stats.overdueRevenue?.toFixed(2) || '0.00'}`]
+      ];
+
+      doc.autoTable({
+        startY: currentY,
+        head: [['Metric', 'Amount']],
+        body: revenueData,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 126, 234] }
+      });
+
+      currentY = doc.lastAutoTable.finalY + 20;
+
+      // Invoice Statistics
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('Invoice Statistics', 20, currentY);
+      currentY += 10;
+
+      const invoiceData = [
+        ['Total Invoices', stats.totalInvoices || 0],
+        ['Average Invoice Value', `£${stats.averageInvoiceValue?.toFixed(2) || '0.00'}`],
+        ['Paid Invoices', stats.statusCounts?.paid || 0],
+        ['Unpaid Invoices', stats.statusCounts?.unpaid || 0],
+        ['Overdue Invoices', stats.statusCounts?.overdue || 0]
+      ];
+
+      doc.autoTable({
+        startY: currentY,
+        head: [['Metric', 'Value']],
+        body: invoiceData,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 126, 234] }
+      });
+
+      currentY = doc.lastAutoTable.finalY + 20;
+
+      // Top Clients
+      if (stats.topClients && stats.topClients.length > 0) {
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Top Clients by Revenue', 20, currentY);
+        currentY += 10;
+
+        const clientData = stats.topClients.map(([clientName, data], index) => [
+          index + 1,
+          clientName,
+          data.count,
+          `£${data.revenue.toFixed(2)}`
+        ]);
+
+        doc.autoTable({
+          startY: currentY,
+          head: [['Rank', 'Client Name', 'Invoices', 'Revenue']],
+          body: clientData,
+          theme: 'grid',
+          headStyles: { fillColor: [102, 126, 234] }
+        });
+      }
+
+      // Footer
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'italic');
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, pageHeight - 20, { align: 'center' });
+
+      // Save the PDF
+      const fileName = `business_report_${periodText.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error('Error generating PDF report:', error);
+      alert('Error generating PDF report: ' + (error.message || 'Unknown error occurred'));
+    }
+  };
   };
 
   // Styles
@@ -229,7 +350,7 @@ function Reports() {
       <Navigation user={user} />
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', paddingTop: '100px' }}>
         <div style={headerStyle}>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: '300' }}>
+          <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
             📊 Reports & Analytics
           </h1>
           <p style={{ fontSize: '1.1rem', opacity: '0.9', margin: 0 }}>
@@ -237,23 +358,48 @@ function Reports() {
           </p>
         </div>
 
-        {/* Date Filter */}
+        {/* Date Filter and Download */}
         <div style={filterStyle}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📅 Time Period</h3>
-          <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
-            Select time range:
-            <select 
-              value={dateRange} 
-              onChange={(e) => setDateRange(e.target.value)}
-              style={selectStyle}
-            >
-              <option value="all">All Time</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last Month</option>
-              <option value="quarter">Last Quarter</option>
-              <option value="year">Last Year</option>
-            </select>
-          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'end' }}>
+            <div>
+              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📅 Time Period</h3>
+              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
+                Select time range:
+                <select 
+                  value={dateRange} 
+                  onChange={(e) => setDateRange(e.target.value)}
+                  style={selectStyle}
+                >
+                  <option value="all">All Time</option>
+                  <option value="week">Last 7 Days</option>
+                  <option value="month">Last Month</option>
+                  <option value="quarter">Last Quarter</option>
+                  <option value="year">Last Year</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <button
+                onClick={generateReportPDF}
+                style={{
+                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 25px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease',
+                  height: '44px'
+                }}
+                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+              >
+                📄 Download PDF Report
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Revenue Statistics */}
