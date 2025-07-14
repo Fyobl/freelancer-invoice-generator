@@ -1,244 +1,386 @@
 
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 
-// Shared template function for common PDF elements
-const generatePDFFromTemplate = (documentType, documentData, companySettings) => {
+// Enhanced PDF generation with modern styling and gradients
+const createStyledPDF = (type, data, companySettings) => {
   const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+
+  // Color scheme matching website theme
+  const primaryColor = '#667eea';
+  const secondaryColor = '#764ba2';
+  const accentColor = '#28a745';
+  const textDark = '#333333';
+  const textLight = '#666666';
+  const backgroundLight = '#f8f9fa';
+
+  // Helper function to create gradient effect (simulated with overlapping rectangles)
+  const createGradientHeader = () => {
+    // Primary gradient background
+    doc.setFillColor(102, 126, 234); // #667eea
+    doc.rect(0, 0, pageWidth, 60, 'F');
+    
+    // Secondary gradient overlay with transparency effect
+    doc.setFillColor(118, 75, 162); // #764ba2
+    doc.rect(pageWidth * 0.6, 0, pageWidth * 0.4, 60, 'F');
+    
+    // Decorative accent line
+    doc.setFillColor(40, 167, 69); // #28a745
+    doc.rect(0, 55, pageWidth, 2, 'F');
+  };
+
+  // Helper function for section headers
+  const createSectionHeader = (y, title, icon) => {
+    // Background bar
+    doc.setFillColor(248, 249, 250); // Light background
+    doc.rect(15, y - 5, pageWidth - 30, 20, 'F');
+    
+    // Accent line
+    doc.setFillColor(102, 126, 234);
+    doc.rect(15, y - 5, 4, 20, 'F');
+    
+    // Title text
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${icon} ${title}`, 25, y + 7);
+  };
+
+  // Helper function for table styling
+  const createStyledTable = (startY, headers, rows, colWidths) => {
+    let currentY = startY;
+    
+    // Table header
+    doc.setFillColor(102, 126, 234);
+    doc.rect(15, currentY, pageWidth - 30, 12, 'F');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    
+    let x = 20;
+    headers.forEach((header, index) => {
+      doc.text(header, x, currentY + 8);
+      x += colWidths[index];
+    });
+    
+    currentY += 12;
+    
+    // Table rows
+    rows.forEach((row, rowIndex) => {
+      const isEven = rowIndex % 2 === 0;
+      if (isEven) {
+        doc.setFillColor(248, 249, 250);
+        doc.rect(15, currentY, pageWidth - 30, 10, 'F');
+      }
+      
+      doc.setTextColor(51, 51, 51);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      let x = 20;
+      row.forEach((cell, cellIndex) => {
+        doc.text(String(cell), x, currentY + 7);
+        x += colWidths[cellIndex];
+      });
+      
+      currentY += 10;
+    });
+    
+    return currentY;
+  };
+
+  // Create header with gradient
+  createGradientHeader();
+
+  // Company logo/name in header
+  doc.setFontSize(24);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  const companyName = companySettings?.companyName || 'Your Company';
+  doc.text(companyName, 20, 25);
+
+  // Document type and number
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'normal');
+  const docNumber = data.invoiceNumber || data.quoteNumber || 'DOC-001';
+  doc.text(`${type.toUpperCase()} ${docNumber}`, 20, 40);
+
+  // Date
+  doc.setFontSize(10);
+  const currentDate = new Date().toLocaleDateString();
+  doc.text(`Date: ${currentDate}`, pageWidth - 60, 40);
+
+  let currentY = 80;
+
+  // Company Information Section
+  createSectionHeader(currentY, 'Company Information', '🏢');
+  currentY += 25;
+
+  doc.setFontSize(10);
+  doc.setTextColor(51, 51, 51);
+  doc.setFont('helvetica', 'normal');
+
+  const companyInfo = [
+    companySettings?.companyName || 'Your Company',
+    companySettings?.address || 'Company Address',
+    companySettings?.city ? `${companySettings.city}, ${companySettings.postalCode || ''}` : 'City, Postal Code',
+    companySettings?.phone || 'Phone Number',
+    companySettings?.email || 'company@email.com'
+  ].filter(info => info && info.trim() !== '');
+
+  companyInfo.forEach((info, index) => {
+    doc.text(info, 20, currentY + (index * 6));
+  });
+
+  currentY += (companyInfo.length * 6) + 15;
+
+  // Client Information Section
+  if (type !== 'statement') {
+    createSectionHeader(currentY, 'Bill To', '👤');
+    currentY += 25;
+
+    const clientName = data.clientName || 'Client Name';
+    doc.setFont('helvetica', 'bold');
+    doc.text(clientName, 20, currentY);
+    
+    if (data.dueDate) {
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Due Date: ${data.dueDate}`, 20, currentY + 10);
+      currentY += 20;
+    } else {
+      currentY += 15;
+    }
+    currentY += 10;
+  }
+
+  // Content based on document type
+  if (type === 'invoice') {
+    // Invoice Items Section
+    createSectionHeader(currentY, 'Invoice Details', '📋');
+    currentY += 25;
+
+    const items = [];
+    
+    if (data.selectedProducts && data.selectedProducts.length > 0) {
+      data.selectedProducts.forEach(product => {
+        const quantity = product.quantity || 1;
+        const price = parseFloat(product.price) || 0;
+        const total = quantity * price;
+        items.push([
+          product.name || 'Product',
+          quantity.toString(),
+          `£${price.toFixed(2)}`,
+          `£${total.toFixed(2)}`
+        ]);
+      });
+    } else {
+      items.push([
+        'Service/Product',
+        '1',
+        `£${parseFloat(data.amount || 0).toFixed(2)}`,
+        `£${parseFloat(data.amount || 0).toFixed(2)}`
+      ]);
+    }
+
+    const headers = ['Description', 'Qty', 'Price', 'Total'];
+    const colWidths = [80, 20, 30, 30];
+    
+    currentY = createStyledTable(currentY, headers, items, colWidths);
+    currentY += 15;
+
+    // Totals Section
+    const subtotal = parseFloat(data.amount || 0);
+    const vatRate = parseFloat(data.vat || 0);
+    const vatAmount = (subtotal * vatRate) / 100;
+    const total = subtotal + vatAmount;
+
+    // Totals box
+    const totalsX = pageWidth - 80;
+    doc.setFillColor(248, 249, 250);
+    doc.rect(totalsX - 10, currentY, 70, 40, 'F');
+    
+    doc.setFillColor(102, 126, 234);
+    doc.rect(totalsX - 10, currentY, 70, 3, 'F');
+
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    doc.setFont('helvetica', 'normal');
+    
+    doc.text('Subtotal:', totalsX, currentY + 12);
+    doc.text(`£${subtotal.toFixed(2)}`, totalsX + 35, currentY + 12);
+    
+    if (vatRate > 0) {
+      doc.text(`VAT (${vatRate}%):`, totalsX, currentY + 22);
+      doc.text(`£${vatAmount.toFixed(2)}`, totalsX + 35, currentY + 22);
+    }
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Total:', totalsX, currentY + 32);
+    doc.text(`£${total.toFixed(2)}`, totalsX + 35, currentY + 32);
+
+  } else if (type === 'quote') {
+    // Quote Items Section
+    createSectionHeader(currentY, 'Quote Details', '💰');
+    currentY += 25;
+
+    const items = [];
+    
+    if (data.selectedProducts && data.selectedProducts.length > 0) {
+      data.selectedProducts.forEach(product => {
+        const quantity = product.quantity || 1;
+        const price = parseFloat(product.price) || 0;
+        const total = quantity * price;
+        items.push([
+          product.name || 'Product',
+          quantity.toString(),
+          `£${price.toFixed(2)}`,
+          `£${total.toFixed(2)}`
+        ]);
+      });
+    } else {
+      items.push([
+        'Service/Product',
+        '1',
+        `£${parseFloat(data.amount || 0).toFixed(2)}`,
+        `£${parseFloat(data.amount || 0).toFixed(2)}`
+      ]);
+    }
+
+    const headers = ['Description', 'Qty', 'Price', 'Total'];
+    const colWidths = [80, 20, 30, 30];
+    
+    currentY = createStyledTable(currentY, headers, items, colWidths);
+    currentY += 15;
+
+    // Quote Total
+    const totalsX = pageWidth - 80;
+    doc.setFillColor(40, 167, 69);
+    doc.rect(totalsX - 10, currentY, 70, 25, 'F');
+    
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Quote Total:', totalsX, currentY + 12);
+    doc.text(`£${parseFloat(data.amount || 0).toFixed(2)}`, totalsX + 5, currentY + 22);
+
+    currentY += 35;
+
+    // Quote validity
+    if (data.validUntil) {
+      doc.setFontSize(10);
+      doc.setTextColor(118, 75, 162);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`This quote is valid until: ${data.validUntil}`, 20, currentY);
+    }
+
+  } else if (type === 'statement') {
+    // Statement Period Section
+    createSectionHeader(currentY, 'Statement Period', '📊');
+    currentY += 25;
+
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Period: ${data.period || 'Current Month'}`, 20, currentY);
+    doc.text(`Statement Date: ${currentDate}`, 20, currentY + 10);
+    currentY += 25;
+
+    // Invoice Summary
+    if (data.invoices && data.invoices.length > 0) {
+      createSectionHeader(currentY, 'Invoice Summary', '📋');
+      currentY += 25;
+
+      const invoiceRows = data.invoices.map(invoice => [
+        invoice.invoiceNumber || 'N/A',
+        invoice.date || 'N/A',
+        invoice.status || 'Unknown',
+        `£${parseFloat(invoice.amount || 0).toFixed(2)}`
+      ]);
+
+      const headers = ['Invoice #', 'Date', 'Status', 'Amount'];
+      const colWidths = [40, 35, 35, 35];
+      
+      currentY = createStyledTable(currentY, headers, invoiceRows, colWidths);
+      currentY += 15;
+
+      // Statement Summary
+      const totalAmount = data.invoices.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
+      const paidAmount = data.invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
+      const unpaidAmount = totalAmount - paidAmount;
+
+      const summaryX = pageWidth - 90;
+      doc.setFillColor(248, 249, 250);
+      doc.rect(summaryX - 10, currentY, 85, 45, 'F');
+      
+      doc.setFillColor(102, 126, 234);
+      doc.rect(summaryX - 10, currentY, 85, 3, 'F');
+
+      doc.setFontSize(10);
+      doc.setTextColor(51, 51, 51);
+      doc.setFont('helvetica', 'normal');
+      
+      doc.text('Total Invoiced:', summaryX, currentY + 12);
+      doc.text(`£${totalAmount.toFixed(2)}`, summaryX + 45, currentY + 12);
+      
+      doc.text('Amount Paid:', summaryX, currentY + 22);
+      doc.text(`£${paidAmount.toFixed(2)}`, summaryX + 45, currentY + 22);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(220, 53, 69);
+      doc.text('Outstanding:', summaryX, currentY + 32);
+      doc.text(`£${unpaidAmount.toFixed(2)}`, summaryX + 45, currentY + 32);
+    }
+  }
+
+  // Notes Section
+  if (data.notes && data.notes.trim()) {
+    currentY = Math.max(currentY + 20, pageHeight - 80);
+    
+    createSectionHeader(currentY, 'Notes', '📝');
+    currentY += 25;
+
+    doc.setFontSize(9);
+    doc.setTextColor(102, 102, 102);
+    doc.setFont('helvetica', 'normal');
+    
+    const noteLines = doc.splitTextToSize(data.notes, pageWidth - 40);
+    noteLines.forEach((line, index) => {
+      doc.text(line, 20, currentY + (index * 5));
+    });
+  }
+
+  // Footer
+  const footerY = pageHeight - 25;
   
-  // Header Section
-  addHeader(doc, documentType, companySettings);
+  // Footer gradient line
+  doc.setFillColor(102, 126, 234);
+  doc.rect(0, footerY - 5, pageWidth, 2, 'F');
   
-  // Document-specific content
-  addDocumentContent(doc, documentType, documentData, companySettings);
+  doc.setFontSize(8);
+  doc.setTextColor(102, 102, 102);
+  doc.setFont('helvetica', 'italic');
   
-  // Footer Section
-  addFooter(doc, companySettings);
+  const footerText = companySettings?.footerText || 'Thank you for your business!';
+  doc.text(footerText, 20, footerY);
   
+  // Page number and generation info
+  doc.text(`Generated on ${currentDate}`, pageWidth - 60, footerY);
+
   return doc;
 };
 
-// Add header with company info and document title
-const addHeader = (doc, documentType, companySettings) => {
-  // Document title
-  doc.setFontSize(24);
-  doc.setTextColor(103, 126, 234);
-  doc.text(documentType.toUpperCase(), 20, 30);
-  
-  // Company info (right side)
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  const companyInfo = [
-    companySettings?.name || 'Your Company',
-    companySettings?.address || '',
-    companySettings?.city || '',
-    companySettings?.postcode || '',
-    `Phone: ${companySettings?.phone || ''}`,
-    `Email: ${companySettings?.email || ''}`
-  ].filter(line => line.trim());
-  
-  companyInfo.forEach((line, index) => {
-    doc.text(line, 120, 20 + (index * 5));
-  });
+// Export functions for each document type
+export const generateInvoicePDF = (invoiceData, companySettings) => {
+  return createStyledPDF('invoice', invoiceData, companySettings);
 };
 
-// Add document-specific content based on type
-const addDocumentContent = (doc, documentType, data, companySettings) => {
-  switch (documentType) {
-    case 'invoice':
-      addInvoiceContent(doc, data, companySettings);
-      break;
-    case 'quote':
-      addQuoteContent(doc, data, companySettings);
-      break;
-    case 'statement':
-      addStatementContent(doc, data, companySettings);
-      break;
-    default:
-      throw new Error(`Unknown document type: ${documentType}`);
-  }
+export const generateQuotePDF = (quoteData, companySettings) => {
+  return createStyledPDF('quote', quoteData, companySettings);
 };
 
-// Add invoice-specific content
-const addInvoiceContent = (doc, invoice, companySettings) => {
-  // Invoice details
-  doc.setFontSize(12);
-  doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 20, 60);
-  doc.text(`Date: ${invoice.createdAt?.toDate?.()?.toLocaleDateString() || new Date().toLocaleDateString()}`, 20, 70);
-  doc.text(`Due Date: ${invoice.dueDate || 'Upon receipt'}`, 20, 80);
-  doc.text(`Status: ${invoice.status || 'Unpaid'}`, 20, 90);
-  
-  // Client info
-  doc.text('Bill To:', 20, 110);
-  doc.text(invoice.clientName, 20, 120);
-  
-  // Products/Services section
-  if (invoice.selectedProducts && invoice.selectedProducts.length > 0) {
-    addProductsTable(doc, invoice.selectedProducts, 140);
-  } else {
-    // Simple amount display
-    doc.setFontSize(14);
-    doc.text(`Amount: £${parseFloat(invoice.amount || 0).toFixed(2)}`, 20, 150);
-    
-    if (invoice.vat && parseFloat(invoice.vat) > 0) {
-      const vatAmount = (parseFloat(invoice.amount) * parseFloat(invoice.vat)) / 100;
-      doc.text(`VAT (${invoice.vat}%): £${vatAmount.toFixed(2)}`, 20, 165);
-      doc.text(`Total: £${(parseFloat(invoice.amount) + vatAmount).toFixed(2)}`, 20, 180);
-    }
-  }
-  
-  // Notes
-  if (invoice.notes) {
-    doc.setFontSize(10);
-    doc.text('Notes:', 20, 210);
-    const splitNotes = doc.splitTextToSize(invoice.notes, 170);
-    doc.text(splitNotes, 20, 220);
-  }
-};
-
-// Add quote-specific content
-const addQuoteContent = (doc, quote, companySettings) => {
-  // Quote details
-  doc.setFontSize(12);
-  doc.text(`Quote Number: ${quote.quoteNumber}`, 20, 60);
-  doc.text(`Date: ${quote.createdAt?.toDate?.()?.toLocaleDateString() || new Date().toLocaleDateString()}`, 20, 70);
-  doc.text(`Valid Until: ${quote.validUntil || '30 days'}`, 20, 80);
-  doc.text(`Status: ${quote.status || 'Pending'}`, 20, 90);
-  
-  // Client info
-  doc.text('Quote For:', 20, 110);
-  doc.text(quote.clientName, 20, 120);
-  
-  // Products/Services section
-  if (quote.selectedProducts && quote.selectedProducts.length > 0) {
-    addProductsTable(doc, quote.selectedProducts, 140);
-  } else {
-    // Simple amount display
-    doc.setFontSize(14);
-    doc.text(`Amount: £${parseFloat(quote.amount || 0).toFixed(2)}`, 20, 150);
-    
-    if (quote.vat && parseFloat(quote.vat) > 0) {
-      const vatAmount = (parseFloat(quote.amount) * parseFloat(quote.vat)) / 100;
-      doc.text(`VAT (${quote.vat}%): £${vatAmount.toFixed(2)}`, 20, 165);
-      doc.text(`Total: £${(parseFloat(quote.amount) + vatAmount).toFixed(2)}`, 20, 180);
-    }
-  }
-  
-  // Notes
-  if (quote.notes) {
-    doc.setFontSize(10);
-    doc.text('Notes:', 20, 210);
-    const splitNotes = doc.splitTextToSize(quote.notes, 170);
-    doc.text(splitNotes, 20, 220);
-  }
-};
-
-// Add statement-specific content
-const addStatementContent = (doc, data, companySettings) => {
-  const { client, invoices, period } = data;
-  
-  // Statement details
-  doc.setFontSize(12);
-  doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, 20, 60);
-  doc.text(`Period: ${period === 'full' ? 'All Time' : period}`, 20, 70);
-  doc.text(`Total Invoices: ${invoices.length}`, 20, 80);
-  
-  // Client info
-  doc.text('Statement For:', 20, 100);
-  doc.text(client.name, 20, 110);
-  
-  // Calculate totals
-  const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  
-  // Totals section
-  doc.setFontSize(14);
-  doc.text(`Total Amount: £${totalAmount.toFixed(2)}`, 20, 140);
-  doc.text(`Paid: £${paidAmount.toFixed(2)}`, 20, 155);
-  doc.text(`Unpaid: £${unpaidAmount.toFixed(2)}`, 20, 170);
-  
-  // Invoice list header
-  doc.setFontSize(10);
-  doc.text('Invoice Details:', 20, 200);
-  doc.text('Invoice #', 20, 210);
-  doc.text('Date', 70, 210);
-  doc.text('Amount', 120, 210);
-  doc.text('Status', 160, 210);
-  
-  // Invoice list
-  invoices.slice(0, 15).forEach((invoice, index) => {
-    const y = 220 + (index * 8);
-    doc.text(invoice.invoiceNumber || 'N/A', 20, y);
-    doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 70, y);
-    doc.text(`£${parseFloat(invoice.amount || 0).toFixed(2)}`, 120, y);
-    doc.text(invoice.status || 'Unpaid', 160, y);
-  });
-};
-
-// Add products table for invoices and quotes
-const addProductsTable = (doc, products, startY) => {
-  doc.setFontSize(12);
-  doc.text('Items:', 20, startY);
-  
-  // Table headers
-  doc.setFontSize(10);
-  doc.text('Description', 20, startY + 15);
-  doc.text('Qty', 120, startY + 15);
-  doc.text('Price', 140, startY + 15);
-  doc.text('Total', 170, startY + 15);
-  
-  let currentY = startY + 25;
-  let subtotal = 0;
-  
-  products.forEach((product, index) => {
-    const lineTotal = (product.price || 0) * (product.quantity || 1);
-    subtotal += lineTotal;
-    
-    doc.text(product.name || 'Item', 20, currentY);
-    doc.text((product.quantity || 1).toString(), 120, currentY);
-    doc.text(`£${(product.price || 0).toFixed(2)}`, 140, currentY);
-    doc.text(`£${lineTotal.toFixed(2)}`, 170, currentY);
-    
-    currentY += 10;
-  });
-  
-  // Totals
-  currentY += 10;
-  doc.setFontSize(12);
-  doc.text(`Subtotal: £${subtotal.toFixed(2)}`, 140, currentY);
-  
-  // Calculate VAT if applicable
-  const avgVatRate = products.reduce((sum, product) => sum + (product.vat || 0), 0) / products.length;
-  if (avgVatRate > 0) {
-    const vatAmount = subtotal * (avgVatRate / 100);
-    doc.text(`VAT (${avgVatRate.toFixed(1)}%): £${vatAmount.toFixed(2)}`, 140, currentY + 15);
-    doc.text(`Total: £${(subtotal + vatAmount).toFixed(2)}`, 140, currentY + 30);
-  }
-};
-
-// Add footer with company details
-const addFooter = (doc, companySettings) => {
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  
-  if (companySettings?.companyNumber) {
-    doc.text(`Company Number: ${companySettings.companyNumber}`, 20, 280);
-  }
-  if (companySettings?.vatNumber) {
-    doc.text(`VAT Number: ${companySettings.vatNumber}`, 20, 285);
-  }
-};
-
-// Export functions using the new template system
-export const generateInvoicePDF = (invoice, companySettings) => {
-  return generatePDFFromTemplate('invoice', invoice, companySettings);
-};
-
-export const generateQuotePDF = (quote, companySettings) => {
-  return generatePDFFromTemplate('quote', quote, companySettings);
-};
-
-export const generateStatementPDF = (client, invoices, companySettings, period = 'full') => {
-  const data = { client, invoices, period };
-  return generatePDFFromTemplate('statement', data, companySettings);
+export const generateStatementPDF = (statementData, companySettings) => {
+  return createStyledPDF('statement', statementData, companySettings);
 };
