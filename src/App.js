@@ -16,7 +16,7 @@ import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
 import EmailSettings from './EmailSettings.js';
 import Admin from './Admin.js';
-import PDFPreview from './PDFPreview';
+import PDFPreview from './PDFPreview.js';
 import Subscription from './Subscription.js';
 import RecycleBin from './RecycleBin.js';
 import './App.css';
