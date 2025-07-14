@@ -21,6 +21,7 @@ function Admin({ user }) {
   const [subscriptionEndDate, setSubscriptionEndDate] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [blockedUsers, setBlockedUsers] = useState([]);
 
   // Check if current user is admin
   const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
@@ -52,6 +53,11 @@ function Admin({ user }) {
       }));
       setSubscriptions(subscriptionsData);
 
+      // Fetch blocked users
+      const blockedSnapshot = await getDocs(collection(db, 'blockedUsers'));
+      const blockedData = blockedSnapshot.docs.map(doc => doc.id);
+      setBlockedUsers(blockedData);
+
       // Calculate analytics
       const totalUsers = usersData.length;
       const activeSubscriptions = subscriptionsData.filter(sub => sub.status === 'active').length;
@@ -64,7 +70,8 @@ function Admin({ user }) {
         activeSubscriptions,
         monthlyRevenue,
         trialUsers: subscriptionsData.filter(sub => sub.status === 'trial').length,
-        cancelledUsers: subscriptionsData.filter(sub => sub.status === 'cancelled').length
+        cancelledUsers: subscriptionsData.filter(sub => sub.status === 'cancelled').length,
+        blockedUsers: blockedData.length
       });
 
     } catch (error) {
@@ -177,6 +184,30 @@ function Admin({ user }) {
     } catch (error) {
       console.error('Error granting subscription:', error);
       setSuccessMessage('Error granting subscription');
+      setShowSuccessModal(true);
+    }
+  };
+
+  const toggleBlockUser = async (userId, currentlyBlocked) => {
+    try {
+      if (currentlyBlocked) {
+        // Unblock user
+        await deleteDoc(doc(db, 'blockedUsers', userId));
+        setSuccessMessage('User unblocked successfully');
+      } else {
+        // Block user
+        await updateDoc(doc(db, 'blockedUsers', userId), {
+          blockedAt: new Date(),
+          blockedBy: user.uid
+        });
+        setSuccessMessage('User blocked successfully');
+      }
+      
+      fetchAdminData();
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error blocking/unblocking user:', error);
+      setSuccessMessage('Error updating user block status');
       setShowSuccessModal(true);
     }
   };
@@ -351,6 +382,12 @@ function Admin({ user }) {
                 </h3>
                 <p style={{ margin: 0, color: '#666', fontSize: '1.1rem' }}>Trial Users</p>
               </div>
+              <div style={statCardStyle}>
+                <h3 style={{ fontSize: '2rem', margin: '0 0 10px 0', color: '#dc3545' }}>
+                  {analytics.blockedUsers}
+                </h3>
+                <p style={{ margin: 0, color: '#666', fontSize: '1.1rem' }}>Blocked Users</p>
+              </div>
             </div>
 
             <div style={cardStyle}>
@@ -413,6 +450,7 @@ function Admin({ user }) {
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Email</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Company</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Plan</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Status</th>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Actions</th>
                   </tr>
                 </thead>
@@ -434,7 +472,18 @@ function Admin({ user }) {
                             background: userSub?.plan === 'premium' ? '#d4edda' : '#fff3cd',
                             color: userSub?.plan === 'premium' ? '#155724' : '#856404'
                           }}>
-                            {userSub?.plan || 'trial'}
+                            {userSub?.plan === 'premium' ? 'Subscribed' : userSub?.plan || 'trial'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            background: blockedUsers.includes(user.id) ? '#f8d7da' : '#d4edda',
+                            color: blockedUsers.includes(user.id) ? '#721c24' : '#155724'
+                          }}>
+                            {blockedUsers.includes(user.id) ? 'Blocked' : 'Active'}
                           </span>
                         </td>
                         <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
@@ -470,6 +519,16 @@ function Admin({ user }) {
                             onClick={() => grantSubscription(user.id)}
                           >
                             Grant Subscription
+                          </button>
+                          <button
+                            style={{
+                              ...buttonStyle,
+                              background: blockedUsers.includes(user.id) ? '#ffc107' : '#fd7e14',
+                              color: 'white'
+                            }}
+                            onClick={() => toggleBlockUser(user.id, blockedUsers.includes(user.id))}
+                          >
+                            {blockedUsers.includes(user.id) ? 'Unblock' : 'Block'}
                           </button>
                           <button
                             style={{
