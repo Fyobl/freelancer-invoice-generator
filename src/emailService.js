@@ -321,6 +321,8 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   }
 };
 
+export { generateInvoicePDF };
+
 const generateQuotePDF = async (quote, companySettings) => {
   try {
     const doc = new jsPDF();
@@ -336,7 +338,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.rect(0, 0, pageWidth, 3, 'F');
 
     // Company logo (larger and better positioned)
-    if (companySettings.logo) {
+    if (companySettings && companySettings.logo) {
       try {
         doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
       } catch (error) {
@@ -348,7 +350,7 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setTextColor(17, 24, 39);
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
+    doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
 
     // QUOTE title in header (centered)
     doc.setFontSize(20);
@@ -360,16 +362,16 @@ const generateQuotePDF = async (quote, companySettings) => {
     doc.setTextColor(75, 85, 99);
     let companyY = 26;
 
-    const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
+    const fullAddress = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
       doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
       companyY += 6;
     }
-    if (companySettings.email) {
+    if (companySettings?.email) {
       doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
       companyY += 6;
     }
-    if (companySettings.phone) {
+    if (companySettings?.phone) {
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
@@ -919,7 +921,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.rect(0, 0, pageWidth, 3, 'F');
 
     // Company logo (larger and better positioned)
-    if (companySettings.logo) {
+    if (companySettings && companySettings.logo) {
       try {
         doc.addImage(companySettings.logo, 'JPEG', 20, 8, 70, 40);
       } catch (error) {
@@ -931,7 +933,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setTextColor(17, 24, 39);
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
+    doc.text(companySettings?.name || companySettings?.companyName || 'Your Company', pageWidth - 20, 18, { align: 'right' });
 
     // STATEMENT title in header (centered)
     doc.setFontSize(20);
@@ -943,16 +945,16 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setTextColor(75, 85, 99);
     let companyY = 26;
 
-    const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
+    const fullAddress = [companySettings?.address, companySettings?.city, companySettings?.postcode].filter(Boolean).join(', ');
     if (fullAddress) {
       doc.text(fullAddress, pageWidth - 20, companyY, { align: 'right' });
       companyY += 6;
     }
-    if (companySettings.email) {
+    if (companySettings?.email) {
       doc.text(companySettings.email, pageWidth - 20, companyY, { align: 'right' });
       companyY += 6;
     }
-    if (companySettings.phone) {
+    if (companySettings?.phone) {
       doc.text(companySettings.phone, pageWidth - 20, companyY, { align: 'right' });
     }
 
@@ -1262,7 +1264,6 @@ Best regards,
 };
 
 export { 
-  generateInvoicePDF,
   generateQuotePDF, 
   sendInvoiceViaEmail, 
   sendQuoteViaEmail,
