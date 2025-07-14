@@ -1,6 +1,11 @@
 import { jsPDF } from 'jspdf';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
+import { 
+  generateInvoicePDFFromTemplate, 
+  generateQuotePDFFromTemplate, 
+  generateStatementPDFFromTemplate 
+} from './pdfTemplateService.js';
 
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
@@ -70,14 +75,14 @@ const drawHeader = (doc, companySettings, documentType, theme) => {
       const logoWidth = theme.logo?.maxWidth || 60;
       const logoHeight = theme.logo?.maxHeight || 30;
       let logoX = 20; // default to left
-      
+
       // Position logo based on settings
       if (theme.logo?.positioning === 'top-center') {
         logoX = (pageWidth - logoWidth) / 2;
       } else if (theme.logo?.positioning === 'top-right') {
         logoX = pageWidth - logoWidth - 20;
       }
-      
+
       doc.addImage(companySettings.logo, 'JPEG', logoX, 12, logoWidth, logoHeight);
     } catch (error) {
       console.log('Error adding logo to PDF:', error);
@@ -117,7 +122,7 @@ const drawHeader = (doc, companySettings, documentType, theme) => {
     companySettings?.city, 
     companySettings?.postcode
   ].filter(Boolean);
-  
+
   if (addressParts.length > 0) {
     doc.text(addressParts.join(', '), pageWidth - 20, detailY, { align: 'right' });
   }
@@ -872,7 +877,8 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        const doc = await generateInvoicePDF(invoice, companySettings);
+        // const doc = await generateInvoicePDF(invoice, companySettings);
+        const doc = await generateInvoicePDFFromTemplate(invoice, companySettings);
         const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         doc.save(fileName);
       } catch (error) {
@@ -931,7 +937,8 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        const doc = await generateQuotePDF(quote, companySettings);
+        // const doc = await generateQuotePDF(quote, companySettings);
+        const doc = await generateQuotePDFFromTemplate(quote, companySettings);
         const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         doc.save(fileName);
       } catch (error) {
@@ -996,7 +1003,8 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        const doc = await generateStatementPDF(client, invoices, companySettings, period);
+        // const doc = await generateStatementPDF(client, invoices, companySettings, period);
+         const doc = await generateStatementPDFFromTemplate(client, invoices, companySettings, period);
         const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
       } catch (error) {

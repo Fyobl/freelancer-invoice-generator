@@ -306,7 +306,17 @@ function Clients() {
         return;
       }
 
-      const doc = await generateStatementPDF(client, clientInvoices, companySettings, period);
+      // Try to use custom template first, fallback to original if not available
+      let doc;
+      try {
+        const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
+        doc = await generateStatementPDFFromTemplate(client, clientInvoices, companySettings, period);
+        console.log('Using custom template for statement PDF');
+      } catch (templateError) {
+        console.log('Custom template not available, using original PDF generator:', templateError.message);
+        doc = await generateStatementPDF(client, clientInvoices, companySettings, period);
+      }
+
       const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
     } catch (error) {
