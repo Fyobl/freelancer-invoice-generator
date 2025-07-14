@@ -373,16 +373,9 @@ function Quotes({ user }) {
     try {
       console.log('Starting PDF download for quote:', quote.quoteNumber);
       
-      // Try to use custom template first, fallback to original if not available
-      let doc;
-      try {
-        const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
-        doc = await generateQuotePDFFromTemplate(quote, companySettings);
-        console.log('Using custom template for quote PDF');
-      } catch (templateError) {
-        console.log('Custom template not available, using original PDF generator:', templateError.message);
-        doc = await generateQuotePDF(quote, companySettings);
-      }
+      // Use new template system
+      const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
+      const doc = await generateQuotePDFFromTemplate(quote, companySettings);
       
       // Download the PDF
       const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;

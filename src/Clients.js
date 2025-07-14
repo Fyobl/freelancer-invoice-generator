@@ -141,11 +141,11 @@ function Clients() {
   // Get client invoices for statements
   const getClientInvoices = (clientId, period = 'full') => {
     let clientInvoices = invoices.filter(inv => inv.clientId === clientId);
-    
+
     if (period !== 'full') {
       const now = new Date();
       const cutoffDate = new Date();
-      
+
       switch (period) {
         case 'month':
           cutoffDate.setMonth(now.getMonth() - 1);
@@ -157,13 +157,13 @@ function Clients() {
           cutoffDate.setFullYear(now.getFullYear() - 1);
           break;
       }
-      
+
       clientInvoices = clientInvoices.filter(inv => {
         const invDate = inv.createdAt?.toDate() || new Date(inv.dueDate);
         return invDate >= cutoffDate;
       });
     }
-    
+
     return clientInvoices;
   };
 
@@ -178,7 +178,7 @@ function Clients() {
   // Show client invoice history
   const showClientHistory = (client) => {
     const clientInvoices = getClientInvoices(client.id);
-    
+
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -216,7 +216,7 @@ function Clients() {
         <div style="font-size: 36px; margin-bottom: 15px;">📋📊</div>
         <h2 style="color: #333; margin-bottom: 10px; font-size: 1.5rem;">Invoice History - ${client.name}</h2>
         <p style="color: #666; margin-bottom: 20px;">Complete invoice history for this client</p>
-        
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
           <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
             <h4 style="margin: 0 0 5px 0; color: #28a745; font-size: 0.9rem;">Total Revenue</h4>
@@ -232,7 +232,7 @@ function Clients() {
           </div>
         </div>
       </div>
-      
+
       ${clientInvoices.length > 0 ? `
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
@@ -274,7 +274,7 @@ function Clients() {
           <p style="font-size: 1.1rem; margin: 0;">No invoices found for this client.</p>
         </div>
       `}
-      
+
       <div style="text-align: center; margin-top: 25px;">
         <button onclick="closeHistoryModal()" style="background: #6c757d; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 14px;">Close</button>
       </div>
@@ -306,16 +306,9 @@ function Clients() {
         return;
       }
 
-      // Try to use custom template first, fallback to original if not available
-      let doc;
-      try {
-        const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
-        doc = await generateStatementPDFFromTemplate(client, clientInvoices, companySettings, period);
-        console.log('Using custom template for statement PDF');
-      } catch (templateError) {
-        console.log('Custom template not available, using original PDF generator:', templateError.message);
-        doc = await generateStatementPDF(client, clientInvoices, companySettings, period);
-      }
+      // Use new template system
+      const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
+      const doc = await generateStatementPDFFromTemplate(client, clientInvoices, companySettings, period);
 
       const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
@@ -382,7 +375,7 @@ function Clients() {
       <p style="color: #666; margin-bottom: 25px; line-height: 1.5;">
         Choose the period and action for the client statement.
       </p>
-      
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
         <div style="text-align: center;">
           <h4 style="margin: 0 0 10px 0; color: #555;">📥 Download PDF</h4>
@@ -391,7 +384,7 @@ function Clients() {
           <button onclick="downloadStatement('year')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Year</button>
           <button onclick="downloadStatement('full')" style="width: 100%; padding: 8px; margin: 4px 0; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Full History</button>
         </div>
-        
+
         <div style="text-align: center;">
           <h4 style="margin: 0 0 10px 0; color: #555;">📧 Email Statement</h4>
           <button onclick="emailStatement('month')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Last Month</button>
@@ -400,7 +393,7 @@ function Clients() {
           <button onclick="emailStatement('full')" style="width: 100%; padding: 8px; margin: 4px 0; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Full History</button>
         </div>
       </div>
-      
+
       <button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Close</button>
     `;
 

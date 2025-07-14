@@ -873,15 +873,9 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        // Try template-based generation first, fallback to original
-        let doc;
-        try {
-          const { generateInvoicePDFFromTemplate } = await import('./pdfTemplateService.js');
-          doc = await generateInvoicePDFFromTemplate(invoice, companySettings);
-        } catch (templateError) {
-          console.log('Template generation failed, using original PDF generator:', templateError.message);
-          doc = await generateInvoicePDF(invoice, companySettings);
-        }
+        // Use new template system
+        const { generateInvoicePDFFromTemplate } = await import('./pdfTemplateService.js');
+        const doc = await generateInvoicePDFFromTemplate(invoice, companySettings);
         const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         doc.save(fileName);
       } catch (error) {
@@ -940,15 +934,9 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        // Try template-based generation first, fallback to original
-        let doc;
-        try {
-          const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
-          doc = await generateQuotePDFFromTemplate(quote, companySettings);
-        } catch (templateError) {
-          console.log('Template generation failed, using original PDF generator:', templateError.message);
-          doc = await generateQuotePDF(quote, companySettings);
-        }
+        // Use new template system
+        const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
+        const doc = await generateQuotePDFFromTemplate(quote, companySettings);
         const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         doc.save(fileName);
       } catch (error) {
@@ -1013,15 +1001,9 @@ Best regards,
 
     const downloadPDF = async () => {
       try {
-        // Try template-based generation first, fallback to original
-        let doc;
-        try {
-          const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
-          doc = await generateStatementPDFFromTemplate(client, invoices, companySettings, period);
-        } catch (templateError) {
-          console.log('Template generation failed, using original PDF generator:', templateError.message);
-          doc = await generateStatementPDF(client, invoices, companySettings, period);
-        }
+        // Use new template system
+        const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
+        const doc = await generateStatementPDFFromTemplate(client, invoices, companySettings, period);
         const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
       } catch (error) {

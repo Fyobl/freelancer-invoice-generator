@@ -1,4 +1,3 @@
-
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import { jsPDF } from 'jspdf';
@@ -27,12 +26,12 @@ export const getDefaultTemplate = async (type) => {
       where('isDefault', '==', true)
     );
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error fetching default template:', error);
@@ -46,7 +45,7 @@ const getCompanySettings = async () => {
     if (!auth.currentUser) return null;
     const q = query(collection(db, 'companySettings'), where('userId', '==', auth.currentUser.uid));
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       return snapshot.docs[0].data();
     }
@@ -60,20 +59,20 @@ const getCompanySettings = async () => {
 // Replace template variables with actual data
 const replaceVariables = (text, data) => {
   if (!text || typeof text !== 'string') return text;
-  
+
   let result = text;
   Object.keys(data).forEach(key => {
     const regex = new RegExp(`\\{${key}\\}`, 'g');
     result = result.replace(regex, data[key] || '');
   });
-  
+
   return result;
 };
 
 // Render template element on PDF
 const renderElement = (doc, element, data) => {
   const content = replaceVariables(element.content, data);
-  
+
   switch (element.type) {
     case 'text':
     case 'variable':
@@ -81,7 +80,7 @@ const renderElement = (doc, element, data) => {
       if (content && content !== element.content) {
         doc.setFontSize(element.fontSize || 12);
         doc.setFont(undefined, element.fontWeight || 'normal');
-        
+
         // Convert hex color to RGB
         const hexToRgb = (hex) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -91,10 +90,10 @@ const renderElement = (doc, element, data) => {
             parseInt(result[3], 16)
           ] : [0, 0, 0];
         };
-        
+
         const color = element.color === 'white' ? [255, 255, 255] : hexToRgb(element.color || '#000000');
         doc.setTextColor(...color);
-        
+
         // Handle multiline text
         if (content.includes('\n')) {
           const lines = content.split('\n');
@@ -106,7 +105,7 @@ const renderElement = (doc, element, data) => {
         }
       }
       break;
-      
+
     case 'line':
       const lineColor = element.color === 'white' ? [255, 255, 255] : element.color?.startsWith('#') ? 
         [
@@ -114,12 +113,12 @@ const renderElement = (doc, element, data) => {
           parseInt(element.color.slice(3, 5), 16),
           parseInt(element.color.slice(5, 7), 16)
         ] : [0, 0, 0];
-      
+
       doc.setDrawColor(...lineColor);
       doc.setLineWidth(element.height || 1);
       doc.line(element.x, element.y, element.x + element.width, element.y);
       break;
-      
+
     case 'rectangle':
       const rectColor = element.color?.startsWith('#') ? 
         [
@@ -127,11 +126,11 @@ const renderElement = (doc, element, data) => {
           parseInt(element.color.slice(3, 5), 16),
           parseInt(element.color.slice(5, 7), 16)
         ] : [103, 126, 234]; // Default to theme color
-      
+
       doc.setFillColor(...rectColor);
       doc.rect(element.x, element.y, element.width, element.height, 'F');
       break;
-      
+
     case 'image':
       if (element.content === '{companyLogo}' && data.companyLogo) {
         try {
@@ -159,7 +158,7 @@ export const generateInvoicePDFFromTemplate = async (invoice, companySettings) =
     }
 
     const doc = new jsPDF();
-    
+
     // Prepare data for template
     const templateData = {
       // Company data
@@ -172,7 +171,7 @@ export const generateInvoicePDFFromTemplate = async (invoice, companySettings) =
       companyNumber: companySettings?.companyNumber || '',
       vatNumber: companySettings?.vatNumber || '',
       companyLogo: companySettings?.logo || '',
-      
+
       // Invoice data
       clientName: invoice.clientName || '',
       invoiceNumber: invoice.invoiceNumber || '',
@@ -204,7 +203,7 @@ export const generateQuotePDFFromTemplate = async (quote, companySettings) => {
     }
 
     const doc = new jsPDF();
-    
+
     // Prepare data for template
     const templateData = {
       // Company data
@@ -217,7 +216,7 @@ export const generateQuotePDFFromTemplate = async (quote, companySettings) => {
       companyNumber: companySettings?.companyNumber || '',
       vatNumber: companySettings?.vatNumber || '',
       companyLogo: companySettings?.logo || '',
-      
+
       // Quote data
       clientName: quote.clientName || '',
       quoteNumber: quote.quoteNumber || '',
@@ -250,12 +249,12 @@ export const generateStatementPDFFromTemplate = async (client, invoices, company
     }
 
     const doc = new jsPDF();
-    
+
     // Calculate totals
     const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const paidAmount = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
     const unpaidAmount = invoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-    
+
     // Prepare data for template
     const templateData = {
       // Company data
@@ -268,7 +267,7 @@ export const generateStatementPDFFromTemplate = async (client, invoices, company
       companyNumber: companySettings?.companyNumber || '',
       vatNumber: companySettings?.vatNumber || '',
       companyLogo: companySettings?.logo || '',
-      
+
       // Statement data
       clientName: client.name || '',
       period: period === 'full' ? 'All Time' : period,
@@ -287,15 +286,15 @@ export const generateStatementPDFFromTemplate = async (client, invoices, company
     // Add invoice table data (simplified for now)
     const startY = 420;
     let currentY = startY;
-    
+
     invoices.slice(0, 10).forEach((invoice, index) => { // Limit to first 10 invoices
       const y = currentY + (index * 15);
-      
+
       doc.setFontSize(9);
       doc.setTextColor(51, 51, 51);
       doc.text(invoice.invoiceNumber || 'N/A', 35, y);
       doc.text(invoice.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A', 130, y);
-      
+
       // Status with color
       if (invoice.status === 'Paid') {
         doc.setTextColor(40, 167, 69);
@@ -305,7 +304,7 @@ export const generateStatementPDFFromTemplate = async (client, invoices, company
         doc.setTextColor(255, 193, 7);
       }
       doc.text(invoice.status || 'Unpaid', 220, y);
-      
+
       doc.setTextColor(51, 51, 51);
       doc.text(`£${(parseFloat(invoice.amount) || 0).toFixed(2)}`, 500, y);
     });
