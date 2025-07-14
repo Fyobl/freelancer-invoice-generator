@@ -7,7 +7,7 @@ import { auth, db } from './firebase.js';
 function Navigation({ user }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [location = useLocation();
+  const location = useLocation();
 
   useEffect(() => {
     if (user) {

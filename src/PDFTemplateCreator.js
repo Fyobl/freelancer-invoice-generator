@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase.js';
@@ -46,7 +45,7 @@ function PDFTemplateCreator({ user }) {
       // Check if default templates already exist
       const templatesSnapshot = await getDocs(collection(db, 'pdfTemplates'));
       const existingTemplates = templatesSnapshot.docs.map(doc => doc.data());
-      
+
       const hasInvoiceTemplate = existingTemplates.some(t => t.type === 'invoice' && t.name === 'Professional Invoice');
       const hasQuoteTemplate = existingTemplates.some(t => t.type === 'quote' && t.name === 'Professional Quote');
       const hasStatementTemplate = existingTemplates.some(t => t.type === 'statement' && t.name === 'Professional Statement');
@@ -63,14 +62,14 @@ function PDFTemplateCreator({ user }) {
             { id: 'logo', type: 'image', content: '{companyLogo}', x: 30, y: 30, width: 80, height: 40, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'header_title', type: 'header', content: 'INVOICE', x: 262, y: 40, width: 100, height: 30, fontSize: 24, fontWeight: 'bold', color: '#667eea' },
             { id: 'company_details', type: 'text', content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\n{companyPhone}\n{companyEmail}', x: 400, y: 30, width: 165, height: 80, fontSize: 10, fontWeight: 'normal', color: '#333' },
-            
+
             // Divider line
             { id: 'header_line', type: 'line', content: '', x: 30, y: 120, width: 535, height: 2, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
-            
+
             // Bill To section
             { id: 'bill_to_label', type: 'text', content: 'BILL TO:', x: 30, y: 140, width: 80, height: 20, fontSize: 12, fontWeight: 'bold', color: '#667eea' },
             { id: 'client_name', type: 'text', content: '{clientName}', x: 30, y: 160, width: 200, height: 20, fontSize: 14, fontWeight: 'bold', color: '#333' },
-            
+
             // Invoice details
             { id: 'invoice_number_label', type: 'text', content: 'Invoice Number:', x: 400, y: 140, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'invoice_number', type: 'text', content: '{invoiceNumber}', x: 400, y: 155, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
@@ -78,22 +77,22 @@ function PDFTemplateCreator({ user }) {
             { id: 'date', type: 'text', content: '{createdDate}', x: 400, y: 190, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'due_date_label', type: 'text', content: 'Due Date:', x: 400, y: 210, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'due_date', type: 'text', content: '{dueDate}', x: 400, y: 225, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
-            
+
             // Items table header
             { id: 'items_header_bg', type: 'rectangle', content: '', x: 30, y: 280, width: 535, height: 25, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
             { id: 'description_header', type: 'text', content: 'DESCRIPTION', x: 35, y: 295, width: 300, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
             { id: 'quantity_header', type: 'text', content: 'QTY', x: 350, y: 295, width: 50, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
             { id: 'rate_header', type: 'text', content: 'RATE', x: 420, y: 295, width: 60, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
             { id: 'amount_header', type: 'text', content: 'AMOUNT', x: 500, y: 295, width: 60, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
-            
+
             // Total section
             { id: 'total_label', type: 'text', content: 'TOTAL:', x: 450, y: 400, width: 50, height: 20, fontSize: 14, fontWeight: 'bold', color: '#667eea' },
             { id: 'total_amount', type: 'text', content: '£{amount}', x: 500, y: 400, width: 65, height: 20, fontSize: 16, fontWeight: 'bold', color: '#333' },
-            
+
             // Notes section
             { id: 'notes_label', type: 'text', content: 'NOTES:', x: 30, y: 450, width: 60, height: 15, fontSize: 11, fontWeight: 'bold', color: '#667eea' },
             { id: 'notes', type: 'text', content: '{notes}', x: 30, y: 470, width: 535, height: 60, fontSize: 10, fontWeight: 'normal', color: '#666' },
-            
+
             // Footer
             { id: 'footer_line', type: 'line', content: '', x: 30, y: 750, width: 535, height: 1, fontSize: 12, fontWeight: 'normal', color: '#ddd' },
             { id: 'company_registration', type: 'text', content: 'Company No: {companyNumber} | VAT: {vatNumber}', x: 297, y: 765, width: 300, height: 15, fontSize: 9, fontWeight: 'normal', color: '#999' },
@@ -102,7 +101,7 @@ function PDFTemplateCreator({ user }) {
           createdBy: user.uid,
           createdAt: new Date()
         };
-        
+
         await setDoc(doc(db, 'pdfTemplates', 'default_invoice_template'), invoiceTemplate);
         console.log('Created default invoice template');
       }
@@ -119,14 +118,14 @@ function PDFTemplateCreator({ user }) {
             { id: 'logo', type: 'image', content: '{companyLogo}', x: 30, y: 30, width: 80, height: 40, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'header_title', type: 'header', content: 'QUOTE', x: 272, y: 40, width: 80, height: 30, fontSize: 24, fontWeight: 'bold', color: '#667eea' },
             { id: 'company_details', type: 'text', content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\n{companyPhone}\n{companyEmail}', x: 400, y: 30, width: 165, height: 80, fontSize: 10, fontWeight: 'normal', color: '#333' },
-            
+
             // Divider line
             { id: 'header_line', type: 'line', content: '', x: 30, y: 120, width: 535, height: 2, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
-            
+
             // Quote For section
             { id: 'quote_for_label', type: 'text', content: 'QUOTE FOR:', x: 30, y: 140, width: 100, height: 20, fontSize: 12, fontWeight: 'bold', color: '#667eea' },
             { id: 'client_name', type: 'text', content: '{clientName}', x: 30, y: 160, width: 200, height: 20, fontSize: 14, fontWeight: 'bold', color: '#333' },
-            
+
             // Quote details
             { id: 'quote_number_label', type: 'text', content: 'Quote Number:', x: 400, y: 140, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'quote_number', type: 'text', content: '{quoteNumber}', x: 400, y: 155, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
@@ -134,23 +133,23 @@ function PDFTemplateCreator({ user }) {
             { id: 'date', type: 'text', content: '{createdDate}', x: 400, y: 190, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'valid_until_label', type: 'text', content: 'Valid Until:', x: 400, y: 210, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'valid_until', type: 'text', content: '{validUntil}', x: 400, y: 225, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
-            
+
             // Service description
             { id: 'service_header_bg', type: 'rectangle', content: '', x: 30, y: 280, width: 535, height: 25, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
             { id: 'service_header', type: 'text', content: 'SERVICE DESCRIPTION', x: 35, y: 295, width: 400, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
             { id: 'amount_header', type: 'text', content: 'AMOUNT', x: 500, y: 295, width: 60, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
-            
+
             // Service line
             { id: 'service_description', type: 'text', content: '{productName}', x: 35, y: 320, width: 400, height: 20, fontSize: 12, fontWeight: 'normal', color: '#333' },
-            
+
             // Total section
             { id: 'total_label', type: 'text', content: 'TOTAL:', x: 450, y: 400, width: 50, height: 20, fontSize: 14, fontWeight: 'bold', color: '#667eea' },
             { id: 'total_amount', type: 'text', content: '£{amount}', x: 500, y: 400, width: 65, height: 20, fontSize: 16, fontWeight: 'bold', color: '#333' },
-            
+
             // Notes section
             { id: 'notes_label', type: 'text', content: 'NOTES:', x: 30, y: 450, width: 60, height: 15, fontSize: 11, fontWeight: 'bold', color: '#667eea' },
             { id: 'notes', type: 'text', content: '{notes}', x: 30, y: 470, width: 535, height: 60, fontSize: 10, fontWeight: 'normal', color: '#666' },
-            
+
             // Footer
             { id: 'footer_line', type: 'line', content: '', x: 30, y: 750, width: 535, height: 1, fontSize: 12, fontWeight: 'normal', color: '#ddd' },
             { id: 'company_registration', type: 'text', content: 'Company No: {companyNumber} | VAT: {vatNumber}', x: 297, y: 765, width: 300, height: 15, fontSize: 9, fontWeight: 'normal', color: '#999' },
@@ -159,7 +158,7 @@ function PDFTemplateCreator({ user }) {
           createdBy: user.uid,
           createdAt: new Date()
         };
-        
+
         await setDoc(doc(db, 'pdfTemplates', 'default_quote_template'), quoteTemplate);
         console.log('Created default quote template');
       }
@@ -176,24 +175,24 @@ function PDFTemplateCreator({ user }) {
             { id: 'logo', type: 'image', content: '{companyLogo}', x: 30, y: 30, width: 80, height: 40, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'header_title', type: 'header', content: 'STATEMENT', x: 252, y: 40, width: 120, height: 30, fontSize: 24, fontWeight: 'bold', color: '#667eea' },
             { id: 'company_details', type: 'text', content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\n{companyPhone}\n{companyEmail}', x: 400, y: 30, width: 165, height: 80, fontSize: 10, fontWeight: 'normal', color: '#333' },
-            
+
             // Divider line
             { id: 'header_line', type: 'line', content: '', x: 30, y: 120, width: 535, height: 2, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
-            
+
             // Statement For section
             { id: 'statement_for_label', type: 'text', content: 'STATEMENT FOR:', x: 30, y: 140, width: 120, height: 20, fontSize: 12, fontWeight: 'bold', color: '#667eea' },
             { id: 'client_name', type: 'text', content: '{clientName}', x: 30, y: 160, width: 200, height: 20, fontSize: 14, fontWeight: 'bold', color: '#333' },
-            
+
             // Statement details
             { id: 'period_label', type: 'text', content: 'Period:', x: 400, y: 140, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'period', type: 'text', content: '{period}', x: 400, y: 155, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
             { id: 'statement_date_label', type: 'text', content: 'Statement Date:', x: 400, y: 175, width: 100, height: 15, fontSize: 10, fontWeight: 'bold', color: '#666' },
             { id: 'statement_date', type: 'text', content: '{statementDate}', x: 400, y: 190, width: 100, height: 15, fontSize: 12, fontWeight: 'normal', color: '#333' },
-            
+
             // Account summary
             { id: 'summary_header_bg', type: 'rectangle', content: '', x: 30, y: 230, width: 535, height: 25, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
             { id: 'summary_header', type: 'text', content: 'ACCOUNT SUMMARY', x: 35, y: 245, width: 200, height: 15, fontSize: 11, fontWeight: 'bold', color: 'white' },
-            
+
             // Summary details
             { id: 'total_invoices_label', type: 'text', content: 'Total Invoices:', x: 35, y: 270, width: 100, height: 15, fontSize: 11, fontWeight: 'bold', color: '#666' },
             { id: 'total_invoices', type: 'text', content: '{totalInvoices}', x: 150, y: 270, width: 50, height: 15, fontSize: 11, fontWeight: 'normal', color: '#333' },
@@ -203,14 +202,14 @@ function PDFTemplateCreator({ user }) {
             { id: 'paid_amount', type: 'text', content: '£{paidAmount}', x: 150, y: 310, width: 100, height: 15, fontSize: 11, fontWeight: 'normal', color: '#28a745' },
             { id: 'unpaid_amount_label', type: 'text', content: 'Outstanding:', x: 35, y: 330, width: 100, height: 15, fontSize: 11, fontWeight: 'bold', color: '#666' },
             { id: 'unpaid_amount', type: 'text', content: '£{unpaidAmount}', x: 150, y: 330, width: 100, height: 15, fontSize: 11, fontWeight: 'normal', color: '#dc3545' },
-            
+
             // Invoices table header
             { id: 'invoices_header_bg', type: 'rectangle', content: '', x: 30, y: 380, width: 535, height: 25, fontSize: 12, fontWeight: 'normal', color: '#667eea' },
             { id: 'invoice_header', type: 'text', content: 'INVOICE #', x: 35, y: 395, width: 80, height: 15, fontSize: 10, fontWeight: 'bold', color: 'white' },
             { id: 'date_header', type: 'text', content: 'DATE', x: 130, y: 395, width: 60, height: 15, fontSize: 10, fontWeight: 'bold', color: 'white' },
             { id: 'status_header', type: 'text', content: 'STATUS', x: 220, y: 395, width: 60, height: 15, fontSize: 10, fontWeight: 'bold', color: 'white' },
             { id: 'invoice_amount_header', type: 'text', content: 'AMOUNT', x: 500, y: 395, width: 60, height: 15, fontSize: 10, fontWeight: 'bold', color: 'white' },
-            
+
             // Footer
             { id: 'footer_line', type: 'line', content: '', x: 30, y: 750, width: 535, height: 1, fontSize: 12, fontWeight: 'normal', color: '#ddd' },
             { id: 'company_registration', type: 'text', content: 'Company No: {companyNumber} | VAT: {vatNumber}', x: 297, y: 765, width: 300, height: 15, fontSize: 9, fontWeight: 'normal', color: '#999' },
@@ -219,7 +218,7 @@ function PDFTemplateCreator({ user }) {
           createdBy: user.uid,
           createdAt: new Date()
         };
-        
+
         await setDoc(doc(db, 'pdfTemplates', 'default_statement_template'), statementTemplate);
         console.log('Created default statement template');
       }
@@ -838,7 +837,7 @@ function PDFTemplateCreator({ user }) {
                       </select>
                     </>
                   )}
-                  
+
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ fontSize: '10px', color: '#666', marginBottom: '3px', display: 'block' }}>Color:</label>
                     <input

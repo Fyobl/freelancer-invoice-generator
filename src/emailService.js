@@ -175,34 +175,34 @@ const drawFooter = (doc, companySettings, currentY, theme, thankYouMessage) => {
 
 // Add watermark if enabled
 const addWatermark = (doc, watermarkSettings) => {
-  if (!watermarkSettings.enabled) return;
+  if (watermarkSettings && watermarkSettings.enabled) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setTextColor(watermarkSettings.color || '#cccccc');
+    doc.setFontSize(watermarkSettings.fontSize || 60);
+    doc.setFont(undefined, 'bold');
 
-  doc.setTextColor(watermarkSettings.color || '#cccccc');
-  doc.setFontSize(watermarkSettings.fontSize || 60);
-  doc.setFont(undefined, 'bold');
+    // Save current graphics state
+    const currentAlpha = doc.internal.getGState();
 
-  // Save current graphics state
-  const currentAlpha = doc.internal.getGState();
+    // Set transparency
+    doc.setGState(new doc.GState({ opacity: watermarkSettings.opacity || 0.1 }));
 
-  // Set transparency
-  doc.setGState(new doc.GState({ opacity: watermarkSettings.opacity || 0.1 }));
+    // Add rotated watermark text
+    doc.text(
+      watermarkSettings.text || 'DRAFT',
+      pageWidth / 2,
+      pageHeight / 2,
+      {
+        align: 'center',
+        angle: 45
+      }
+    );
 
-  // Add rotated watermark text
-  doc.text(
-    watermarkSettings.text || 'DRAFT',
-    pageWidth / 2,
-    pageHeight / 2,
-    {
-      align: 'center',
-      angle: 45
-    }
-  );
-
-  // Restore graphics state
-  doc.setGState(currentAlpha);
+    // Restore graphics state
+    doc.setGState(currentAlpha);
+  }
 };
 
 // Invoice PDF Template
