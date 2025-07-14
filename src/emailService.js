@@ -1,11 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
-import { 
-  generateInvoicePDFFromTemplate, 
-  generateQuotePDFFromTemplate, 
-  generateStatementPDFFromTemplate 
-} from './pdfTemplateService.js';
+// Template service imports removed - using built-in PDF generation
 
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);

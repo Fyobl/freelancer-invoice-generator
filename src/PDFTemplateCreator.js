@@ -24,9 +24,9 @@ function PDFTemplateCreator({ user }) {
   useEffect(() => {
     if (isAdmin) {
       fetchTemplates();
-      importExistingDesigns();
+      deleteAllTemplates();
     }
-  }, [isAdmin, templateType]);
+  }, [isAdmin]);
 
   const fetchTemplates = async () => {
     try {
@@ -231,46 +231,26 @@ function PDFTemplateCreator({ user }) {
     }
   };
 
-  const importExistingDesigns = async () => {
+  const deleteAllTemplates = async () => {
     try {
-      // Import current default elements as a template
-      const importedTemplate = {
-        id: `imported_${templateType}_${Date.now()}`,
-        name: `Default ${templateType.charAt(0).toUpperCase() + templateType.slice(1)} Template`,
-        type: templateType,
-        isDefault: false,
-        elements: [...defaultElements[templateType]],
-        createdBy: user?.uid || 'system',
-        createdAt: new Date()
-      };
-
-      // Check if this template already exists
-      const existingTemplate = templates.find(t => 
-        t.name === importedTemplate.name && t.type === templateType
-      );
-
-      if (!existingTemplate) {
-        // Save to Firestore
-        await setDoc(doc(db, 'pdfTemplates', importedTemplate.id), importedTemplate);
-        
-        // Add to local state
-        setTemplates(prev => [...prev, importedTemplate]);
-        
-        console.log(`Imported ${templateType} template successfully`);
-      }
+      console.log('Deleting all PDF templates...');
+      const templatesSnapshot = await getDocs(collection(db, 'pdfTemplates'));
+      
+      const deletePromises = templatesSnapshot.docs.map(async (templateDoc) => {
+        await deleteDoc(doc(db, 'pdfTemplates', templateDoc.id));
+        console.log(`Deleted template: ${templateDoc.id}`);
+      });
+      
+      await Promise.all(deletePromises);
+      
+      // Clear local state
+      setTemplates([]);
+      setCurrentTemplate(null);
+      setElements([]);
+      
+      console.log('All PDF templates deleted successfully');
     } catch (error) {
-      console.error('Error importing existing designs:', error);
-    }
-  };
-
-  const manualImportExistingDesigns = async () => {
-    try {
-      await importExistingDesigns();
-      await fetchTemplates();
-      alert(`${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template imported successfully!`);
-    } catch (error) {
-      console.error('Error importing existing designs:', error);
-      alert('Error importing existing designs.');
+      console.error('Error deleting templates:', error);
     }
   };
 
@@ -390,14 +370,11 @@ function PDFTemplateCreator({ user }) {
           <div style={cardStyle}>
             <h3>📋 Templates</h3>
 
-            {/* Import Existing Designs Button */}
-            <div style={{ marginBottom: '20px' }}>
-              <button 
-                onClick={manualImportExistingDesigns} 
-                style={{ ...buttonStyle, background: '#22c55e', marginBottom: '15px', width: '100%' }}
-              >
-                📥 Import Existing PDF Designs
-              </button>
+            {/* Templates cleared - no import needed */}
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+              <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                ✅ All PDF templates have been removed
+              </p>
             </div>
 
             {/* Template Creation */}
