@@ -371,7 +371,7 @@ function Reports() {
 
         {/* Date Filter and Download */}
         <div style={filterStyle}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '20px', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', alignItems: 'end' }}>
             <div>
               <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📅 Time Period</h3>
               <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
@@ -408,6 +408,7 @@ function Reports() {
               </label>
             </div>
             <div>
+              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📄 Export</h3>
               <button
                 onClick={generateReportPDF}
                 style={{
@@ -420,7 +421,8 @@ function Reports() {
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   transition: 'transform 0.2s ease',
-                  height: '44px'
+                  height: '44px',
+                  width: '100%'
                 }}
                 onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
                 onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}

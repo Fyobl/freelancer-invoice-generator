@@ -188,7 +188,7 @@ function Subscription({ user }) {
           <div style={modalContentStyle}>
             <h2 style={{ color: '#dc3545', marginBottom: '20px' }}>⚠️ Trial Expired</h2>
             <p style={{ color: '#666', marginBottom: '30px', lineHeight: 1.6 }}>
-              Your free trial has ended. Please upgrade to continue using our invoice management system.
+              Your free trial has ended. Please upgrade to continue using Eazee Invoice management system.
             </p>
 
             <div style={{ border: '2px solid #007bff', borderRadius: '10px', padding: '20px', marginBottom: '30px' }}>
@@ -289,7 +289,7 @@ function Subscription({ user }) {
         {currentPlan === 'trial' && (
           <div style={cardStyle}>
             <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
-              🚀 Subscribe to Easy Invoice
+              🚀 Subscribe to Eazee Invoice
             </h2>
 
             <div style={{ border: '2px solid #007bff', borderRadius: '15px', padding: '25px', textAlign: 'center' }}>
@@ -341,7 +341,7 @@ function Subscription({ user }) {
               ✨ Active Subscriber
             </h2>
             <p style={{ color: '#666', lineHeight: 1.6 }}>
-              You're enjoying all Easy Invoice features! Your subscription will automatically renew on <strong>{endDate.toLocaleDateString()}</strong>.
+              You're enjoying all Eazee Invoice features! Your subscription will automatically renew on <strong>{endDate.toLocaleDateString()}</strong>.
             </p>
 
             <div style={{ marginTop: '20px', padding: '20px', background: '#d4edda', borderRadius: '10px', border: '1px solid #c3e6cb' }}>
