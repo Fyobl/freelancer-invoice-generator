@@ -1,3 +1,4 @@
+javascript
 import React, { useState, useEffect } from 'react';
 import {
   collection,
@@ -636,6 +637,7 @@ function Dashboard() {
                         <button
                           onClick={() => removeProduct(product.id)}
                           style={{
+                            padding: '8px 15px',
                             background: '#dc3545',
                             color: 'white',
                             border: 'none',
