@@ -5,8 +5,19 @@ import { db, auth } from './firebase.js';
 // Debug logging for jsPDF import
 console.log('jsPDF import check:', typeof jsPDF);
 
-const generateInvoicePDF = async (invoice, companySettings) => {
+export const generateInvoicePDF = async (invoice, companySettings) => {
   try {
+    console.log('Starting invoice PDF generation');
+
+    // Validate input data
+    if (!invoice) {
+      throw new Error('Invoice data is required');
+    }
+
+    if (!companySettings) {
+      console.warn('Company settings not provided, using defaults');
+    }
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let currentY = 20;
@@ -138,45 +149,55 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     doc.rect(20, currentY, pageWidth - 40, 12, 'F');
 
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
     doc.text('DESCRIPTION', 25, currentY + 8);
     doc.text('QTY', pageWidth - 120, currentY + 8, { align: 'center' });
     doc.text('RATE', pageWidth - 80, currentY + 8, { align: 'center' });
-    doc.text('AMOUNT', pageWidth - 30, currentY + 8, { align: 'right' });
+    doc.text('AMOUNT', pageWidth - 35, currentY + 8, { align: 'center' });
 
-    currentY += 12;
+    currentY += 15;
+
+    // Display items
     doc.setTextColor(17, 24, 39);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
 
-    // Items display
     if (invoice.selectedProducts && invoice.selectedProducts.length > 0) {
       invoice.selectedProducts.forEach((product, index) => {
-        const bgColor = index % 2 === 0 ? 249 : 255;
-        doc.setFillColor(bgColor, bgColor === 249 ? 250 : 255);
-        doc.rect(20, currentY, pageWidth - 40, 10, 'F');
+        try {
+          const isEven = index % 2 === 0;
+          if (isEven) {
+            doc.setFillColor(249, 250, 251);
+            doc.rect(20, currentY - 2, pageWidth - 40, 12, 'F');
+          }
 
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'normal');
-        doc.text(product.name, 25, currentY + 7);
-        doc.text(String(product.quantity || 1), pageWidth - 120, currentY + 7, { align: 'center' });
-        doc.text(`£${(product.price || 0).toFixed(2)}`, pageWidth - 80, currentY + 7, { align: 'center' });
-        doc.text(`£${((product.price || 0) * (product.quantity || 1)).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
+          const productName = product.name || 'Product';
+          const quantity = product.quantity || 1;
+          const price = parseFloat(product.price) || 0;
+          const total = price * quantity;
 
-        currentY += 10;
+          doc.setTextColor(17, 24, 39);
+          doc.text(productName, 25, currentY + 6);
+          doc.text(quantity.toString(), pageWidth - 120, currentY + 6, { align: 'center' });
+          doc.text(`£${price.toFixed(2)}`, pageWidth - 80, currentY + 6, { align: 'center' });
+          doc.text(`£${total.toFixed(2)}`, pageWidth - 35, currentY + 6, { align: 'center' });
+
+          currentY += 12;
+        } catch (error) {
+          console.error('Error rendering product:', product, error);
+          // Skip this product and continue
+        }
       });
     } else {
       // Single service line
-      doc.setFillColor(249, 250, 251);
-      doc.rect(20, currentY, pageWidth - 40, 10, 'F');
-
-      doc.setFontSize(8);
-      doc.setFont(undefined, 'normal');
-      doc.text('Professional Services', 25, currentY + 7);
-      doc.text('1', pageWidth - 120, currentY + 7, { align: 'center' });
-      doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 80, currentY + 7, { align: 'center' });
-      doc.text(`£${Number(invoice.amount).toFixed(2)}`, pageWidth - 30, currentY + 7, { align: 'right' });
-
-      currentY += 10;
+      const amount = parseFloat(invoice.amount) || 0;
+      doc.setTextColor(17, 24, 39);
+      doc.text('Service/Product', 25, currentY + 6);
+      doc.text('1', pageWidth - 120, currentY + 6, { align: 'center' });
+      doc.text(`£${amount.toFixed(2)}`, pageWidth - 80, currentY + 6, { align: 'center' });
+      doc.text(`£${amount.toFixed(2)}`, pageWidth - 35, currentY + 6, { align: 'center' });
+      currentY += 12;
     }
 
   // Calculate totals
@@ -644,7 +665,7 @@ const showEmailInstructions = (type, documentNumber, onDownloadPDF, onEmailReady
 
     <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; border-left: 3px solid #667eea;">
       <h4 style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem;">📋 Steps:</h4>
-      <ol style="margin: 0; padding-left: 20px; color: #666; line-height: 1.4; font-size: 0.85rem;">
+      <ol<previous_generation> style="margin: 0; padding-left: 20px; color: #666; line-height: 1.4; font-size: 0.85rem;">
         <li>Click "Download PDF" below</li>
         <li>Click "Done - Open Email"</li>
         <li>Attach the downloaded PDF</li>
