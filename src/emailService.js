@@ -321,8 +321,6 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   }
 };
 
-export { generateInvoicePDF };
-
 const generateQuotePDF = async (quote, companySettings) => {
   try {
     const doc = new jsPDF();
