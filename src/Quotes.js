@@ -265,10 +265,10 @@ function Quotes({ user }) {
     const matchesStatus = filterStatus === 'all' || quote.status === filterStatus;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    // Sort by quote number (extract numeric part)
+    // Sort by quote number (extract numeric part) - newest first
     const numA = parseInt(a.quoteNumber?.replace('QUO-', '') || '0');
     const numB = parseInt(b.quoteNumber?.replace('QUO-', '') || '0');
-    return numA - numB;
+    return numB - numA;
   });
 
   const sendQuoteEmail = async (quote) => {

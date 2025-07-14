@@ -27,7 +27,6 @@ function Dashboard() {
   const [notes, setNotes] = useState('');
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
-  const [clients, setClients] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [template, setTemplate] = useState('standard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -458,7 +457,7 @@ function Dashboard() {
     // Sort by invoice number (extract numeric part)
     const numA = parseInt(a.invoiceNumber?.replace('INV-', '') || '0');
     const numB = parseInt(b.invoiceNumber?.replace('INV-', '') || '0');
-    return numA - numB;
+    return numB - numA;
   });
 
   return (
@@ -773,8 +772,7 @@ function Dashboard() {
                               background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', 
                               color: 'white', 
                               border: 'none', 
-                              borderRadius: '6px', 
-                              marginRight: '8px',
+                              borderRadius: '6px',                               marginRight: '8px',
                               fontSize: '12px',
                               fontWeight: 'bold',
                               cursor: 'pointer'
