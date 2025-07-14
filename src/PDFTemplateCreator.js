@@ -1,8 +1,12 @@
+The code is modified to import existing PDF designs, enable drag-and-drop variable boxes, and update element handling for resizing and variable detection.
+```
 
+```replit_final_file
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from './firebase.js';
+import { db } from './firebase.js';
 import Navigation from './Navigation.js';
+import { generateInvoicePDF, generateQuotePDF, generateStatementPDF } from './emailService.js';
 
 function PDFTemplateCreator({ user }) {
   const [templates, setTemplates] = useState([]);
@@ -79,7 +83,7 @@ function PDFTemplateCreator({ user }) {
       createdBy: user.uid,
       createdAt: new Date()
     };
-    
+
     setCurrentTemplate(newTemplate);
     setElements([...defaultElements[templateType]]);
     setTemplateName('');
@@ -88,7 +92,7 @@ function PDFTemplateCreator({ user }) {
 
   const saveTemplate = async () => {
     if (!currentTemplate) return;
-    
+
     try {
       const templateData = {
         ...currentTemplate,
@@ -97,7 +101,7 @@ function PDFTemplateCreator({ user }) {
       };
 
       await setDoc(doc(db, 'pdfTemplates', currentTemplate.id), templateData);
-      
+
       // If this is set as default, remove default from other templates of same type
       if (isDefault) {
         const otherTemplates = templates.filter(t => t.type === templateType && t.id !== currentTemplate.id);
@@ -157,18 +161,47 @@ function PDFTemplateCreator({ user }) {
 
   const addElement = (type) => {
     const newElement = {
-      id: Date.now().toString(),
+      id: `element_${Date.now()}`,
       type: type,
-      content: type === 'text' ? 'New Text Element' : type === 'line' ? '' : 'New Header',
+      content: type === 'text' ? 'Sample Text' : 
+               type === 'line' ? '' : 
+               type === 'variable' ? '{variableName}' : 'Element',
       x: 50,
       y: 50,
       width: type === 'line' ? 200 : 150,
-      height: type === 'line' ? 2 : 20,
-      fontSize: type === 'header' ? 16 : 12,
-      fontWeight: type === 'header' ? 'bold' : 'normal',
-      color: '#333'
+      height: type === 'line' ? 2 : 30,
+      fontSize: 12,
+      fontWeight: 'normal',
+      color: type === 'variable' ? '#667eea' : '#000000',
+      draggable: true
     };
+
     setElements(prev => [...prev, newElement]);
+    setSelectedElement(newElement);
+  };
+
+  const handleElementResize = (elementId, newWidth, newHeight) => {
+    setElements(prev => prev.map(el => 
+      el.id === elementId ? { ...el, width: Math.max(20, newWidth), height: Math.max(15, newHeight) } : el
+    ));
+  };
+
+  const availableVariables = {
+    invoice: [
+      '{companyName}', '{companyEmail}', '{companyPhone}', '{companyAddress}',
+      '{clientName}', '{invoiceNumber}', '{createdDate}', '{dueDate}', 
+      '{status}', '{amount}', '{notes}'
+    ],
+    quote: [
+      '{companyName}', '{companyEmail}', '{companyPhone}', '{companyAddress}',
+      '{clientName}', '{quoteNumber}', '{createdDate}', '{validUntil}', 
+      '{status}', '{amount}', '{notes}', '{productName}'
+    ],
+    statement: [
+      '{companyName}', '{companyEmail}', '{companyPhone}', '{companyAddress}',
+      '{clientName}', '{period}', '{statementDate}', '{totalInvoices}',
+      '{totalAmount}', '{paidAmount}', '{unpaidAmount}'
+    ]
   };
 
   const deleteElement = (elementId) => {
@@ -192,9 +225,45 @@ function PDFTemplateCreator({ user }) {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       updateElement(draggedElement.id, { x, y });
       setDraggedElement(null);
+    }
+  };
+
+  const importExistingDesigns = async () => {
+    try {
+      let importedTemplates;
+      if (templateType === 'invoice') {
+        importedTemplates = await generateInvoicePDF();
+      } else if (templateType === 'quote') {
+        importedTemplates = await generateQuotePDF();
+      } else if (templateType === 'statement') {
+        importedTemplates = await generateStatementPDF();
+      }
+  
+      // Assuming the generate functions return an object containing the template data
+      if (importedTemplates) {
+          const newTemplate = {
+              id: Date.now().toString(),
+              name: `Imported ${templateType} Template`,
+              type: templateType,
+              isDefault: false,
+              elements: importedTemplates.elements || [], // Adjust based on the actual structure
+              createdBy: user.uid,
+              createdAt: new Date()
+          };
+  
+          setCurrentTemplate(newTemplate);
+          setElements(newTemplate.elements);
+          setTemplateName(newTemplate.name);
+          setIsDefault(false);
+      } else {
+          alert('Failed to import existing designs.');
+      }
+    } catch (error) {
+      console.error('Error importing existing designs:', error);
+      alert('Error importing existing designs.');
     }
   };
 
@@ -227,20 +296,38 @@ function PDFTemplateCreator({ user }) {
 
   const elementStyle = (element) => ({
     position: 'absolute',
-    left: element.x,
-    top: element.y,
-    width: element.width,
-    height: element.height,
-    fontSize: element.fontSize,
+    left: `${element.x}px`,
+    top: `${element.y}px`,
+    width: `${element.width}px`,
+    height: `${element.height}px`,
+    fontSize: `${element.fontSize}px`,
     fontWeight: element.fontWeight,
     color: element.color,
-    border: selectedElement?.id === element.id ? '2px solid #007bff' : '1px solid transparent',
-    cursor: 'move',
-    padding: '2px',
-    backgroundColor: element.type === 'line' ? element.color : 'transparent',
-    borderRadius: '2px',
-    userSelect: 'none'
+    backgroundColor: element.backgroundColor || (element.type === 'variable' ? '#f0f8ff' : 'transparent'),
+    border: selectedElement?.id === element.id ? '2px solid #667eea' : (element.type === 'variable' ? '2px dashed #667eea' : '1px solid #ddd'),
+    padding: '4px',
+    cursor: previewMode ? 'default' : 'move',
+    userSelect: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: element.type === 'line' ? 'stretch' : 'flex-start',
+    boxSizing: 'border-box',
+    minWidth: '20px',
+    minHeight: '15px',
+    resize: !previewMode && selectedElement?.id === element.id ? 'both' : 'none',
+    overflow: 'hidden'
   });
+
+  const resizeHandleStyle = {
+    position: 'absolute',
+    bottom: '0',
+    right: '0',
+    width: '10px',
+    height: '10px',
+    background: '#667eea',
+    cursor: 'se-resize',
+    border: '1px solid white'
+  };
 
   const buttonStyle = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -292,21 +379,22 @@ function PDFTemplateCreator({ user }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 300px', gap: '20px' }}>
-          {/* Left Panel - Templates List */}
+          {/* Left Panel - Templates & Tools */}
           <div style={cardStyle}>
-            <h3 style={{ marginTop: 0, color: '#333' }}>📋 Templates</h3>
-            
+            <h3>📋 Templates</h3>
+
+            {/* Import Existing Designs Button */}
             <div style={{ marginBottom: '20px' }}>
-              <select
-                value={templateType}
-                onChange={(e) => setTemplateType(e.target.value)}
-                style={inputStyle}
+              <button 
+                onClick={importExistingDesigns} 
+                style={{ ...buttonStyle, background: '#22c55e', marginBottom: '15px', width: '100%' }}
               >
-                <option value="invoice">Invoice</option>
-                <option value="quote">Quote</option>
-                <option value="statement">Statement</option>
-              </select>
-              
+                📥 Import Existing PDF Designs
+              </button>
+            </div>
+
+            {/* Template Creation */}
+            <div style={{ marginBottom: '20px' }}>
               <input
                 type="text"
                 placeholder="Template name"
@@ -314,7 +402,15 @@ function PDFTemplateCreator({ user }) {
                 onChange={(e) => setTemplateName(e.target.value)}
                 style={inputStyle}
               />
-              
+              <select 
+                value={templateType} 
+                onChange={(e) => setTemplateType(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="invoice">Invoice</option>
+                <option value="quote">Quote</option>
+                <option value="statement">Statement</option>
+              </select>
               <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                 <input
                   type="checkbox"
@@ -324,9 +420,8 @@ function PDFTemplateCreator({ user }) {
                 />
                 Set as default template
               </label>
-              
               <button onClick={createNewTemplate} style={buttonStyle}>
-                ➕ New Template
+                ➕ Create New Template
               </button>
             </div>
 
@@ -377,7 +472,7 @@ function PDFTemplateCreator({ user }) {
               >
                 {previewMode ? '✏️ Edit Mode' : '👁️ Preview Mode'}
               </button>
-              
+
               {currentTemplate && (
                 <button onClick={saveTemplate} style={buttonStyle}>
                   💾 Save Template
@@ -433,154 +528,142 @@ function PDFTemplateCreator({ user }) {
           {/* Right Panel - Element Properties */}
           <div style={cardStyle}>
             <h3 style={{ marginTop: 0, color: '#333' }}>🛠️ Tools</h3>
-            
+
+            {/* Element Tools */}
             <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ color: '#333', marginBottom: '10px' }}>Add Elements</h4>
-              <button onClick={() => addElement('text')} style={buttonStyle}>
+              <h4>🛠️ Add Elements</h4>
+              <button onClick={() => addElement('text')} style={{ ...buttonStyle, marginRight: '5px', marginBottom: '5px' }}>
                 📝 Text
               </button>
-              <button onClick={() => addElement('header')} style={buttonStyle}>
-                📋 Header
+              <button onClick={() => addElement('variable')} style={{ ...buttonStyle, marginRight: '5px', marginBottom: '5px' }}>
+                🔤 Variable
               </button>
-              <button onClick={() => addElement('line')} style={buttonStyle}>
+              <button onClick={() => addElement('line')} style={{ ...buttonStyle, marginRight: '5px', marginBottom: '5px' }}>
                 ➖ Line
               </button>
+
+              {/* Available Variables */}
+              <div style={{ marginTop: '15px' }}>
+                <h5 style={{ color: '#667eea', marginBottom: '10px' }}>📋 Available Variables:</h5>
+                {availableVariables[templateType]?.map(variable => (
+                  <div 
+                    key={variable}
+                    style={{ 
+                      padding: '5px 8px', 
+                      background: '#f0f8ff', 
+                      border: '1px dashed #667eea', 
+                      borderRadius: '4px', 
+                      marginBottom: '5px',
+                      fontSize: '10px',
+                      cursor: 'pointer',
+                      color: '#667eea'
+                    }}
+                    onClick={() => {
+                      const variableElement = {
+                        id: `var_${Date.now()}`,
+                        type: 'variable',
+                        content: variable,
+                        x: 50,
+                        y: 50 + (elements.length * 25),
+                        width: 120,
+                        height: 20,
+                        fontSize: 10,
+                        fontWeight: 'normal',
+                        color: '#667eea',
+                        draggable: true
+                      };
+                      setElements(prev => [...prev, variableElement]);
+                      setSelectedElement(variableElement);
+                    }}
+                  >
+                    {variable}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {selectedElement && (
-              <div>
-                <h4 style={{ color: '#333', marginBottom: '10px' }}>Element Properties</h4>
-                
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Content:
-                </label>
-                <input
-                  type="text"
-                  value={selectedElement.content}
-                  onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                  style={inputStyle}
-                />
-
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Position X:
-                </label>
-                <input
-                  type="number"
-                  value={selectedElement.x}
-                  onChange={(e) => updateElement(selectedElement.id, { x: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Position Y:
-                </label>
-                <input
-                  type="number"
-                  value={selectedElement.y}
-                  onChange={(e) => updateElement(selectedElement.id, { y: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Width:
-                </label>
-                <input
-                  type="number"
-                  value={selectedElement.width}
-                  onChange={(e) => updateElement(selectedElement.id, { width: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Height:
-                </label>
-                <input
-                  type="number"
-                  value={selectedElement.height}
-                  onChange={(e) => updateElement(selectedElement.id, { height: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-
-                {selectedElement.type !== 'line' && (
-                  <>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                      Font Size:
-                    </label>
-                    <input
-                      type="number"
-                      value={selectedElement.fontSize}
-                      onChange={(e) => updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
-                      style={inputStyle}
-                    />
-
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                      Font Weight:
-                    </label>
+                <div>
+                  <h4>🎨 Element Properties</h4>
+                  <label style={{ fontSize: '12px', color: '#666', marginBottom: '5px', display: 'block' }}>
+                    Content {selectedElement.type === 'variable' && '(Use {variableName} format)'}:
+                  </label>
+                  {selectedElement.type === 'variable' ? (
                     <select
-                      value={selectedElement.fontWeight}
-                      onChange={(e) => updateElement(selectedElement.id, { fontWeight: e.target.value })}
+                      value={selectedElement.content}
+                      onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
                       style={inputStyle}
                     >
-                      <option value="normal">Normal</option>
-                      <option value="bold">Bold</option>
+                      {availableVariables[templateType]?.map(variable => (
+                        <option key={variable} value={variable}>{variable}</option>
+                      ))}
                     </select>
-                  </>
-                )}
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Content"
+                      value={selectedElement.content}
+                      onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
+                      style={inputStyle}
+                    />
+                  )}
 
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Color:
-                </label>
-                <input
-                  type="color"
-                  value={selectedElement.color}
-                  onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                  style={inputStyle}
-                />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                    <div>
+                      <label style={{ fontSize: '10px', color: '#666' }}>Width:</label>
+                      <input
+                        type="number"
+                        value={selectedElement.width}
+                        onChange={(e) => updateElement(selectedElement.id, { width: parseInt(e.target.value) })}
+                        style={{ ...inputStyle, marginBottom: '5px' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '10px', color: '#666' }}>Height:</label>
+                      <input
+                        type="number"
+                        value={selectedElement.height}
+                        onChange={(e) => updateElement(selectedElement.id, { height: parseInt(e.target.value) })}
+                        style={{ ...inputStyle, marginBottom: '5px' }}
+                      />
+                    </div>
+                  </div>
 
-                <button
-                  onClick={() => deleteElement(selectedElement.id)}
-                  style={{ ...buttonStyle, background: '#dc3545', width: '100%' }}
-                >
-                  🗑️ Delete Element
-                </button>
-              </div>
-            )}
-
-            <div style={{ marginTop: '30px' }}>
-              <h4 style={{ color: '#333', marginBottom: '10px' }}>Available Variables</h4>
-              <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                {templateType === 'invoice' && (
-                  <>
-                    <div><code>{'{companyName}'}</code></div>
-                    <div><code>{'{clientName}'}</code></div>
-                    <div><code>{'{invoiceNumber}'}</code></div>
-                    <div><code>{'{amount}'}</code></div>
-                    <div><code>{'{dueDate}'}</code></div>
-                    <div><code>{'{notes}'}</code></div>
-                  </>
-                )}
-                {templateType === 'quote' && (
-                  <>
-                    <div><code>{'{companyName}'}</code></div>
-                    <div><code>{'{clientName}'}</code></div>
-                    <div><code>{'{quoteNumber}'}</code></div>
-                    <div><code>{'{amount}'}</code></div>
-                    <div><code>{'{validUntil}'}</code></div>
-                    <div><code>{'{notes}'}</code></div>
-                  </>
-                )}
-                {templateType === 'statement' && (
-                  <>
-                    <div><code>{'{companyName}'}</code></div>
-                    <div><code>{'{clientName}'}</code></div>
-                    <div><code>{'{period}'}</code></div>
-                    <div><code>{'{totalAmount}'}</code></div>
-                    <div><code>{'{paidAmount}'}</code></div>
-                    <div><code>{'{unpaidAmount}'}</code></div>
-                  </>
-                )}
-              </div>
-            </div>
+                  <input
+                    type="number"
+                    placeholder="Font Size"
+                    value={selectedElement.fontSize}
+                    onChange={(e) => updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
+                    style={inputStyle}
+                  />
+                  <select
+                    value={selectedElement.fontWeight}
+                    onChange={(e) => updateElement(selectedElement.id, { fontWeight: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                  </select>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '10px', color: '#666', marginBottom: '3px', display: 'block' }}>Color:</label>
+                    <input
+                      type="color"
+                      value={selectedElement.color}
+                      onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                      style={{ width: '100%', height: '30px', border: 'none', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setElements(prev => prev.filter(el => el.id !== selectedElement.id));
+                      setSelectedElement(null);
+                    }}
+                    style={{ ...buttonStyle, background: '#ef4444', width: '100%' }}
+                  >
+                    🗑️ Delete Element
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </div>
