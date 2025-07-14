@@ -780,7 +780,7 @@ function Dashboard() {
                           <button
                             onClick={() => handleDelete(inv)}
                             style={{ 
-                              padding: ''8px 15px', 
+                              padding: '8px 15px', 
                               background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
                               color: 'white', 
                               border: 'none', 
