@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { sendQuoteViaEmail, generateQuotePDF } from './emailService.js';
+import { sendQuoteViaEmail } from './emailService.js';
 
 function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);

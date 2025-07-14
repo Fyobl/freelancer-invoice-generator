@@ -746,22 +746,6 @@ function Dashboard() {
                 <option value="Overdue">Overdue</option>
               </select>
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-                Invoice Template
-              </label>
-              <select
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              >
-                <option value="standard">Standard</option>
-                <option value="professional">Professional</option>
-                <option value="modern">Modern</option>
-                <option value="classic">Classic</option>
-                <option value="minimal">Minimal</option>
-              </select>
             </div>
           </div>
 

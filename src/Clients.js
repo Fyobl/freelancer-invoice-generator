@@ -6,7 +6,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
-import { generateStatementPDF, sendClientStatementViaEmail } from './emailService.js';
+import { sendClientStatementViaEmail } from './emailService.js';
 
 function Clients() {
   const [clients, setClients] = useState([]);
