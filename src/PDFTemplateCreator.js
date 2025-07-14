@@ -1,7 +1,4 @@
-The code is modified to import existing PDF designs, enable drag-and-drop variable boxes, and update element handling for resizing and variable detection.
-```
 
-```replit_final_file
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase.js';
@@ -27,8 +24,9 @@ function PDFTemplateCreator({ user }) {
   useEffect(() => {
     if (isAdmin) {
       fetchTemplates();
+      importExistingDesigns();
     }
-  }, [isAdmin]);
+  }, [isAdmin, templateType]);
 
   const fetchTemplates = async () => {
     try {
@@ -213,18 +211,20 @@ function PDFTemplateCreator({ user }) {
 
   const handleDragStart = (e, element) => {
     setDraggedElement(element);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     if (draggedElement) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = Math.max(0, e.clientX - rect.left - (draggedElement.width / 2));
+      const y = Math.max(0, e.clientY - rect.top - (draggedElement.height / 2));
 
       updateElement(draggedElement.id, { x, y });
       setDraggedElement(null);
@@ -233,34 +233,41 @@ function PDFTemplateCreator({ user }) {
 
   const importExistingDesigns = async () => {
     try {
-      let importedTemplates;
-      if (templateType === 'invoice') {
-        importedTemplates = await generateInvoicePDF();
-      } else if (templateType === 'quote') {
-        importedTemplates = await generateQuotePDF();
-      } else if (templateType === 'statement') {
-        importedTemplates = await generateStatementPDF();
+      // Import current default elements as a template
+      const importedTemplate = {
+        id: `imported_${templateType}_${Date.now()}`,
+        name: `Default ${templateType.charAt(0).toUpperCase() + templateType.slice(1)} Template`,
+        type: templateType,
+        isDefault: false,
+        elements: [...defaultElements[templateType]],
+        createdBy: user?.uid || 'system',
+        createdAt: new Date()
+      };
+
+      // Check if this template already exists
+      const existingTemplate = templates.find(t => 
+        t.name === importedTemplate.name && t.type === templateType
+      );
+
+      if (!existingTemplate) {
+        // Save to Firestore
+        await setDoc(doc(db, 'pdfTemplates', importedTemplate.id), importedTemplate);
+        
+        // Add to local state
+        setTemplates(prev => [...prev, importedTemplate]);
+        
+        console.log(`Imported ${templateType} template successfully`);
       }
-  
-      // Assuming the generate functions return an object containing the template data
-      if (importedTemplates) {
-          const newTemplate = {
-              id: Date.now().toString(),
-              name: `Imported ${templateType} Template`,
-              type: templateType,
-              isDefault: false,
-              elements: importedTemplates.elements || [], // Adjust based on the actual structure
-              createdBy: user.uid,
-              createdAt: new Date()
-          };
-  
-          setCurrentTemplate(newTemplate);
-          setElements(newTemplate.elements);
-          setTemplateName(newTemplate.name);
-          setIsDefault(false);
-      } else {
-          alert('Failed to import existing designs.');
-      }
+    } catch (error) {
+      console.error('Error importing existing designs:', error);
+    }
+  };
+
+  const manualImportExistingDesigns = async () => {
+    try {
+      await importExistingDesigns();
+      await fetchTemplates();
+      alert(`${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template imported successfully!`);
     } catch (error) {
       console.error('Error importing existing designs:', error);
       alert('Error importing existing designs.');
@@ -386,7 +393,7 @@ function PDFTemplateCreator({ user }) {
             {/* Import Existing Designs Button */}
             <div style={{ marginBottom: '20px' }}>
               <button 
-                onClick={importExistingDesigns} 
+                onClick={manualImportExistingDesigns} 
                 style={{ ...buttonStyle, background: '#22c55e', marginBottom: '15px', width: '100%' }}
               >
                 📥 Import Existing PDF Designs
@@ -495,9 +502,17 @@ function PDFTemplateCreator({ user }) {
                     onClick={() => !previewMode && setSelectedElement(element)}
                   >
                     {element.type === 'line' ? (
-                      <div style={{ width: '100%', height: '100%' }} />
+                      <div style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        backgroundColor: element.color || '#000',
+                        border: 'none'
+                      }} />
                     ) : (
                       element.content
+                    )}
+                    {!previewMode && selectedElement?.id === element.id && (
+                      <div style={resizeHandleStyle}></div>
                     )}
                   </div>
                 ))}
@@ -598,6 +613,10 @@ function PDFTemplateCreator({ user }) {
                         <option key={variable} value={variable}>{variable}</option>
                       ))}
                     </select>
+                  ) : selectedElement.type === 'line' ? (
+                    <div style={{ marginBottom: '10px', color: '#666', fontSize: '12px' }}>
+                      Line element (no content)
+                    </div>
                   ) : (
                     <input
                       type="text"
@@ -614,7 +633,7 @@ function PDFTemplateCreator({ user }) {
                       <input
                         type="number"
                         value={selectedElement.width}
-                        onChange={(e) => updateElement(selectedElement.id, { width: parseInt(e.target.value) })}
+                        onChange={(e) => updateElement(selectedElement.id, { width: parseInt(e.target.value) || 20 })}
                         style={{ ...inputStyle, marginBottom: '5px' }}
                       />
                     </div>
@@ -623,27 +642,32 @@ function PDFTemplateCreator({ user }) {
                       <input
                         type="number"
                         value={selectedElement.height}
-                        onChange={(e) => updateElement(selectedElement.id, { height: parseInt(e.target.value) })}
+                        onChange={(e) => updateElement(selectedElement.id, { height: parseInt(e.target.value) || 15 })}
                         style={{ ...inputStyle, marginBottom: '5px' }}
                       />
                     </div>
                   </div>
 
-                  <input
-                    type="number"
-                    placeholder="Font Size"
-                    value={selectedElement.fontSize}
-                    onChange={(e) => updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
-                    style={inputStyle}
-                  />
-                  <select
-                    value={selectedElement.fontWeight}
-                    onChange={(e) => updateElement(selectedElement.id, { fontWeight: e.target.value })}
-                    style={inputStyle}
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="bold">Bold</option>
-                  </select>
+                  {selectedElement.type !== 'line' && (
+                    <>
+                      <input
+                        type="number"
+                        placeholder="Font Size"
+                        value={selectedElement.fontSize}
+                        onChange={(e) => updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) || 12 })}
+                        style={inputStyle}
+                      />
+                      <select
+                        value={selectedElement.fontWeight}
+                        onChange={(e) => updateElement(selectedElement.id, { fontWeight: e.target.value })}
+                        style={inputStyle}
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                      </select>
+                    </>
+                  )}
+                  
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ fontSize: '10px', color: '#666', marginBottom: '3px', display: 'block' }}>Color:</label>
                     <input
@@ -654,10 +678,7 @@ function PDFTemplateCreator({ user }) {
                     />
                   </div>
                   <button 
-                    onClick={() => {
-                      setElements(prev => prev.filter(el => el.id !== selectedElement.id));
-                      setSelectedElement(null);
-                    }}
+                    onClick={() => deleteElement(selectedElement.id)}
                     style={{ ...buttonStyle, background: '#ef4444', width: '100%' }}
                   >
                     🗑️ Delete Element
