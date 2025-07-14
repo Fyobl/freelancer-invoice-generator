@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { generateInvoicePDF, sendInvoiceViaEmail } from './emailService.js';
+import { sendInvoiceViaEmail } from './emailService.js';
 import { incrementInvoiceCount, checkSubscriptionStatus } from './subscriptionService.js';
 
 function Dashboard() {
@@ -487,6 +487,7 @@ function Dashboard() {
   const downloadPDF = async (invoice) => {
     try {
       console.log('Starting PDF download for invoice:', invoice.invoiceNumber);
+      console.log('Starting invoice PDF generation');
 
       // Use new template system
       const { generateInvoicePDFFromTemplate } = await import('./pdfTemplateService.js');
@@ -494,14 +495,13 @@ function Dashboard() {
 
       // Download the PDF
       const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      console.log('PDF generation completed successfully');
       console.log('Attempting to save PDF with filename:', fileName);
       doc.save(fileName);
       console.log('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error.message, error.stack);
-      console.error('Invoice data:', invoice);
-      console.error('Company settings:', companySettings);
       alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
     }
   };

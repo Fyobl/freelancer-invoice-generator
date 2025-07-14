@@ -372,6 +372,7 @@ function Quotes({ user }) {
   const downloadQuotePDF = async (quote) => {
     try {
       console.log('Starting PDF download for quote:', quote.quoteNumber);
+      console.log('Starting quote PDF generation');
       
       // Use new template system
       const { generateQuotePDFFromTemplate } = await import('./pdfTemplateService.js');
@@ -379,14 +380,13 @@ function Quotes({ user }) {
       
       // Download the PDF
       const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      console.log('PDF generation completed successfully');
       console.log('Attempting to save PDF with filename:', fileName);
       doc.save(fileName);
       console.log('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       console.error('Error details:', error.message, error.stack);
-      console.error('Quote data:', quote);
-      console.error('Company settings:', companySettings);
       alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
     }
   };

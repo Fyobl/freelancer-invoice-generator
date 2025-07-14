@@ -307,12 +307,15 @@ function Clients() {
         return;
       }
 
+      console.log('Starting statement PDF generation');
       // Use new template system
       const { generateStatementPDFFromTemplate } = await import('./pdfTemplateService.js');
       const doc = await generateStatementPDFFromTemplate(client, clientInvoices, companySettings, period);
 
       const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
+      console.log('PDF generation completed successfully');
       doc.save(fileName);
+      console.log('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating client statement:', error);
       alert('Error generating statement: ' + (error.message || 'Unknown error occurred'));
