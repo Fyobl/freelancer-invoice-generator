@@ -772,7 +772,7 @@ function Dashboard() {
                               padding: '8px 15px', 
                               background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', 
                               color: 'white', 
-                                                            border: 'none', 
+                              border: 'none', 
                               borderRadius: '6px',                               marginRight: '8px',
                               fontSize: '12px',
                               fontWeight: 'bold',
