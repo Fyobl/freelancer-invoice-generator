@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase.js';
+import { auth } from './firebase';
+import Navigation from './Navigation';
+import { createDefaultTemplates } from './pdfTemplateService';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';
@@ -40,6 +43,9 @@ function App() {
       setUser(currentUser);
       setLoading(false);
     });
+
+    // Initialize default templates
+    createDefaultTemplates().catch(console.error);
 
     return () => unsubscribe();
   }, []);
@@ -83,7 +89,7 @@ function App() {
               <Route path="/company-settings" element={<CompanySettings user={user} />} />
               <Route path="/account-settings" element={<AccountSettings user={user} />} />
               <Route path="/email-settings" element={<EmailSettings user={user} />} />
-              
+
               <Route path="/subscription" element={<Subscription user={user} />} />
               <Route path="/admin" element={<Admin user={user} />} />
               <Route path="/recycle-bin" element={<RecycleBin user={user} />} />

@@ -409,6 +409,12 @@ const generateInvoicePDF = async (invoice, companySettings) => {
     drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your business!');
 
     console.log('PDF generation completed successfully');
+    
+    // Add watermark if enabled
+    if (companySettings.watermark && companySettings.watermark.enabled) {
+      addWatermark(doc, companySettings.watermark);
+    }
+
     return doc;
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
@@ -593,6 +599,10 @@ const generateQuotePDF = async (quote, companySettings) => {
     drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for considering our services!');
 
     console.log('Quote PDF generation completed successfully');
+    // Add watermark if enabled
+    if (companySettings.watermark && companySettings.watermark.enabled) {
+      addWatermark(doc, companySettings.watermark);
+    }
     return doc;
   } catch (error) {
     console.error('Error generating quote PDF:', error);
@@ -714,7 +724,8 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
       if (currentY > 250) {
         doc.addPage();
         addWatermark(doc, pdfSettings.watermark);
-        currentY = 30;
+        currentY = ```text
+30;
       }
 
       const isEven = index % 2 === 0;
@@ -743,7 +754,10 @@ const generateStatementPDF = async (client, invoices, companySettings, period = 
 
       currentY += 10;
     });
-
+     // Add watermark
+    if (companySettings.watermark && companySettings.watermark.enabled) {
+      addWatermark(doc, companySettings.watermark);
+    }
     // Add footer
     drawFooter(doc, companySettings, currentY, pdfSettings, 'Thank you for your continued business!');
 

@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import { jsPDF } from 'jspdf';
 
@@ -17,6 +17,269 @@ export const fetchPDFTemplates = async () => {
   }
 };
 
+// Create default templates if none exist
+export const createDefaultTemplates = async () => {
+  try {
+    const templates = [
+      {
+        id: 'default_invoice',
+        name: 'Default Invoice Template',
+        type: 'invoice',
+        isDefault: true,
+        elements: [
+          {
+            id: 'company_logo',
+            type: 'image',
+            content: '{companyLogo}',
+            x: 50,
+            y: 30,
+            width: 80,
+            height: 40
+          },
+          {
+            id: 'document_title',
+            type: 'text',
+            content: 'INVOICE',
+            x: 300,
+            y: 45,
+            width: 100,
+            height: 30,
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#667eea'
+          },
+          {
+            id: 'company_address',
+            type: 'text',
+            content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\nPhone: {companyPhone}\nEmail: {companyEmail}',
+            x: 450,
+            y: 30,
+            width: 120,
+            height: 60,
+            fontSize: 10
+          },
+          {
+            id: 'invoice_details',
+            type: 'text',
+            content: 'Invoice Number: {invoiceNumber}\nDate: {createdDate}\nDue Date: {dueDate}\nStatus: {status}',
+            x: 50,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'client_details',
+            type: 'text',
+            content: 'Bill To:\n{clientName}',
+            x: 350,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'amount_section',
+            type: 'text',
+            content: 'Total Amount: £{amount}',
+            x: 400,
+            y: 200,
+            width: 150,
+            height: 30,
+            fontSize: 16,
+            fontWeight: 'bold'
+          },
+          {
+            id: 'footer_info',
+            type: 'text',
+            content: 'Company Number: {companyNumber}\nVAT Number: {vatNumber}',
+            x: 50,
+            y: 750,
+            width: 500,
+            height: 30,
+            fontSize: 9,
+            color: '#666666'
+          }
+        ]
+      },
+      {
+        id: 'default_quote',
+        name: 'Default Quote Template',
+        type: 'quote',
+        isDefault: true,
+        elements: [
+          {
+            id: 'company_logo',
+            type: 'image',
+            content: '{companyLogo}',
+            x: 50,
+            y: 30,
+            width: 80,
+            height: 40
+          },
+          {
+            id: 'document_title',
+            type: 'text',
+            content: 'QUOTE',
+            x: 300,
+            y: 45,
+            width: 100,
+            height: 30,
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#667eea'
+          },
+          {
+            id: 'company_address',
+            type: 'text',
+            content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\nPhone: {companyPhone}\nEmail: {companyEmail}',
+            x: 450,
+            y: 30,
+            width: 120,
+            height: 60,
+            fontSize: 10
+          },
+          {
+            id: 'quote_details',
+            type: 'text',
+            content: 'Quote Number: {quoteNumber}\nDate: {createdDate}\nValid Until: {validUntil}\nStatus: {status}',
+            x: 50,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'client_details',
+            type: 'text',
+            content: 'Quote For:\n{clientName}',
+            x: 350,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'amount_section',
+            type: 'text',
+            content: 'Total Amount: £{amount}',
+            x: 400,
+            y: 200,
+            width: 150,
+            height: 30,
+            fontSize: 16,
+            fontWeight: 'bold'
+          },
+          {
+            id: 'footer_info',
+            type: 'text',
+            content: 'Company Number: {companyNumber}\nVAT Number: {vatNumber}',
+            x: 50,
+            y: 750,
+            width: 500,
+            height: 30,
+            fontSize: 9,
+            color: '#666666'
+          }
+        ]
+      },
+      {
+        id: 'default_statement',
+        name: 'Default Statement Template',
+        type: 'statement',
+        isDefault: true,
+        elements: [
+          {
+            id: 'company_logo',
+            type: 'image',
+            content: '{companyLogo}',
+            x: 50,
+            y: 30,
+            width: 80,
+            height: 40
+          },
+          {
+            id: 'document_title',
+            type: 'text',
+            content: 'STATEMENT',
+            x: 300,
+            y: 45,
+            width: 100,
+            height: 30,
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#667eea'
+          },
+          {
+            id: 'company_address',
+            type: 'text',
+            content: '{companyName}\n{companyAddress}\n{companyCity}, {companyPostcode}\nPhone: {companyPhone}\nEmail: {companyEmail}',
+            x: 450,
+            y: 30,
+            width: 120,
+            height: 60,
+            fontSize: 10
+          },
+          {
+            id: 'statement_details',
+            type: 'text',
+            content: 'Statement Date: {statementDate}\nPeriod: {period}\nTotal Invoices: {totalInvoices}',
+            x: 50,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'client_details',
+            type: 'text',
+            content: 'Statement For:\n{clientName}',
+            x: 350,
+            y: 100,
+            width: 200,
+            height: 40,
+            fontSize: 11
+          },
+          {
+            id: 'totals_section',
+            type: 'text',
+            content: 'Total Amount: £{totalAmount}\nPaid: £{paidAmount}\nUnpaid: £{unpaidAmount}',
+            x: 50,
+            y: 200,
+            width: 200,
+            height: 60,
+            fontSize: 12,
+            fontWeight: 'bold'
+          },
+          {
+            id: 'footer_info',
+            type: 'text',
+            content: 'Company Number: {companyNumber}\nVAT Number: {vatNumber}',
+            x: 50,
+            y: 750,
+            width: 500,
+            height: 30,
+            fontSize: 9,
+            color: '#666666'
+          }
+        ]
+      }
+    ];
+
+    for (const template of templates) {
+      await setDoc(doc(db, 'pdfTemplates', template.id), {
+        ...template,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    console.log('Default templates created successfully');
+  } catch (error) {
+    console.error('Error creating default templates:', error);
+  }
+};
+
 // Get default template for a type
 export const getDefaultTemplate = async (type) => {
   try {
@@ -29,6 +292,15 @@ export const getDefaultTemplate = async (type) => {
 
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+
+    // If no default template found, create defaults and try again
+    await createDefaultTemplates();
+    
+    const retrySnapshot = await getDocs(q);
+    if (!retrySnapshot.empty) {
+      const doc = retrySnapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
 
