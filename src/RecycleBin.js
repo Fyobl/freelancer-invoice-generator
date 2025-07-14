@@ -17,6 +17,8 @@ function RecycleBin({ user }) {
   const [deletedItems, setDeletedItems] = useState([]);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [restoreConfirmation, setRestoreConfirmation] = useState({ show: false, item: null });
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, item: null });
 
   useEffect(() => {
     if (user) {
@@ -88,25 +90,29 @@ function RecycleBin({ user }) {
       await deleteDoc(doc(db, 'recycleBin', item.id));
       
       fetchDeletedItems();
-      alert(`${item.originalCollection.slice(0, -1)} restored successfully!`);
+      setRestoreConfirmation({ show: false, item: null });
     } catch (error) {
       console.error('Error restoring item:', error);
-      alert('Error restoring item. Please try again.');
     }
     setLoading(false);
   };
 
+  const confirmRestore = (item) => {
+    setRestoreConfirmation({ show: true, item });
+  };
+
   const permanentlyDelete = async (item) => {
-    if (window.confirm('Are you sure you want to permanently delete this item? This cannot be undone.')) {
-      try {
-        await deleteDoc(doc(db, 'recycleBin', item.id));
-        fetchDeletedItems();
-        alert('Item permanently deleted.');
-      } catch (error) {
-        console.error('Error permanently deleting item:', error);
-        alert('Error deleting item. Please try again.');
-      }
+    try {
+      await deleteDoc(doc(db, 'recycleBin', item.id));
+      fetchDeletedItems();
+      setDeleteConfirmation({ show: false, item: null });
+    } catch (error) {
+      console.error('Error permanently deleting item:', error);
     }
+  };
+
+  const confirmPermanentDelete = (item) => {
+    setDeleteConfirmation({ show: true, item });
   };
 
   const getDaysRemaining = (expiresAt) => {
@@ -247,7 +253,7 @@ function RecycleBin({ user }) {
 
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => restoreItem(item)}
+                      onClick={() => confirmRestore(item)}
                       disabled={loading}
                       style={{
                         ...buttonStyle,
@@ -259,7 +265,7 @@ function RecycleBin({ user }) {
                       ↩️ Restore
                     </button>
                     <button
-                      onClick={() => permanentlyDelete(item)}
+                      onClick={() => confirmPermanentDelete(item)}
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
@@ -273,6 +279,162 @@ function RecycleBin({ user }) {
             </div>
           )}
         </div>
+
+        {/* Restore Confirmation Modal */}
+        {restoreConfirmation.show && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            backdropFilter: 'blur(4px)'
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              border: '2px solid #28a745'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '15px' }}>↩️</div>
+              <h2 style={{ color: '#333', marginBottom: '15px', fontSize: '1.4rem' }}>
+                Confirm Restore
+              </h2>
+              <p style={{ color: '#666', marginBottom: '25px', lineHeight: '1.5' }}>
+                Are you sure you want to restore <strong>{restoreConfirmation.item?.invoiceNumber || restoreConfirmation.item?.quoteNumber}</strong>?
+                <br />This will move it back to your active {restoreConfirmation.item?.originalCollection === 'invoices' ? 'invoices' : 'quotes'}.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => restoreItem(restoreConfirmation.item)}
+                  disabled={loading}
+                  style={{
+                    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'transform 0.2s ease',
+                    opacity: loading ? 0.6 : 1
+                  }}
+                  onMouseOver={(e) => !loading && (e.target.style.transform = 'translateY(-1px)')}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  {loading ? '⏳ Restoring...' : '↩️ Restore Item'}
+                </button>
+                <button
+                  onClick={() => setRestoreConfirmation({ show: false, item: null })}
+                  disabled={loading}
+                  style={{
+                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'transform 0.2s ease',
+                    opacity: loading ? 0.6 : 1
+                  }}
+                  onMouseOver={(e) => !loading && (e.target.style.transform = 'translateY(-1px)')}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Permanent Delete Confirmation Modal */}
+        {deleteConfirmation.show && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            backdropFilter: 'blur(4px)'
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              border: '2px solid #dc3545'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '15px' }}>⚠️</div>
+              <h2 style={{ color: '#333', marginBottom: '15px', fontSize: '1.4rem' }}>
+                Permanent Deletion
+              </h2>
+              <p style={{ color: '#666', marginBottom: '25px', lineHeight: '1.5' }}>
+                Are you sure you want to permanently delete <strong>{deleteConfirmation.item?.invoiceNumber || deleteConfirmation.item?.quoteNumber}</strong>?
+                <br /><span style={{ color: '#dc3545', fontWeight: 'bold' }}>This action cannot be undone!</span>
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => permanentlyDelete(deleteConfirmation.item)}
+                  style={{
+                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  🗑️ Delete Forever
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmation({ show: false, item: null })}
+                  style={{
+                    background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
