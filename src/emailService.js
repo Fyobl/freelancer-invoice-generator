@@ -18,7 +18,7 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   // Company logo
   if (companySettings.logo) {
     try {
-      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 60, 30);
     } catch (error) {
       console.log('Error adding logo to PDF:', error);
     }
@@ -28,13 +28,14 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont(undefined, 'bold');
-  doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+  doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
 
   // Company details in header
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  if (companySettings.address) {
-    doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+  const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
+  if (fullAddress) {
+    doc.text(fullAddress, pageWidth - 20, 28, { align: 'right' });
   }
   if (companySettings.email) {
     doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
@@ -169,6 +170,9 @@ const generateInvoicePDF = async (invoice, companySettings) => {
   if (companySettings.vatNumber) {
     footerText.push(`VAT Number: ${companySettings.vatNumber}`);
   }
+  if (companySettings.phone) {
+    footerText.push(`Phone: ${companySettings.phone}`);
+  }
 
   if (footerText.length > 0) {
     doc.text(footerText.join(' | '), pageWidth / 2, footerY + 10, { align: 'center' });
@@ -203,7 +207,7 @@ const generateQuotePDF = async (quote, companySettings) => {
   // Company logo
   if (companySettings.logo) {
     try {
-      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+      doc.addImage(companySettings.logo, 'JPEG', 15, 8, 60, 30);
     } catch (error) {
       console.log('Error adding logo to PDF:', error);
     }
@@ -213,13 +217,14 @@ const generateQuotePDF = async (quote, companySettings) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont(undefined, 'bold');
-  doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+  doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
 
   // Company details in header
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  if (companySettings.address) {
-    doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+  const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
+  if (fullAddress) {
+    doc.text(fullAddress, pageWidth - 20, 28, { align: 'right' });
   }
   if (companySettings.email) {
     doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
@@ -329,6 +334,9 @@ const generateQuotePDF = async (quote, companySettings) => {
   }
   if (companySettings.vatNumber) {
     footerText.push(`VAT Number: ${companySettings.vatNumber}`);
+  }
+    if (companySettings.phone) {
+    footerText.push(`Phone: ${companySettings.phone}`);
   }
 
   if (footerText.length > 0) {
@@ -673,7 +681,7 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     // Company logo
     if (companySettings.logo) {
       try {
-        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 30, 15);
+        doc.addImage(companySettings.logo, 'JPEG', 15, 8, 60, 30);
       } catch (error) {
         console.log('Error adding logo to PDF:', error);
       }
@@ -683,13 +691,14 @@ const generateClientStatementPDF = async (client, invoices, companySettings, per
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text(companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
+    doc.text(companySettings.name || companySettings.companyName || 'Your Company', pageWidth - 20, 20, { align: 'right' });
 
     // Company details in header
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    if (companySettings.address) {
-      doc.text(companySettings.address, pageWidth - 20, 28, { align: 'right' });
+    const fullAddress = [companySettings.address, companySettings.city, companySettings.postcode].filter(Boolean).join(', ');
+    if (fullAddress) {
+      doc.text(fullAddress, pageWidth - 20, 28, { align: 'right' });
     }
     if (companySettings.email) {
       doc.text(companySettings.email, pageWidth - 20, 33, { align: 'right' });
