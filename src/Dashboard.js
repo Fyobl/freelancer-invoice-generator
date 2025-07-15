@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
@@ -308,6 +309,48 @@ function Dashboard() {
     }
   };
 
+  const checkSubscriptionStatus = async (userId) => {
+    try {
+      const response = await fetch('/api/check-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to check subscription');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return { success: false };
+    }
+  };
+
+  const incrementInvoiceCount = async (userId) => {
+    try {
+      const response = await fetch('/api/increment-invoice-count', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to increment invoice count');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error incrementing invoice count:', error);
+      return { success: false };
+    }
+  };
+
   const handleAddInvoice = async () => {
     // Check subscription status and limits first
     const subscriptionCheck = await checkSubscriptionStatus(user.uid);
@@ -487,7 +530,8 @@ function Dashboard() {
       setClientName('');
     }
   };
-    const addProductToInvoice = (productId) => {
+
+  const addProductToInvoice = (productId) => {
     if (!productId) return;
 
     const product = products.find(p => p.id === productId);
@@ -557,11 +601,6 @@ function Dashboard() {
     setDueDate('');
     setNotes('');
   };
-
-
-
-
-
 
   // Filter invoices based on search and status
   const filteredInvoices = invoices.filter(invoice => {
@@ -1003,8 +1042,6 @@ function Dashboard() {
           </select>
         </div>
 
-
-
         {/* Invoice Table */}
         {filteredInvoices.length === 0 ? (
           <div style={{ ...formStyle, textAlign: 'center', padding: '60px' }}>
@@ -1017,88 +1054,89 @@ function Dashboard() {
                 : 'Create your first invoice to get started!'}
             </p>
           </div>
-        ) : (<div style={tableStyle}>
-          <div style={{ padding: '25px' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                    <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
-                    <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
-                    <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
-                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
-                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
-                    <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredInvoices.map((inv, index) => (
-                    <tr key={inv.id} style={{
-                      borderBottom: '1px solid #f1f3f4',
-                      backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
-                      transition: 'background-color 0.2s ease'
-                    }}>
-                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
-                      <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
-                      <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
-                        £{Number(inv.amount).toFixed(2)}
-                      </td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <select
-                          value={inv.status}
-                          onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                          style={{
-                            padding: '6px 12px',
-                            background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
-                            border: '2px solid',
-                            borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            fontSize: '12px'
-                          }}
-                        >
-                          <option value="Unpaid">Unpaid</option>
-                          <option value="Paid">Paid</option>
-                          <option value="Overdue">Overdue</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleDelete(inv)}
-                          style={{
-                            padding: '8px 15px',
-                            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
-                        <button
-                          onClick={() => downloadInvoicePDF(inv)}
-                          style={{
-                            ...buttonStyle,
-                            background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                            fontSize: '12px',
-                            padding: '8px 16px',
-                            marginRight: '5px'
-                          }}
-                        >
-                          📄 PDF
-                        </button>
-                      </td>
+        ) : (
+          <div style={tableStyle}>
+            <div style={{ padding: '25px' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Invoice #</th>
+                      <th style={{ padding: '15px', textAlign: 'left', color: 'white', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '15px', textAlign: 'right', color: 'white', fontWeight: 'bold' }}>Amount</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Due Date</th>
+                      <th style={{ padding: '15px', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredInvoices.map((inv, index) => (
+                      <tr key={inv.id} style={{
+                        borderBottom: '1px solid #f1f3f4',
+                        backgroundColor: index % 2 === 0 ? '#fafbfc' : 'white',
+                        transition: 'background-color 0.2s ease'
+                      }}>
+                        <td style={{ padding: '15px', fontWeight: 'bold', color: '#667eea' }}>{inv.invoiceNumber}</td>
+                        <td style={{ padding: '15px', color: '#333' }}>{inv.clientName}</td>
+                        <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#333' }}>
+                          £{Number(inv.amount).toFixed(2)}
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <select
+                            value={inv.status}
+                            onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                            style={{
+                              padding: '6px 12px',
+                              background: inv.status === 'Paid' ? '#d4edda' : inv.status === 'Overdue' ? '#f8d7da' : '#fff3cd',
+                              border: '2px solid',
+                              borderColor: inv.status === 'Paid' ? '#c3e6cb' : inv.status === 'Overdue' ? '#f5c6cb' : '#ffeaa7',
+                              borderRadius: '8px',
+                              fontWeight: 'bold',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => downloadInvoicePDF(inv)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                              fontSize: '12px',
+                              padding: '8px 16px',
+                              marginRight: '5px'
+                            }}
+                          >
+                            📄 PDF
+                          </button>
+                          <button
+                            onClick={() => handleDelete(inv)}
+                            style={{
+                              padding: '8px 15px',
+                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
         )}
       </div>
 
