@@ -849,4 +849,4 @@ function Dashboard() {
               </label>
               <input
                 style={inputStyle}
-                placeholder="🔍 Search invoices by client name or invoice number..."
+                placeholder="Search invoices by client name or invoice number..."
