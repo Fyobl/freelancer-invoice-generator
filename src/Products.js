@@ -182,37 +182,39 @@ function Products({ user }) {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 15px',
+    padding: '15px 18px',
     border: '2px solid #e1e5e9',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '16px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
     outline: 'none',
-    height: '44px',
+    height: '52px',
     lineHeight: '20px',
-    verticalAlign: 'top'
+    verticalAlign: 'top',
+    display: 'block'
   };
 
   const selectStyle = {
     width: '100%',
-    padding: '12px 15px',
+    padding: '15px 18px',
     border: '2px solid #e1e5e9',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '16px',
     marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
     outline: 'none',
-    height: '44px',
+    height: '52px',
     lineHeight: '20px',
     verticalAlign: 'top',
-    appearance: 'none'
+    appearance: 'none',
+    display: 'block'
   };
 
   const buttonStyle = {

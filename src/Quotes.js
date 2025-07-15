@@ -457,8 +457,22 @@ function Quotes({ user }) {
   };
 
   const selectStyle = {
-    ...inputStyle,
-    appearance: 'none'
+    width: '100%',
+    padding: '15px 18px',
+    border: '2px solid #e1e5e9',
+    borderRadius: '8px',
+    fontSize: '16px',
+    marginBottom: '15px',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    fontFamily: 'inherit',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '52px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    appearance: 'none',
+    display: 'block'
   };
 
   const buttonStyle = {

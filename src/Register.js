@@ -88,15 +88,20 @@ function Register({ onRegister }) {
 
   const inputStyle = {
     width: '100%',
-    padding: '15px 20px',
+    padding: '15px 18px',
     margin: '10px 0',
     border: '2px solid #e1e5e9',
-    borderRadius: '12px',
+    borderRadius: '8px',
     fontSize: '16px',
     fontFamily: 'inherit',
     backgroundColor: '#fff',
     boxSizing: 'border-box',
     outline: 'none',
+    height: '52px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    display: 'block',
+    marginBottom: '15px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease'
   };
 

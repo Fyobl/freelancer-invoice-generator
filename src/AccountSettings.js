@@ -121,14 +121,20 @@ function AccountSettings({ user }) {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
+    padding: '15px 18px',
     margin: '8px 0',
     border: '2px solid #e1e5e9',
     borderRadius: '8px',
     fontSize: '16px',
     fontFamily: 'inherit',
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    outline: 'none',
+    height: '52px',
+    lineHeight: '20px',
+    verticalAlign: 'top',
+    display: 'block',
+    marginBottom: '15px'
   };
 
   const buttonStyle = {
