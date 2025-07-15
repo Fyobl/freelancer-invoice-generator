@@ -52,10 +52,10 @@ function Navigation({ user }) {
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/clients', label: 'Clients', icon: '👥' },
     { path: '/products', label: 'Products', icon: '📦' },
     { path: '/reports', label: 'Reports', icon: '📈' },
-    { path: '/quotes', label: 'Quotes', icon: '💰' },
     { path: '/company-settings', label: 'Company Settings', icon: '⚙️' },
     { path: '/account-settings', label: 'Account Settings', icon: '👤' },
     { path: '/subscription', label: 'Subscription', icon: '💳' },

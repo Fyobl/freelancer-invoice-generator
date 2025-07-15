@@ -560,32 +560,73 @@ function Dashboard() {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Select Client
               </label>
-              <select
-                value={selectedClientId}
-                onChange={(e) => handleClientSelect(e.target.value)}
-                style={selectStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              >
-                <option value="">Select existing client or enter new</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} ({client.email})
-                  </option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', marginBottom: '15px' }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Type to search clients or enter new client name..."
+                  value={clientName}
+                  onChange={(e) => {
+                    setClientName(e.target.value);
+                    setSelectedClientId('');
+                  }}
+                  style={{ ...inputStyle, marginBottom: '0' }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+                />
+                {clientName && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '2px solid #e1e5e9',
+                    borderTop: 'none',
+                    borderRadius: '0 0 8px 8px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  }}>
+                    {clients
+                      .filter(client => 
+                        client.name.toLowerCase().includes(clientName.toLowerCase()) ||
+                        (client.email && client.email.toLowerCase().includes(clientName.toLowerCase()))
+                      )
+                      .map(client => (
+                        <div
+                          key={client.id}
+                          onClick={() => {
+                            setSelectedClientId(client.id);
+                            setClientName(client.name);
+                          }}
+                          style={{
+                            padding: '12px 15px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f0f0f0',
+                            backgroundColor: selectedClientId === client.id ? '#f8f9fa' : 'white',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = selectedClientId === client.id ? '#f8f9fa' : 'white'}
+                        >
+                          <div style={{ fontWeight: 'bold', color: '#333' }}>{client.name}</div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>{client.email}</div>
+                        </div>
+                      ))}
+                    {clients.filter(client => 
+                      client.name.toLowerCase().includes(clientName.toLowerCase()) ||
+                      (client.email && client.email.toLowerCase().includes(clientName.toLowerCase()))
+                    ).length === 0 && clientName.trim() && (
+                      <div style={{ padding: '12px 15px', color: '#666', fontStyle: 'italic' }}>
+                        No existing clients found. Press Enter to create "{clientName}" as new client.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-                Client Name *
-              </label>
-              <input
-                placeholder="Enter client name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              />
+              
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
