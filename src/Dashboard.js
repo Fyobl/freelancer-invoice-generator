@@ -857,9 +857,7 @@ function Dashboard() {
                         </button>
                       </div>
                       {products
-                        .filter(product => The code change removes an incorrectly placed description at the beginning of the file.
-<replit_final_file>
-import React, { useState, useEffect } from 'react';
+                        .filter(product =>
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
