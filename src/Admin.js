@@ -145,17 +145,23 @@ function Admin({ user }) {
     if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       try {
         const userToDelete = users.find(u => u.id === userId);
-        await deleteDoc(doc(db, 'users', userId));
-        await deleteDoc(doc(db, 'subscriptions', userId));
         
-        // Add audit log
+        // Add audit log first
         await addAuditLog('USER_DELETED', {
           deletedUserId: userId,
           deletedUserEmail: userToDelete?.email || 'Unknown',
           deletedUserName: `${userToDelete?.firstName || ''} ${userToDelete?.lastName || ''}`.trim() || 'Unknown'
         });
         
-        fetchAdminData();
+        // Then delete user data
+        await deleteDoc(doc(db, 'users', userId));
+        await deleteDoc(doc(db, 'subscriptions', userId));
+        
+        // Wait a moment to ensure audit log is saved, then refresh data
+        setTimeout(() => {
+          fetchAdminData();
+        }, 1000);
+        
         setSuccessMessage('User deleted successfully');
         setShowSuccessModal(true);
       } catch (error) {
