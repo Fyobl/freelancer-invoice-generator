@@ -1,0 +1,65 @@
+hanks for the detailed code. Based on your Dashboard.js, the issue you're having — only the Invoice PDF shows the logo but Quote and Statement do not — most likely stems from this part:
+
+✅ Root Cause
+In your Dashboard.js, you're calling:
+
+js
+Copy
+Edit
+const pdfDoc = await generatePDFWithLogo('invoice', invoice, companySettings, clientData);
+But this only happens for invoices.
+
+You never call generatePDFWithLogo() for quote or statement anywhere in this component.
+
+So unless you've added separate export functions for Quote and Statement (like downloadQuotePDF() or downloadStatementPDF()) that also use generatePDFWithLogo(...), they’re likely still calling older versions of the generateQuotePDF() and generateStatementPDF() functions that process the logo internally — and may not handle async logo loading reliably (as we discussed earlier).
+
+✅ Solution
+Step 1: Update your generatePDFWithLogo() utility to handle all three types properly:
+
+js
+Copy
+Edit
+export const generatePDFWithLogo = async (type, data, companySettings, clientData = null) => {
+  const logoInfo = await processLogoImage(companySettings.logo);
+
+  switch (type) {
+    case 'invoice':
+      return await generateInvoicePDF(data, companySettings, clientData, logoInfo);
+    case 'quote':
+      return await generateQuotePDF(data, companySettings, clientData, logoInfo);
+    case 'statement':
+      return await generateStatementPDF(clientData, data, companySettings, 'All Time', logoInfo);
+    default:
+      throw new Error('Invalid PDF type');
+  }
+};
+✅ This ensures all three PDF types use the same logo handling logic.
+
+Step 2: Replace other download functions (like for quotes/statements) to also use generatePDFWithLogo(...).
+
+For example, create this:
+
+js
+Copy
+Edit
+const downloadQuotePDF = async (quote) => {
+  try {
+    let clientData = null;
+    if (quote.clientId) {
+      const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
+      if (clientDoc.exists()) {
+        clientData = clientDoc.data();
+      }
+    }
+
+    const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
+    pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
+  } catch (error) {
+    console.error('Error generating Quote PDF:', error);
+    alert('Error generating Quote PDF. Please try again.');
+  }
+};
+✅ Summary
+Why invoice logo works: generatePDFWithLogo() uses a preprocessed logoInfo.
+
+Why quotes/statements fail: you’re likely still calling older functions (generateQuotePDF, generateStatementPDF) that don’t preload the logo consistently or are not being used at all yet.
