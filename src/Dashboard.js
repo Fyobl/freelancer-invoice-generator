@@ -976,7 +976,7 @@ function Dashboard() {
           </h2>
 
           <input
-            placeholder="🔍 Search invoices by client or number..."
+            placeholder="Search invoices by client or number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ ...inputStyle, marginBottom: 0, minWidth: '300px', flex: 1 }}
