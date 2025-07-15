@@ -518,10 +518,10 @@ function Quotes({ user }) {
 
   const quoteCardStyle = {
     background: 'white',
-    border: '2px solid #f8f9fa',
-    borderRadius: '12px',
-    padding: '25px',
-    marginBottom: '20px',
+    border: '1px solid #e9ecef',
+    borderRadius: '8px',
+    padding: '15px',
+    marginBottom: '8px',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
   };
 
@@ -942,7 +942,7 @@ function Quotes({ user }) {
               <p>{searchTerm ? 'Try adjusting your search terms' : 'Create your first quote to get started!'}</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'grid', gap: '8px' }}>
               {filteredQuotes.map(quote => (
                 <div
                   key={quote.id}
@@ -958,56 +958,32 @@ function Quotes({ user }) {
                     e.currentTarget.style.borderColor = '#f8f9fa';
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                    <div>
-                      <h3 style={{ margin: 0, color: '#333', fontSize: '1.2rem' }}>{quote.quoteNumber}</h3>
-                      <p style={{ margin: '5px 0', color: '#666', fontSize: '1rem' }}>{quote.clientName}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
+                      <div>
+                        <h4 style={{ margin: 0, color: '#333', fontSize: '1rem' }}>{quote.quoteNumber}</h4>
+                        <p style={{ margin: 0, color: '#666', fontSize: '0.85rem' }}>{quote.clientName}</p>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        <span style={{ marginRight: '10px' }}>£{(parseFloat(quote.amount) * (1 + (quote.vat || 0) / 100)).toFixed(2)}</span>
+                        <span>{quote.validUntil}</span>
+                      </div>
                     </div>
-                    <span style={{
-                      background: getStatusColor(quote.status),
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {quote.status}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-                    <div>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Amount:</strong> £{parseFloat(quote.amount).toFixed(2)}
-                      </p>
-                      {quote.vat > 0 && (
-                        <p style={{ margin: '5px 0', color: '#666' }}>
-                          <strong>VAT ({quote.vat}%):</strong> £{(parseFloat(quote.amount) * quote.vat / 100).toFixed(2)}
-                        </p>
-                      )}
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Total:</strong> £{(parseFloat(quote.amount) * (1 + (quote.vat || 0) / 100)).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Valid Until:</strong> {quote.validUntil}
-                      </p>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Created:</strong> {quote.createdAt?.toDate().toLocaleDateString() || 'N/A'}
-                      </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        background: getStatusColor(quote.status),
+                        color: 'white',
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {quote.status}
+                      </span>
                     </div>
                   </div>
 
-                  {quote.notes && (
-                    <div style={{ marginBottom: '15px' }}>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Notes:</strong> {quote.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {quote.status === 'Pending' && (
                       <>
                         <button
@@ -1015,9 +991,9 @@ function Quotes({ user }) {
                           style={{
                             ...buttonStyle,
                             background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                            fontSize: '12px',
-                            padding: '8px 16px',
-                            marginRight: '5px'
+                            fontSize: '10px',
+                            padding: '4px 8px',
+                            marginRight: '3px'
                           }}
                         >
                           ✅ Accept
@@ -1027,9 +1003,9 @@ function Quotes({ user }) {
                           style={{
                             ...buttonStyle,
                             background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                            fontSize: '12px',
-                            padding: '8px 16px',
-                            marginRight: '5px'
+                            fontSize: '10px',
+                            padding: '4px 8px',
+                            marginRight: '3px'
                           }}
                         >
                           ❌ Reject
@@ -1042,12 +1018,12 @@ function Quotes({ user }) {
                         style={{
                           ...buttonStyle,
                           background: 'linear-gradient(135deg, #6f42c1 0%, #563d7c 100%)',
-                          fontSize: '12px',
-                          padding: '8px 16px',
-                          marginRight: '5px'
+                          fontSize: '10px',
+                          padding: '4px 8px',
+                          marginRight: '3px'
                         }}
                       >
-                        🔄 Convert to Invoice
+                        🔄 Convert
                       </button>
                     )}
 
@@ -1056,9 +1032,9 @@ function Quotes({ user }) {
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        marginRight: '3px'
                       }}
                     >
                       📄 PDF
@@ -1069,9 +1045,9 @@ function Quotes({ user }) {
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        marginRight: '3px'
                       }}
                     >
                       🗑️ Delete

@@ -76,6 +76,127 @@ function Clients() {
     }
   };
 
+  const downloadClientStatement = async (client) => {
+    // Show period selection popup
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      backdrop-filter: blur(4px);
+    `;
+
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      max-width: 400px;
+      width: 90%;
+      border: 2px solid #667eea;
+    `;
+
+    popup.innerHTML = `
+      <div style="text-align: center; margin-bottom: 25px;">
+        <div style="font-size: 36px; margin-bottom: 15px;">📄</div>
+        <h2 style="color: #333; margin-bottom: 10px; font-size: 1.5rem;">Download Statement</h2>
+        <p style="color: #666; margin-bottom: 20px;">Select the period for ${client.name}'s statement</p>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #555;">Statement Period:</label>
+        <select id="statementPeriod" style="
+          width: 100%;
+          padding: 12px 15px;
+          border: 2px solid #e1e5e9;
+          border-radius: 8px;
+          font-size: 14px;
+          font-family: inherit;
+          background: white;
+          outline: none;
+        ">
+          <option value="month">Last Month</option>
+          <option value="quarter">Last Quarter</option>
+          <option value="year">Last Year</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+
+      <div style="text-align: center;">
+        <button onclick="generateStatement()" style="
+          background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+          color: white;
+          border: none;
+          padding: 12px 25px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: bold;
+          margin-right: 10px;
+        ">📄 Download PDF</button>
+        <button onclick="closeStatementModal()" style="
+          background: #6c757d;
+          color: white;
+          border: none;
+          padding: 12px 25px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+        ">Cancel</button>
+      </div>
+    `;
+
+    modal.appendChild(popup);
+    document.body.appendChild(modal);
+
+    // Add global functions for the popup
+    window.generateStatement = async () => {
+      const period = document.getElementById('statementPeriod').value;
+      await generateClientStatementPDF(client, period);
+      window.closeStatementModal();
+    };
+
+    window.closeStatementModal = () => {
+      document.body.removeChild(modal);
+      delete window.generateStatement;
+      delete window.closeStatementModal;
+    };
+
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        window.closeStatementModal();
+      }
+    });
+  };
+
+  const generateClientStatementPDF = async (client, period) => {
+    try {
+      const { generateStatementPDF, downloadPDF } = await import('./pdfService.js');
+      
+      let clientInvoices = getClientInvoices(client.id, period);
+      
+      const periodLabel = period === 'month' ? 'Last Month' :
+                         period === 'quarter' ? 'Last Quarter' :
+                         period === 'year' ? 'Last Year' : 'All Time';
+      
+      const pdfDoc = await generateStatementPDF(client, clientInvoices, companySettings, periodLabel);
+      downloadPDF(pdfDoc, `Statement-${client.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating statement PDF:', error);
+      alert('Error generating statement PDF. Please try again.');
+    }
+  };
+
   const addClient = async () => {
     if (!name.trim() || !email.trim()) return;
 
@@ -692,6 +813,20 @@ function Clients() {
                             onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
                           >
                             📋 History
+                          </button>
+                          <button
+                            onClick={() => downloadClientStatement(client)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                              fontSize: '11px',
+                              padding: '6px 12px',
+                              marginRight: 0
+                            }}
+                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                          >
+                            📄 Statement
                           </button>
                           
                           <button

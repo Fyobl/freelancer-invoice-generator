@@ -397,6 +397,11 @@ export const generateQuotePDF = async (quote, companySettings = {}, clientData =
     doc.setFont('helvetica', 'normal');
     doc.text('QUOTE', 150, 18);
 
+    // Add a subtle line under header
+    doc.setDrawColor(...lightGray);
+    doc.setLineWidth(0.5);
+    doc.line(20, 42, 190, 42);
+
     // Company details
     doc.setTextColor(...textColor);
     doc.setFontSize(9);
@@ -572,13 +577,14 @@ export const generateQuotePDF = async (quote, companySettings = {}, clientData =
   }
 };
 
-export const generateStatementPDF = async (client, invoices, companySettings = {}) => {
+export const generateStatementPDF = async (client, invoices, companySettings = {}, period = 'All Time') => {
   try {
     const doc = new jsPDF();
 
     const primaryColor = [102, 126, 234];
     const secondaryColor = [118, 75, 162];
     const textColor = [51, 51, 51];
+    const lightGray = [128, 128, 128];
 
     doc.setFont('helvetica');
 
@@ -627,6 +633,11 @@ export const generateStatementPDF = async (client, invoices, companySettings = {
     doc.setFont('helvetica', 'normal');
     doc.text('STATEMENT', 150, 18);
 
+    // Add a subtle line under header
+    doc.setDrawColor(...lightGray);
+    doc.setLineWidth(0.5);
+    doc.line(20, 42, 190, 42);
+
     // Company and client details
     doc.setTextColor(...textColor);
     doc.setFontSize(9);
@@ -647,9 +658,10 @@ export const generateStatementPDF = async (client, invoices, companySettings = {
 
     // Date range
     doc.setFont('helvetica', 'bold');
-    doc.text('Statement Date:', 120, 55);
+    doc.text('Statement Details:', 120, 55);
     doc.setFont('helvetica', 'normal');
-    doc.text(new Date().toLocaleDateString(), 120, 62);
+    doc.text(`Period: ${period}`, 120, 62);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 120, 69);
 
     // Invoices table
     yPos = 85;

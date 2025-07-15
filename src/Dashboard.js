@@ -451,10 +451,10 @@ function Dashboard() {
 
   const invoiceCardStyle = {
     background: 'white',
-    border: '2px solid #f8f9fa',
-    borderRadius: '12px',
-    padding: '25px',
-    marginBottom: '20px',
+    border: '1px solid #e9ecef',
+    borderRadius: '8px',
+    padding: '15px',
+    marginBottom: '8px',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
   };
 
@@ -886,7 +886,7 @@ function Dashboard() {
               <p>{searchTerm ? 'Try adjusting your search terms' : 'Create your first invoice to get started!'}</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'grid', gap: '8px' }}>
               {filteredInvoices.map(invoice => (
                 <div
                   key={invoice.id}
@@ -902,68 +902,44 @@ function Dashboard() {
                     e.currentTarget.style.borderColor = '#f8f9fa';
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                    <div>
-                      <h3 style={{ margin: 0, color: '#333', fontSize: '1.2rem' }}>{invoice.invoiceNumber}</h3>
-                      <p style={{ margin: '5px 0', color: '#666', fontSize: '1rem' }}>{invoice.clientName}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
+                      <div>
+                        <h4 style={{ margin: 0, color: '#333', fontSize: '1rem' }}>{invoice.invoiceNumber}</h4>
+                        <p style={{ margin: 0, color: '#666', fontSize: '0.85rem' }}>{invoice.clientName}</p>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        <span style={{ marginRight: '10px' }}>£{(parseFloat(invoice.amount) * (1 + (invoice.vat || 0) / 100)).toFixed(2)}</span>
+                        <span>{invoice.dueDate}</span>
+                      </div>
                     </div>
-                    <span style={{
-                      background: getStatusColor(invoice.status),
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {invoice.status}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-                    <div>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Amount:</strong> £{parseFloat(invoice.amount).toFixed(2)}
-                      </p>
-                      {invoice.vat > 0 && (
-                        <p style={{ margin: '5px 0', color: '#666' }}>
-                          <strong>VAT ({invoice.vat}%):</strong> £{(parseFloat(invoice.amount) * invoice.vat / 100).toFixed(2)}
-                        </p>
-                      )}
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Total:</strong> £{(parseFloat(invoice.amount) * (1 + (invoice.vat || 0) / 100)).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Due Date:</strong> {invoice.dueDate}
-                      </p>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Created:</strong> {invoice.createdAt?.toDate().toLocaleDateString() || 'N/A'}
-                      </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        background: getStatusColor(invoice.status),
+                        color: 'white',
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {invoice.status}
+                      </span>
                     </div>
                   </div>
 
-                  {invoice.notes && (
-                    <div style={{ marginBottom: '15px' }}>
-                      <p style={{ margin: '5px 0', color: '#666' }}>
-                        <strong>Notes:</strong> {invoice.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {invoice.status === 'Unpaid' && (
                       <button
                         onClick={() => updateInvoiceStatus(invoice.id, 'Paid')}
                         style={{
                           ...buttonStyle,
                           background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                          fontSize: '12px',
-                          padding: '8px 16px',
-                          marginRight: '5px'
+                          fontSize: '10px',
+                          padding: '4px 8px',
+                          marginRight: '3px'
                         }}
                       >
-                        ✅ Mark Paid
+                        ✅ Paid
                       </button>
                     )}
 
@@ -972,9 +948,9 @@ function Dashboard() {
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        marginRight: '3px'
                       }}
                     >
                       📄 PDF
@@ -985,9 +961,9 @@ function Dashboard() {
                       style={{
                         ...buttonStyle,
                         background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        marginRight: '3px'
                       }}
                     >
                       🗑️ Delete
