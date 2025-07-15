@@ -175,53 +175,69 @@ const downloadClientStatementPDF = async (clientName) => {
 
   const generateReportPDF = () => {
     const doc = new jsPDF();
+    let currentY = 20;
 
-      // Revenue Overview
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text('Revenue Overview', 20, currentY);
-      currentY += 10;
+    // Header
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('Business Report', 20, currentY);
+    currentY += 15;
 
-      const revenueData = [
-        ['Total Revenue', `£${stats.totalRevenue?.toFixed(2) || '0.00'}`],
-        ['Paid Revenue', `£${stats.paidRevenue?.toFixed(2) || '0.00'}`],
-        ['Unpaid Revenue', `£${stats.unpaidRevenue?.toFixed(2) || '0.00'}`],
-        ['Overdue Revenue', `£${stats.overdueRevenue?.toFixed(2) || '0.00'}`]
-      ];
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, currentY);
+    currentY += 20;
 
-      doc.autoTable({
-        startY: currentY,
-        head: [['Metric', 'Amount']],
-        body: revenueData,
-        theme: 'grid',
-        headStyles: { fillColor: [102, 126, 234] }
-      });
+    // Revenue Overview
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text('Revenue Overview', 20, currentY);
+    currentY += 10;
 
-      currentY = doc.lastAutoTable.finalY + 20;
+    const revenueData = [
+      ['Total Revenue', `£${stats.totalRevenue?.toFixed(2) || '0.00'}`],
+      ['Paid Revenue', `£${stats.paidRevenue?.toFixed(2) || '0.00'}`],
+      ['Unpaid Revenue', `£${stats.unpaidRevenue?.toFixed(2) || '0.00'}`],
+      ['Overdue Revenue', `£${stats.overdueRevenue?.toFixed(2) || '0.00'}`]
+    ];
 
-      // Invoice Statistics
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text('Invoice Statistics', 20, currentY);
-      currentY += 10;
+    doc.autoTable({
+      startY: currentY,
+      head: [['Metric', 'Amount']],
+      body: revenueData,
+      theme: 'grid',
+      headStyles: { fillColor: [102, 126, 234] }
+    });
 
-      const invoiceData = [
-        ['Total Invoices', stats.totalInvoices || 0],
-        ['Average Invoice Value', `£${stats.averageInvoiceValue?.toFixed(2) || '0.00'}`],
-        ['Paid Invoices', stats.statusCounts?.paid || 0],
-        ['Unpaid Invoices', stats.statusCounts?.unpaid || 0],
-        ['Overdue Invoices', stats.statusCounts?.overdue || 0]
-      ];
+    currentY = doc.lastAutoTable.finalY + 20;
 
-      doc.autoTable({
-        startY: currentY,
-        head: [['Metric', 'Value']],
-        body: invoiceData,
-        theme: 'grid',
-        headStyles: { fillColor: [102, 126, 234] }
-      });
+    // Invoice Statistics
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text('Invoice Statistics', 20, currentY);
+    currentY += 10;
 
-      currentY = doc.lastAutoTable.finalY + 20;
+    const invoiceData = [
+      ['Total Invoices', stats.totalInvoices || 0],
+      ['Average Invoice Value', `£${stats.averageInvoiceValue?.toFixed(2) || '0.00'}`],
+      ['Paid Invoices', stats.statusCounts?.paid || 0],
+      ['Unpaid Invoices', stats.statusCounts?.unpaid || 0],
+      ['Overdue Invoices', stats.statusCounts?.overdue || 0]
+    ];
+
+    doc.autoTable({
+      startY: currentY,
+      head: [['Metric', 'Value']],
+      body: invoiceData,
+      theme: 'grid',
+      headStyles: { fillColor: [102, 126, 234] }
+    });
+
+    currentY = doc.lastAutoTable.finalY + 20;
+
+    // Save the PDF
+    doc.save(`Business-Report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
 
 
