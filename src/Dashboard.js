@@ -850,3 +850,5 @@ function Dashboard() {
               <input
                 style={inputStyle}
                 placeholder="Search invoices by client name or invoice number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
