@@ -533,48 +533,83 @@ function Quotes({ user }) {
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
-              <div style={{ marginBottom: '15px' }}>
-                <input
-                  type="text"
-                  placeholder="🔍 Search products..."
-                  value={productSearchTerm}
-                  onChange={(e) => setProductSearchTerm(e.target.value)}
-                  style={{ ...inputStyle, marginBottom: '10px' }}
-                />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => handleProductSelect(e.target.value)}
-                    style={{ ...selectStyle, marginBottom: '0', flex: '1' }}
-                  >
-                    <option value="">Select product to add</option>
-                    {products
-                      .filter(product => 
+              <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
+                <div style={{ position: 'relative', flex: '1' }}>
+                  <input
+                    type="text"
+                    placeholder="🔍 Type to search and select product..."
+                    value={productSearchTerm}
+                    onChange={(e) => setProductSearchTerm(e.target.value)}
+                    onFocus={() => setSelectedProductId('')}
+                    style={{ ...inputStyle, marginBottom: '0' }}
+                  />
+                  {productSearchTerm && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '2px solid #e1e5e9',
+                      borderTop: 'none',
+                      borderRadius: '0 0 8px 8px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                    }}>
+                      {products
+                        .filter(product => 
+                          product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                          (product.description && product.description.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                        )
+                        .map(product => (
+                          <div
+                            key={product.id}
+                            onClick={() => {
+                              setSelectedProductId(product.id);
+                              setProductSearchTerm(product.name);
+                            }}
+                            style={{
+                              padding: '12px 15px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f0f0f0',
+                              backgroundColor: selectedProductId === product.id ? '#f8f9fa' : 'white',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = selectedProductId === product.id ? '#f8f9fa' : 'white'}
+                          >
+                            <div style={{ fontWeight: 'bold', color: '#333' }}>{product.name}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>£{product.price.toFixed(2)}</div>
+                          </div>
+                        ))}
+                      {products.filter(product => 
                         product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
                         (product.description && product.description.toLowerCase().includes(productSearchTerm.toLowerCase()))
-                      )
-                      .map(product => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} - £{product.price.toFixed(2)}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => addProductToQuote(selectedProductId)}
-                    disabled={!selectedProductId}
-                    style={{
-                      ...buttonStyle,
-                      marginRight: '0',
-                      marginBottom: '0',
-                      padding: '12px 20px',
-                      opacity: selectedProductId ? 1 : 0.5,
-                      cursor: selectedProductId ? 'pointer' : 'not-allowed'
-                    }}
-                  >
-                    ➕ Add
-                  </button>
+                      ).length === 0 && (
+                        <div style={{ padding: '12px 15px', color: '#666', fontStyle: 'italic' }}>
+                          No products found
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => addProductToQuote(selectedProductId)}
+                  disabled={!selectedProductId}
+                  style={{
+                    ...buttonStyle,
+                    marginRight: '0',
+                    marginBottom: '0',
+                    padding: '12px 20px',
+                    opacity: selectedProductId ? 1 : 0.5,
+                    cursor: selectedProductId ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  ➕ Add
+                </button>
               </div>
 
               {/* Selected Products Display */}
