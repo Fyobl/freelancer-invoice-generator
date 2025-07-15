@@ -49,7 +49,10 @@ function Quotes({ user }) {
     const handleClickOutside = (event) => {
       // Close client dropdown if clicking outside
       if (!event.target.closest('.client-dropdown-container')) {
-        setClientName('');
+        // Only clear if we haven't selected a client yet
+        if (!selectedClientId) {
+          // Don't clear clientName as user might be typing a new client name
+        }
       }
       // Close product dropdown if clicking outside
       if (!event.target.closest('.product-dropdown-container')) {
@@ -537,7 +540,7 @@ function Quotes({ user }) {
                   }}
                   style={{ ...inputStyle, marginBottom: '0' }}
                 />
-                {clientName && (
+                {clientName && !selectedClientId && (
                   <div style={{
                     position: 'absolute',
                     top: '100%',
@@ -563,6 +566,7 @@ function Quotes({ user }) {
                           onClick={() => {
                             setSelectedClientId(client.id);
                             setClientName(client.name);
+                            // Dropdown will close since selectedClientId is set
                           }}
                           style={{
                             padding: '12px 15px',

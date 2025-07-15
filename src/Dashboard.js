@@ -181,7 +181,10 @@ function Dashboard() {
     const handleClickOutside = (event) => {
       // Close client dropdown if clicking outside
       if (!event.target.closest('.client-dropdown-container')) {
-        setSearchTerm('');
+        // Only clear if we haven't selected a client yet
+        if (!selectedClientId) {
+          // Don't clear clientName as user might be typing a new client name
+        }
       }
       // Close product dropdown if clicking outside
       if (!event.target.closest('.product-dropdown-container')) {
@@ -592,7 +595,7 @@ function Dashboard() {
                   onFocus={(e) => e.target.style.borderColor = '#667eea'}
                   onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
                 />
-                {clientName && searchTerm && (
+                {clientName && (
                   <div style={{
                     position: 'absolute',
                     top: '100%',
@@ -618,7 +621,7 @@ function Dashboard() {
                           onClick={() => {
                             setSelectedClientId(client.id);
                             setClientName(client.name);
-                            setSearchTerm('');
+                            // Dropdown will close naturally since clientName is set
                           }}
                           style={{
                             padding: '12px 15px',
