@@ -379,9 +379,41 @@ function Dashboard() {
     ));
   };
 
+  const addAuditLog = async (action, details) => {
+    try {
+      await addDoc(collection(db, 'auditLogs'), {
+        action,
+        details,
+        userId: user.uid,
+        userEmail: user.email,
+        timestamp: new Date(),
+        createdAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error adding audit log:', error);
+    }
+  };
+
   const deleteInvoice = async (id) => {
-    await deleteDoc(doc(db, 'invoices', id));
-    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      try {
+        const invoiceToDelete = invoices.find(inv => inv.id === id);
+        await deleteDoc(doc(db, 'invoices', id));
+
+        // Add audit log
+        await addAuditLog('INVOICE_DELETED', {
+          invoiceId: id,
+          invoiceNumber: invoiceToDelete?.invoiceNumber || 'Unknown',
+          amount: invoiceToDelete?.total || 0,
+          clientName: invoiceToDelete?.clientName || 'Unknown',
+          deletedAt: new Date()
+        });
+
+        fetchInvoices();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
+    }
   };
 
   const handleDelete = (invoice) => {

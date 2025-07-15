@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, getDoc, addDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
 import { grantTrialFromAdmin } from './subscriptionService.js';
@@ -23,6 +23,7 @@ function Admin({ user }) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   // Check if current user is admin
   const adminEmails = ['fyobl007@gmail.com', 'fyobl_ben@hotmail.com'];
@@ -59,10 +60,23 @@ function Admin({ user }) {
       const blockedData = blockedSnapshot.docs.map(doc => doc.id);
       setBlockedUsers(blockedData);
 
-      // Calculate analytics
+      // Fetch audit logs
+      const auditSnapshot = await getDocs(query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc')));
+      const auditData = auditSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAuditLogs(auditData);
+
+      // Filter out subscriptions for deleted users (users that don't exist in users collection)
+      const validUserIds = usersData.map(user => user.id);
+      const validSubscriptions = subscriptionsData.filter(sub => validUserIds.includes(sub.userId));
+      setSubscriptions(validSubscriptions);
+
+      // Calculate analytics using filtered subscriptions
       const totalUsers = usersData.length;
-      const activeSubscriptions = subscriptionsData.filter(sub => sub.status === 'active').length;
-      const monthlyRevenue = subscriptionsData
+      const activeSubscriptions = validSubscriptions.filter(sub => sub.status === 'active').length;
+      const monthlyRevenue = validSubscriptions
         .filter(sub => sub.status === 'active')
         .reduce((sum, sub) => sum + (sub.amount || 0), 0);
 
@@ -70,8 +84,8 @@ function Admin({ user }) {
         totalUsers,
         activeSubscriptions,
         monthlyRevenue,
-        trialUsers: subscriptionsData.filter(sub => sub.status === 'trial').length,
-        cancelledUsers: subscriptionsData.filter(sub => sub.status === 'cancelled').length,
+        trialUsers: validSubscriptions.filter(sub => sub.status === 'trial').length,
+        cancelledUsers: validSubscriptions.filter(sub => sub.status === 'cancelled').length,
         blockedUsers: blockedData.length
       });
 
@@ -112,11 +126,35 @@ function Admin({ user }) {
     return prices[plan] || 0;
   };
 
+  const addAuditLog = async (action, details, userId = null) => {
+    try {
+      await addDoc(collection(db, 'auditLogs'), {
+        action,
+        details,
+        userId: userId || user.uid,
+        adminEmail: user.email,
+        timestamp: new Date(),
+        createdAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error adding audit log:', error);
+    }
+  };
+
   const deleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       try {
+        const userToDelete = users.find(u => u.id === userId);
         await deleteDoc(doc(db, 'users', userId));
         await deleteDoc(doc(db, 'subscriptions', userId));
+        
+        // Add audit log
+        await addAuditLog('USER_DELETED', {
+          deletedUserId: userId,
+          deletedUserEmail: userToDelete?.email || 'Unknown',
+          deletedUserName: `${userToDelete?.firstName || ''} ${userToDelete?.lastName || ''}`.trim() || 'Unknown'
+        });
+        
         fetchAdminData();
         setSuccessMessage('User deleted successfully');
         setShowSuccessModal(true);
@@ -353,7 +391,12 @@ function Admin({ user }) {
           >
             📈 Analytics
           </button>
-          
+          <button
+            style={tabButtonStyle(activeTab === 'audit')}
+            onClick={() => setActiveTab('audit')}
+          >
+            📋 Audit Log
+          </button>
         </div>
 
         {/* Dashboard Tab */}
@@ -672,7 +715,90 @@ function Admin({ user }) {
           </div>
         )}
 
-        
+        {/* Audit Log Tab */}
+        {activeTab === 'audit' && (
+          <div style={cardStyle}>
+            <h2 style={{ marginTop: 0, color: '#333', fontSize: '1.5rem' }}>
+              📋 Audit Log
+            </h2>
+            <p style={{ color: '#666', marginBottom: '20px' }}>
+              Track all administrative actions and user activities
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Date/Time</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Action</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Details</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #dee2e6' }}>Admin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                        No audit logs found
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map(log => (
+                      <tr key={log.id}>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          {log.timestamp?.toDate?.()?.toLocaleString() || log.createdAt?.toDate?.()?.toLocaleString() || 'N/A'}
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            background: log.action === 'USER_DELETED' ? '#f8d7da' : 
+                                      log.action === 'INVOICE_DELETED' ? '#fff3cd' : 
+                                      log.action === 'SUBSCRIPTION_GRANTED' ? '#d4edda' : '#e2e3e5',
+                            color: log.action === 'USER_DELETED' ? '#721c24' : 
+                                   log.action === 'INVOICE_DELETED' ? '#856404' : 
+                                   log.action === 'SUBSCRIPTION_GRANTED' ? '#155724' : '#383d41'
+                          }}>
+                            {log.action.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          {log.action === 'USER_DELETED' && (
+                            <div>
+                              <strong>User:</strong> {log.details?.deletedUserName || 'Unknown'}<br/>
+                              <strong>Email:</strong> {log.details?.deletedUserEmail || 'Unknown'}
+                            </div>
+                          )}
+                          {log.action === 'INVOICE_DELETED' && (
+                            <div>
+                              <strong>Invoice #:</strong> {log.details?.invoiceNumber || 'Unknown'}<br/>
+                              <strong>Amount:</strong> £{log.details?.amount || '0.00'}<br/>
+                              <strong>Client:</strong> {log.details?.clientName || 'Unknown'}
+                            </div>
+                          )}
+                          {log.action === 'SUBSCRIPTION_GRANTED' && (
+                            <div>
+                              <strong>User:</strong> {log.details?.userName || 'Unknown'}<br/>
+                              <strong>Plan:</strong> {log.details?.plan || 'Unknown'}<br/>
+                              <strong>Duration:</strong> {log.details?.duration || 'Unknown'}
+                            </div>
+                          )}
+                          {!['USER_DELETED', 'INVOICE_DELETED', 'SUBSCRIPTION_GRANTED'].includes(log.action) && (
+                            JSON.stringify(log.details || {})
+                          )}
+                        </td>
+                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                          {log.adminEmail || 'System'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* User Detail Modal */}
         {showUserModal && selectedUser && (

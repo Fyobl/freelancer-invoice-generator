@@ -376,6 +376,43 @@ function Quotes({ user }) {
     return numB - numA;
   });
 
+  const addAuditLog = async (action, details) => {
+    try {
+      await addDoc(collection(db, 'auditLogs'), {
+        action,
+        details,
+        userId: user.uid,
+        userEmail: user.email,
+        timestamp: new Date(),
+        createdAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error adding audit log:', error);
+    }
+  };
+
+  const deleteQuote = async (id) => {
+    if (window.confirm('Are you sure you want to delete this quote?')) {
+      try {
+        const quoteToDelete = quotes.find(quote => quote.id === id);
+        await deleteDoc(doc(db, 'quotes', id));
+
+        // Add audit log
+        await addAuditLog('QUOTE_DELETED', {
+          quoteId: id,
+          quoteNumber: quoteToDelete?.quoteNumber || 'Unknown',
+          amount: quoteToDelete?.amount || 0,
+          clientName: quoteToDelete?.clientName || 'Unknown',
+          deletedAt: new Date()
+        });
+
+        fetchQuotes();
+      } catch (error) {
+        console.error('Error deleting quote:', error);
+      }
+    }
+  };
+
 
 
 
