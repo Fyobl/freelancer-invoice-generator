@@ -44,6 +44,25 @@ function Quotes({ user }) {
     }
   }, [user]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close client dropdown if clicking outside
+      if (!event.target.closest('.client-dropdown-container')) {
+        setClientName('');
+      }
+      // Close product dropdown if clicking outside
+      if (!event.target.closest('.product-dropdown-container')) {
+        setProductSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const fetchUserData = async () => {
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -507,7 +526,7 @@ function Quotes({ user }) {
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Select Client *
               </label>
-              <div style={{ position: 'relative', marginBottom: '15px' }}>
+              <div className="client-dropdown-container" style={{ position: 'relative', marginBottom: '15px' }}>
                 <input
                   type="text"
                   placeholder="🔍 Type to search clients or enter new client name..."
@@ -544,7 +563,6 @@ function Quotes({ user }) {
                           onClick={() => {
                             setSelectedClientId(client.id);
                             setClientName(client.name);
-                            setClientName(''); // Clear the search term
                           }}
                           style={{
                             padding: '12px 15px',
@@ -576,7 +594,7 @@ function Quotes({ user }) {
                 Add Product/Service
               </label>
               <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
-                <div style={{ position: 'relative', flex: '1' }}>
+                <div className="product-dropdown-container" style={{ position: 'relative', flex: '1' }}>
                   <input
                     type="text"
                     placeholder="🔍 Type to search and select product..."
@@ -585,7 +603,7 @@ function Quotes({ user }) {
                     onFocus={() => setSelectedProductId('')}
                     style={{ ...inputStyle, marginBottom: '0' }}
                   />
-                  {productSearchTerm && (
+                  {productSearchTerm && !selectedProductId && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',

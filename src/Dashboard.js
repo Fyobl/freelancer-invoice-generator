@@ -176,6 +176,25 @@ function Dashboard() {
     fetchAllData();
   }, [user]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close client dropdown if clicking outside
+      if (!event.target.closest('.client-dropdown-container')) {
+        setSearchTerm('');
+      }
+      // Close product dropdown if clicking outside
+      if (!event.target.closest('.product-dropdown-container')) {
+        setProductSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const fetchAllData = async () => {
     // Fetch invoices
     const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
@@ -560,7 +579,7 @@ function Dashboard() {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Select Client
               </label>
-              <div style={{ position: 'relative', marginBottom: '15px' }}>
+              <div className="client-dropdown-container" style={{ position: 'relative', marginBottom: '15px' }}>
                 <input
                   type="text"
                   placeholder="🔍 Type to search clients or enter new client name..."
@@ -573,7 +592,7 @@ function Dashboard() {
                   onFocus={(e) => e.target.style.borderColor = '#667eea'}
                   onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
                 />
-                {clientName && (
+                {clientName && searchTerm && (
                   <div style={{
                     position: 'absolute',
                     top: '100%',
@@ -632,7 +651,7 @@ function Dashboard() {
                 Add Product/Service
               </label>
               <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
-                <div style={{ position: 'relative', flex: '1' }}>
+                <div className="product-dropdown-container" style={{ position: 'relative', flex: '1' }}>
                   <input
                     type="text"
                     placeholder="🔍 Type to search and select product..."
@@ -641,7 +660,7 @@ function Dashboard() {
                     onFocus={() => setSelectedProductId('')}
                     style={{ ...inputStyle, marginBottom: '0' }}
                   />
-                  {productSearchTerm && (
+                  {productSearchTerm && !selectedProductId && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',
