@@ -8,6 +8,48 @@ import {
 import Navigation from './Navigation.js';
 import { generatePDFWithLogo } from './pdfService.js';
 
+function Clients() {
+  const [clients, setClients] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [companySettings, setCompanySettings] = useState({});
+  const [userData, setUserData] = useState(null);
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  
+  // Form states
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const [country, setCountry] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const user = auth.currentUser;
+
+  // Get client invoices for statement
+  const getClientInvoices = (clientId, period = 'full') => {
+    return invoices.filter(inv => inv.clientId === clientId);
+  };
+
+  // Download client statement function
+  const downloadClientStatement = async (client, period = 'full') => {
+    try {
+      const clientInvoices = getClientInvoices(client.id, period);
+      
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('statement', clientInvoices, companySettings, client, period);
+      
+      // Download the PDF
+      const periodText = period === 'full' ? 'Full' : period;
+      pdfDoc.save(`Statement-${client.name}-${periodText}.pdf`);
+    } catch (error) {
+      console.error('Error generating statement PDF:', error);
+      alert('Error generating statement PDF. Please try again.');
+    }
+  };
+
 
 function Clients() {
   const [clients, setClients] = useState([]);

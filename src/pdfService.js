@@ -477,6 +477,11 @@ const generateStatementPDF = async (clientData, invoices, companySettings, perio
 // Main function to generate PDFs with logo caching
 export const generatePDFWithLogo = async (type, data, companySettings, clientData = null, period = null) => {
   try {
+    // Ensure companySettings exists
+    if (!companySettings) {
+      companySettings = {};
+    }
+
     // Process logo if available
     const logoInfo = await processLogoImage(companySettings.logo);
 
@@ -486,12 +491,12 @@ export const generatePDFWithLogo = async (type, data, companySettings, clientDat
       case 'quote':
         return await generateQuotePDF(data, companySettings, clientData, logoInfo);
       case 'statement':
-        return await generateStatementPDF(clientData, data, companySettings, period, logoInfo);
+        return await generateStatementPDF(clientData, data, companySettings, period || 'All Time', logoInfo);
       default:
-        throw new Error('Invalid PDF type');
+        throw new Error(`Invalid PDF type: ${type}`);
     }
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error(`Error generating ${type} PDF:`, error);
     throw error;
   }
 };
