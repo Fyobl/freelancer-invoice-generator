@@ -1,11 +1,20 @@
 
 import jsPDF from 'jspdf';
 
+// Global logo cache to prevent timing issues
+const logoCache = new Map();
+
 // Helper function to convert image to supported format
 const processLogoImage = (logoData) => {
   return new Promise((resolve, reject) => {
     if (!logoData) {
       resolve(null);
+      return;
+    }
+
+    // Check cache first
+    if (logoCache.has(logoData)) {
+      resolve(logoCache.get(logoData));
       return;
     }
 
@@ -29,11 +38,16 @@ const processLogoImage = (logoData) => {
           // Convert to JPEG base64 (jsPDF works better with JPEG)
           const processedData = canvas.toDataURL('image/jpeg', 0.8);
           
-          resolve({
+          const logoInfo = {
             data: processedData,
             width: this.width,
             height: this.height
-          });
+          };
+          
+          // Cache the processed logo
+          logoCache.set(logoData, logoInfo);
+          
+          resolve(logoInfo);
         } catch (error) {
           console.warn('Error processing logo image:', error);
           resolve(null);
@@ -63,6 +77,44 @@ const processLogoImage = (logoData) => {
   });
 };
 
+// Helper function to add logo to PDF with proper error handling
+const addLogoToPDF = async (doc, companySettings) => {
+  let logoInfo = null;
+  if (companySettings.logo) {
+    try {
+      logoInfo = await processLogoImage(companySettings.logo);
+      if (logoInfo) {
+        // Calculate logo dimensions to fit in header
+        const maxWidth = 35;
+        const maxHeight = 25;
+        let logoWidth = maxWidth;
+        let logoHeight = maxHeight;
+        
+        // Maintain aspect ratio
+        const aspectRatio = logoInfo.width / logoInfo.height;
+        if (aspectRatio > maxWidth / maxHeight) {
+          logoHeight = maxWidth / aspectRatio;
+        } else {
+          logoWidth = maxHeight * aspectRatio;
+        }
+        
+        // Center logo vertically in header
+        const logoX = 15;
+        const logoY = (40 - logoHeight) / 2;
+        
+        // Add small delay to ensure image is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        doc.addImage(logoInfo.data, 'JPEG', logoX, logoY, logoWidth, logoHeight);
+      }
+    } catch (error) {
+      console.warn('Error adding logo to PDF:', error);
+      logoInfo = null;
+    }
+  }
+  return logoInfo;
+};
+
 export const generateInvoicePDF = async (invoice, companySettings = {}, clientData = null) => {
   try {
     const doc = new jsPDF();
@@ -81,36 +133,7 @@ export const generateInvoicePDF = async (invoice, companySettings = {}, clientDa
     doc.rect(0, 0, 210, 40, 'F');
 
     // Process and add company logo if available
-    let logoInfo = null;
-    if (companySettings.logo) {
-      try {
-        logoInfo = await processLogoImage(companySettings.logo);
-        if (logoInfo) {
-          // Calculate logo dimensions to fit in header
-          const maxWidth = 35;
-          const maxHeight = 25;
-          let logoWidth = maxWidth;
-          let logoHeight = maxHeight;
-          
-          // Maintain aspect ratio
-          const aspectRatio = logoInfo.width / logoInfo.height;
-          if (aspectRatio > maxWidth / maxHeight) {
-            logoHeight = maxWidth / aspectRatio;
-          } else {
-            logoWidth = maxHeight * aspectRatio;
-          }
-          
-          // Center logo vertically in header
-          const logoX = 15;
-          const logoY = (40 - logoHeight) / 2;
-          
-          doc.addImage(logoInfo.data, 'JPEG', logoX, logoY, logoWidth, logoHeight);
-        }
-      } catch (error) {
-        console.warn('Error adding logo to PDF:', error);
-        logoInfo = null;
-      }
-    }
+    const logoInfo = await addLogoToPDF(doc, companySettings);
 
     // Company name and invoice title
     doc.setTextColor(255, 255, 255);
@@ -357,33 +380,7 @@ export const generateQuotePDF = async (quote, companySettings = {}, clientData =
     doc.rect(0, 0, 210, 40, 'F');
 
     // Process and add company logo if available
-    let logoInfo = null;
-    if (companySettings.logo) {
-      try {
-        logoInfo = await processLogoImage(companySettings.logo);
-        if (logoInfo) {
-          const maxWidth = 35;
-          const maxHeight = 25;
-          let logoWidth = maxWidth;
-          let logoHeight = maxHeight;
-          
-          const aspectRatio = logoInfo.width / logoInfo.height;
-          if (aspectRatio > maxWidth / maxHeight) {
-            logoHeight = maxWidth / aspectRatio;
-          } else {
-            logoWidth = maxHeight * aspectRatio;
-          }
-          
-          const logoX = 15;
-          const logoY = (40 - logoHeight) / 2;
-          
-          doc.addImage(logoInfo.data, 'JPEG', logoX, logoY, logoWidth, logoHeight);
-        }
-      } catch (error) {
-        console.warn('Error adding logo to quote PDF:', error);
-        logoInfo = null;
-      }
-    }
+    const logoInfo = await addLogoToPDF(doc, companySettings);
 
     doc.setTextColor(255, 255, 255);
     const hasLogo = logoInfo !== null;
@@ -593,33 +590,7 @@ export const generateStatementPDF = async (client, invoices, companySettings = {
     doc.rect(0, 0, 210, 40, 'F');
 
     // Process and add company logo if available
-    let logoInfo = null;
-    if (companySettings.logo) {
-      try {
-        logoInfo = await processLogoImage(companySettings.logo);
-        if (logoInfo) {
-          const maxWidth = 35;
-          const maxHeight = 25;
-          let logoWidth = maxWidth;
-          let logoHeight = maxHeight;
-          
-          const aspectRatio = logoInfo.width / logoInfo.height;
-          if (aspectRatio > maxWidth / maxHeight) {
-            logoHeight = maxWidth / aspectRatio;
-          } else {
-            logoWidth = maxHeight * aspectRatio;
-          }
-          
-          const logoX = 15;
-          const logoY = (40 - logoHeight) / 2;
-          
-          doc.addImage(logoInfo.data, 'JPEG', logoX, logoY, logoWidth, logoHeight);
-        }
-      } catch (error) {
-        console.warn('Error adding logo to statement PDF:', error);
-        logoInfo = null;
-      }
-    }
+    const logoInfo = await addLogoToPDF(doc, companySettings);
 
     doc.setTextColor(255, 255, 255);
     const hasLogo = logoInfo !== null;
@@ -743,4 +714,9 @@ export const downloadPDF = (doc, filename) => {
     console.error('Error downloading PDF:', error);
     throw new Error('Failed to download PDF');
   }
+};
+
+// Clear logo cache when needed (e.g., when company settings change)
+export const clearLogoCache = () => {
+  logoCache.clear();
 };
