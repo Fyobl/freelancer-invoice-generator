@@ -432,6 +432,15 @@ function Dashboard() {
         if (invoiceDoc.exists()) {
           const invoiceData = invoiceDoc.data();
 
+          // Add audit log before deletion
+          await addAuditLog('INVOICE_DELETED', {
+            invoiceId: deleteConfirmation.invoiceId,
+            invoiceNumber: invoiceData.invoiceNumber || 'Unknown',
+            amount: invoiceData.amount || 0,
+            clientName: invoiceData.clientName || 'Unknown',
+            deletedAt: new Date()
+          });
+
           // Move to recycle bin
           await addDoc(collection(db, 'recycleBin'), {
             ...invoiceData,
