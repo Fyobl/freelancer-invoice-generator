@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
@@ -131,39 +129,7 @@ function Reports() {
     });
   };
 
-  const generateReportPDF = () => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let currentY = 20;
-
-      // Header
-      doc.setFillColor(41, 128, 185);
-      doc.rect(0, 0, pageWidth, 40, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(20);
-      doc.setFont(undefined, 'bold');
-      doc.text('Business Report', pageWidth / 2, 25, { align: 'center' });
-
-      currentY = 60;
-      doc.setTextColor(0, 0, 0);
-
-      // Report period
-      doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
-      const periodText = dateRange === 'all' ? 'All Time' : 
-                        dateRange === 'week' ? 'Last 7 Days' :
-                        dateRange === 'month' ? 'Last Month' :
-                        dateRange === 'quarter' ? 'Last Quarter' : 'Last Year';
-      doc.text(`Report Period: ${periodText}`, 20, currentY);
-      currentY += 10;
-      
-      if (selectedClient) {
-        doc.text(`Client Filter: ${selectedClient}`, 20, currentY);
-        currentY += 10;
-      }
-      currentY += 10;
+  
 
       // Revenue Overview
       doc.setFontSize(16);
@@ -212,44 +178,7 @@ function Reports() {
 
       currentY = doc.lastAutoTable.finalY + 20;
 
-      // Top Clients
-      if (stats.topClients && stats.topClients.length > 0) {
-        doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text('Top Clients by Revenue', 20, currentY);
-        currentY += 10;
-
-        const clientData = stats.topClients.map(([clientName, data], index) => [
-          index + 1,
-          clientName,
-          data.count,
-          `£${data.revenue.toFixed(2)}`
-        ]);
-
-        doc.autoTable({
-          startY: currentY,
-          head: [['Rank', 'Client Name', 'Invoices', 'Revenue']],
-          body: clientData,
-          theme: 'grid',
-          headStyles: { fillColor: [102, 126, 234] }
-        });
-      }
-
-      // Footer
-      const pageHeight = doc.internal.pageSize.getHeight();
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'italic');
-      doc.setTextColor(128, 128, 128);
-      doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, pageHeight - 20, { align: 'center' });
-
-      // Save the PDF
-      const fileName = `business_report_${periodText.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
-    } catch (error) {
-      console.error('Error generating PDF report:', error);
-      alert('Error generating PDF report: ' + (error.message || 'Unknown error occurred'));
-    }
-  };
+      
 
   // Styles
   const containerStyle = {
@@ -407,29 +336,7 @@ function Reports() {
                 </select>
               </label>
             </div>
-            <div>
-              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📄 Export</h3>
-              <button
-                onClick={generateReportPDF}
-                style={{
-                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '12px 25px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s ease',
-                  height: '44px',
-                  width: '100%'
-                }}
-                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-              >
-                📄 Download PDF Report
-              </button>
-            </div>
+            
           </div>
         </div>
 
