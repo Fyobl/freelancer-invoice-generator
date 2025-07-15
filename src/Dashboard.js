@@ -681,8 +681,7 @@ function Dashboard() {
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
-              <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
-                <div className="product-dropdown-container" style={{ position: 'relative', flex: '1' }}>
+              <div className="product-dropdown-container" style={{ position: 'relative', marginBottom: '15px' }}>
                   <input
                     type="text"
                     placeholder="🔍 Type to search and select product..."
@@ -772,22 +771,6 @@ function Dashboard() {
                     </div>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => addProductToInvoice(selectedProductId)}
-                  disabled={!selectedProductId}
-                  style={{
-                    ...buttonStyle,
-                    marginRight: '0',
-                    marginBottom: '0',
-                    padding: '12px 20px',
-                    opacity: selectedProductId ? 1 : 0.5,
-                    cursor: selectedProductId ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  ➕ Add
-                </button>
-              </div>
 
               {/* Selected Products Display */}
               {selectedProducts.length > 0 && (
