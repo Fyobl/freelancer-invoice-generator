@@ -578,7 +578,7 @@ function Dashboard() {
             Next Invoice Number: <strong style={{ color: '#667eea' }}>INV-{String(nextInvoiceNumber).padStart(4, '0')}</strong>
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Select Client
@@ -677,7 +677,6 @@ function Dashboard() {
                 )}
               </div>
 
-
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
@@ -771,104 +770,9 @@ function Dashboard() {
                     </div>
                   )}
                 </div>
-
-              {/* Selected Products Display */}
-              {selectedProducts.length > 0 && (
-                <div style={{
-                  background: '#f8f9fa',
-                  border: '2px solid #e9ecef',
-                  borderRadius: '8px',
-                  padding: '15px',
-                  marginBottom: '15px'
-                }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: '#555', fontSize: '14px' }}>Selected Products:</h4>
-                  {selectedProducts.map((product, index) => (
-                    <div key={index} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 0',
-                      borderBottom: index < selectedProducts.length - 1 ? '1px solid #dee2e6' : 'none'
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <strong>{product.name}</strong><br />
-                        <small style={{ color: '#666' }}>£{product.price.toFixed(2)} each</small>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                          type="number"
-                          min="1"
-                          value={product.quantity}
-                          onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
-                          style={{
-                            width: '60px',
-                            padding: '4px 8px',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            textAlign: 'center'
-                          }}
-                        />
-                        <span style={{ minWidth: '60px', textAlign: 'right', fontWeight: 'bold' }}>
-                          £{(product.price * product.quantity).toFixed(2)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeProductFromInvoice(index)}
-                          style={{
-                            background: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px 8px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          ❌
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{
-                    marginTop: '10px',
-                    paddingTop: '10px',
-                    borderTop: '2px solid #dee2e6',
-                    textAlign: 'right',
-                    fontWeight: 'bold'
-                  }}>
-                    Total: £{selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}
-                  </div>
-                </div>
-              )}
-
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-                Amount (£) *
-              </label>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-                VAT (%)
-              </label>
-              <input
-                type="number"
-                placeholder="VAT percentage"
-                value={vat}
-                onChange={(e) => setVat(e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              />
-
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
                 Due Date
               </label>
@@ -895,9 +799,102 @@ function Dashboard() {
                 <option value="Paid">Paid</option>
                 <option value="Overdue">Overdue</option>
               </select>
-
             </div>
           </div>
+
+          {/* Selected Products Display - Full Width */}
+          {selectedProducts.length > 0 && (
+            <div style={{
+              background: '#f8f9fa',
+              border: '2px solid #e9ecef',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <h4 style={{ margin: '0 0 15px 0', color: '#555', fontSize: '16px' }}>Selected Products:</h4>
+              {selectedProducts.map((product, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 0',
+                  borderBottom: index < selectedProducts.length - 1 ? '1px solid #dee2e6' : 'none'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: '14px' }}>{product.name}</strong><br />
+                    <small style={{ color: '#666' }}>£{product.price.toFixed(2)} each</small>
+                    {product.vat > 0 && (
+                      <div style={{ fontSize: '12px', color: '#28a745', fontWeight: 'bold' }}>
+                        VAT: {product.vat}%
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '12px', color: '#666' }}>Qty:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={product.quantity}
+                        onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
+                        style={{
+                          width: '60px',
+                          padding: '6px 8px',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          textAlign: 'center',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        £{(product.price * product.quantity).toFixed(2)}
+                      </div>
+                      {product.vat > 0 && (
+                        <div style={{ fontSize: '12px', color: '#28a745' }}>
+                          +£{((product.price * product.quantity) * (product.vat / 100)).toFixed(2)} VAT
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeProductFromInvoice(index)}
+                      style={{
+                        background: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '6px 10px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      ❌
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div style={{
+                marginTop: '15px',
+                paddingTop: '15px',
+                borderTop: '2px solid #dee2e6',
+                textAlign: 'right'
+              }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '5px' }}>
+                  Subtotal: £{selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}
+                </div>
+                {selectedProducts.some(p => p.vat > 0) && (
+                  <div style={{ fontSize: '14px', color: '#28a745', marginBottom: '5px' }}>
+                    VAT: £{selectedProducts.reduce((sum, p) => sum + ((p.price * p.quantity) * (p.vat / 100)), 0).toFixed(2)}
+                  </div>
+                )}
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#667eea' }}>
+                  Total: £{selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity * (1 + (p.vat / 100))), 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          )}
 
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', marginTop: '20px' }}>
             Notes
