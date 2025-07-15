@@ -470,6 +470,41 @@ function Dashboard() {
     }
   };
 
+  const downloadQuotePDF = async (quote) => {
+    try {
+      // Get client data if available
+      let clientData = null;
+      if (quote.clientId) {
+        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
+        if (clientDoc.exists()) {
+          clientData = clientDoc.data();
+        }
+      }
+
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
+
+      // Download the PDF
+      pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
+    } catch (error) {
+      console.error('Error generating Quote PDF:', error);
+      alert('Error generating Quote PDF. Please try again.');
+    }
+  };
+
+  const downloadStatementPDF = async (client, statements) => {
+    try {
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('statement', statements, companySettings, client);
+
+      // Download the PDF
+      pdfDoc.save(`${client.name || 'Client'}_Statement.pdf`);
+    } catch (error) {
+      console.error('Error generating Statement PDF:', error);
+      alert('Error generating Statement PDF. Please try again.');
+    }
+  };
+
   const handleDelete = (invoice) => {
     setDeleteConfirmation({ 
       show: true, 
