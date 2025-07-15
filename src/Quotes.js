@@ -37,6 +37,7 @@ function Quotes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1);
+  const [selectedProductId, setSelectedProductId] = useState('');
 
   // Download Quote PDF function
   const downloadQuotePDF = async (quote) => {
@@ -439,28 +440,6 @@ function Quotes() {
       } catch (error) {
         console.error('Error deleting quote:', error);
       }
-    }
-  };
-
-  const downloadQuotePDF = async (quote) => {
-    try {
-      // Get client data if available
-      let clientData = null;
-      if (quote.clientId) {
-        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
-        if (clientDoc.exists()) {
-          clientData = clientDoc.data();
-        }
-      }
-
-      // Generate PDF with logo
-      const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
-
-      // Download the PDF
-      pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
     }
   };
 
