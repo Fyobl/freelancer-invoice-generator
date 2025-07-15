@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   collection,
@@ -34,6 +33,7 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
+  const [status, setStatus] = useState('Unpaid'); // Added status state
 
   const user = auth.currentUser;
 
@@ -252,7 +252,7 @@ function Dashboard() {
         vat: finalVat,
         dueDate: dueDateValue,
         notes: notes.trim(),
-        status: 'Unpaid',
+        status: status, // Use the status state
         userId: user.uid,
         selectedProducts: selectedProducts.length > 0 ? selectedProducts : null,
         createdAt: serverTimestamp()
@@ -268,7 +268,7 @@ function Dashboard() {
       setVat('');
       setDueDate('');
       setNotes('');
-
+      setStatus('Unpaid'); // Reset status to default
       fetchInvoices();
     } catch (error) {
       console.error('Error adding invoice:', error);
@@ -401,7 +401,7 @@ function Dashboard() {
 
       const pdfDoc = await generateInvoicePDF(invoice, companySettings, clientData);
       downloadPDF(pdfDoc, `Invoice-${invoice.invoiceNumber || 'Unknown'}.pdf`);
-      
+
       // Add audit log
       await addAuditLog('INVOICE_PDF_DOWNLOADED', {
         invoiceId: invoice.id,
@@ -746,6 +746,22 @@ function Dashboard() {
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
+            </div>
+
+            {/* Status Dropdown */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                Status
+              </label>
+              <select
+                style={selectStyle}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="Unpaid">Unpaid</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+              </select>
             </div>
           </div>
 
