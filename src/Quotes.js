@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
+import { generateQuotePDF, downloadPDF } from './pdfService.js';
 
 
 function Quotes({ user }) {
@@ -410,6 +411,33 @@ function Quotes({ user }) {
       } catch (error) {
         console.error('Error deleting quote:', error);
       }
+    }
+  };
+
+  const downloadQuotePDF = async (quote) => {
+    try {
+      // Get client data if available
+      let clientData = null;
+      if (quote.clientId) {
+        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
+        if (clientDoc.exists()) {
+          clientData = clientDoc.data();
+        }
+      }
+
+      const pdfDoc = await generateQuotePDF(quote, companySettings, clientData);
+      downloadPDF(pdfDoc, `Quote-${quote.quoteNumber || 'Unknown'}.pdf`);
+      
+      // Add audit log
+      await addAuditLog('QUOTE_PDF_DOWNLOADED', {
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber || 'Unknown',
+        clientName: quote.clientName || 'Unknown',
+        downloadedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
   };
 
@@ -1022,6 +1050,19 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
+
+                    <button
+                      onClick={() => downloadQuotePDF(quote)}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                        fontSize: '12px',
+                        padding: '8px 16px',
+                        marginRight: '5px'
+                      }}
+                    >
+                      📄 PDF
+                    </button>
 
                     <button
                       onClick={() => handleDeleteQuote(quote)}

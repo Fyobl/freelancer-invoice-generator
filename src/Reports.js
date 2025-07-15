@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase.js';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  getDoc,
+  doc
+} from 'firebase/firestore';
+import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { generateStatementPDF, downloadPDF } from './pdfService.js';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
@@ -129,7 +139,42 @@ function Reports() {
     });
   };
 
-  
+const downloadClientStatementPDF = async (clientName) => {
+    try {
+      const clientInvoices = filteredInvoices.filter(invoice => 
+        invoice.clientName?.toLowerCase() === clientName.toLowerCase()
+      );
+
+      // Get client data
+      const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const clientsSnapshot = await getDocs(clientsQuery);
+      const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const clientData = clientsData.find(client => client.name?.toLowerCase() === clientName.toLowerCase()) || { name: clientName };
+
+      const period = dateRange === 'all' ? 'All Time' : 
+                    dateRange === 'week' ? 'Last 7 Days' :
+                    dateRange === 'month' ? 'Last Month' :
+                    dateRange === 'quarter' ? 'Last Quarter' :
+                    dateRange === 'year' ? 'Last Year' : 'All Time';
+
+      // Mock company settings
+      const companySettings = {
+          name: userData?.companyName || "Your Company",
+          address: userData?.companyAddress || "Your Company Address",
+          email: userData?.companyEmail || "Your Company Email",
+          phone: userData?.companyPhone || "Your Company Phone",
+      };
+
+      const pdfDoc = await generateStatementPDF(clientData, clientInvoices, companySettings, period);
+      downloadPDF(pdfDoc, `Statement-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating statement PDF:', error);
+      alert('Error generating statement PDF. Please try again.');
+    }
+  };
+
+  const generateReportPDF = () => {
+    const doc = new jsPDF();
 
       // Revenue Overview
       doc.setFontSize(16);
@@ -178,7 +223,7 @@ function Reports() {
 
       currentY = doc.lastAutoTable.finalY + 20;
 
-      
+
 
   // Styles
   const containerStyle = {
@@ -338,7 +383,7 @@ function Reports() {
                 </select>
               </label>
             </div>
-            
+
           </div>
         </div>
 
