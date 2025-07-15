@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   collection,
@@ -33,7 +34,7 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState(1);
-  const [status, setStatus] = useState('Unpaid'); // Added status state
+  const [status, setStatus] = useState('Unpaid');
 
   const user = auth.currentUser;
 
@@ -47,17 +48,12 @@ function Dashboard() {
     }
   }, [user]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close client dropdown if clicking outside
       if (!event.target.closest('.client-dropdown-container')) {
-        // Only clear if we haven't selected a client yet
         if (!selectedClientId) {
-          // Don't clear clientName as user might be typing a new client name
         }
       }
-      // Close product dropdown if clicking outside
       if (!event.target.closest('.product-dropdown-container')) {
         setProductSearchTerm('');
       }
@@ -82,9 +78,10 @@ function Dashboard() {
 
   const fetchCompanySettings = async () => {
     try {
-      const companyDoc = await getDoc(doc(db, 'companySettings', user.uid));
-      if (companyDoc.exists()) {
-        setCompanySettings(companyDoc.data());
+      const q = query(collection(db, 'companySettings'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        setCompanySettings(snapshot.docs[0].data());
       }
     } catch (error) {
       console.error('Error fetching company settings:', error);
@@ -102,7 +99,6 @@ function Dashboard() {
       }));
       setInvoices(data);
 
-      // Calculate next invoice number
       const maxInvoiceNumber = data.reduce((max, invoice) => {
         const num = parseInt(invoice.invoiceNumber?.replace('INV-', '')) || 0;
         return Math.max(max, num);
@@ -163,19 +159,16 @@ function Dashboard() {
       const existingProductIndex = selectedProducts.findIndex(p => p.id === productId);
 
       if (existingProductIndex >= 0) {
-        // Increase quantity if product already exists
         const updatedProducts = [...selectedProducts];
         updatedProducts[existingProductIndex].quantity += 1;
         setSelectedProducts(updatedProducts);
       } else {
-        // Add new product
         setSelectedProducts([...selectedProducts, {
           ...product,
           quantity: 1
         }]);
       }
 
-      // Calculate totals
       calculateInvoiceTotals([...selectedProducts, { ...product, quantity: 1 }]);
       setSelectedProductId('');
       setProductSearchTerm('');
@@ -252,13 +245,12 @@ function Dashboard() {
         vat: finalVat,
         dueDate: dueDateValue,
         notes: notes.trim(),
-        status: status, // Use the status state
+        status: status,
         userId: user.uid,
         selectedProducts: selectedProducts.length > 0 ? selectedProducts : null,
         createdAt: serverTimestamp()
       });
 
-      // Reset form
       setClientName('');
       setSelectedClientId('');
       setSelectedProductId('');
@@ -268,7 +260,7 @@ function Dashboard() {
       setVat('');
       setDueDate('');
       setNotes('');
-      setStatus('Unpaid'); // Reset status to default
+      setStatus('Unpaid');
       fetchInvoices();
     } catch (error) {
       console.error('Error adding invoice:', error);
@@ -300,12 +292,10 @@ function Dashboard() {
   const confirmDelete = async () => {
     if (deleteConfirmation.invoiceId) {
       try {
-        // Get the invoice data before deleting
         const invoiceDoc = await getDoc(doc(db, 'invoices', deleteConfirmation.invoiceId));
         if (invoiceDoc.exists()) {
           const invoiceData = invoiceDoc.data();
 
-          // Add audit log before deletion
           await addAuditLog('INVOICE_DELETED', {
             invoiceId: deleteConfirmation.invoiceId,
             invoiceNumber: invoiceData.invoiceNumber || 'Unknown',
@@ -314,17 +304,15 @@ function Dashboard() {
             deletedAt: new Date()
           });
 
-          // Move to recycle bin
           await addDoc(collection(db, 'recycleBin'), {
             ...invoiceData,
             originalId: deleteConfirmation.invoiceId,
             originalCollection: 'invoices',
             deletedAt: serverTimestamp(),
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             userId: user.uid
           });
 
-          // Delete from original collection
           await deleteDoc(doc(db, 'invoices', deleteConfirmation.invoiceId));
         }
         fetchInvoices();
@@ -345,7 +333,6 @@ function Dashboard() {
     const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    // Sort by invoice number (extract numeric part) - newest first
     const numA = parseInt(a.invoiceNumber?.replace('INV-', '') || '0');
     const numB = parseInt(b.invoiceNumber?.replace('INV-', '') || '0');
     return numB - numA;
@@ -366,31 +353,8 @@ function Dashboard() {
     }
   };
 
-  const deleteInvoice = async (id) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      try {
-        const invoiceToDelete = invoices.find(invoice => invoice.id === id);
-        await deleteDoc(doc(db, 'invoices', id));
-
-        // Add audit log
-        await addAuditLog('INVOICE_DELETED', {
-          invoiceId: id,
-          invoiceNumber: invoiceToDelete?.invoiceNumber || 'Unknown',
-          amount: invoiceToDelete?.amount || 0,
-          clientName: invoiceToDelete?.clientName || 'Unknown',
-          deletedAt: new Date()
-        });
-
-        fetchInvoices();
-      } catch (error) {
-        console.error('Error deleting invoice:', error);
-      }
-    }
-  };
-
   const downloadInvoicePDF = async (invoice) => {
     try {
-      // Get client data if available
       let clientData = null;
       if (invoice.clientId) {
         const clientDoc = await getDoc(doc(db, 'clients', invoice.clientId));
@@ -402,7 +366,6 @@ function Dashboard() {
       const pdfDoc = await generateInvoicePDF(invoice, companySettings, clientData);
       downloadPDF(pdfDoc, `Invoice-${invoice.invoiceNumber || 'Unknown'}.pdf`);
 
-      // Add audit log
       await addAuditLog('INVOICE_PDF_DOWNLOADED', {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber || 'Unknown',
@@ -748,7 +711,6 @@ function Dashboard() {
               />
             </div>
 
-            {/* Status Dropdown */}
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Status
