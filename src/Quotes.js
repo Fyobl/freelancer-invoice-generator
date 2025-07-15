@@ -25,6 +25,7 @@ function Quotes({ user }) {
   const [clientName, setClientName] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   const [amount, setAmount] = useState('');
   const [vat, setVat] = useState('');
   const [validUntil, setValidUntil] = useState('');
@@ -235,6 +236,7 @@ function Quotes({ user }) {
       setSelectedClientId('');
       setSelectedProductId('');
       setSelectedProducts([]);
+      setProductSearchTerm('');
       setAmount('');
       setVat('');
       setValidUntil('');
@@ -531,34 +533,48 @@ function Quotes({ user }) {
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <select
-                  value={selectedProductId}
-                  onChange={(e) => handleProductSelect(e.target.value)}
-                  style={{ ...selectStyle, marginBottom: '0', flex: '1' }}
-                >
-                  <option value="">Select product to add</option>
-                  {products.map(product => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} - £{product.price.toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => addProductToQuote(selectedProductId)}
-                  disabled={!selectedProductId}
-                  style={{
-                    ...buttonStyle,
-                    marginRight: '0',
-                    marginBottom: '0',
-                    padding: '12px 20px',
-                    opacity: selectedProductId ? 1 : 0.5,
-                    cursor: selectedProductId ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  ➕ Add
-                </button>
+              <div style={{ marginBottom: '15px' }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Search products..."
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: '10px' }}
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select
+                    value={selectedProductId}
+                    onChange={(e) => handleProductSelect(e.target.value)}
+                    style={{ ...selectStyle, marginBottom: '0', flex: '1' }}
+                  >
+                    <option value="">Select product to add</option>
+                    {products
+                      .filter(product => 
+                        product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                        (product.description && product.description.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                      )
+                      .map(product => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} - £{product.price.toFixed(2)}
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => addProductToQuote(selectedProductId)}
+                    disabled={!selectedProductId}
+                    style={{
+                      ...buttonStyle,
+                      marginRight: '0',
+                      marginBottom: '0',
+                      padding: '12px 20px',
+                      opacity: selectedProductId ? 1 : 0.5,
+                      cursor: selectedProductId ? 'pointer' : 'not-allowed'
+                    }}
+                  >
+                    ➕ Add
+                  </button>
+                </div>
               </div>
 
               {/* Selected Products Display */}
