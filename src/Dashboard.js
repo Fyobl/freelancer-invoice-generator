@@ -1,21 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  query,
-  where,
-  updateDoc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp
-} from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-
-import { incrementInvoiceCount, checkSubscriptionStatus } from './subscriptionService.js';
+import { generatePDFWithLogo } from './pdfService.js';
 
 function Dashboard() {
   const [clientName, setClientName] = useState('');
@@ -399,14 +386,14 @@ function Dashboard() {
   const deleteInvoice = async (id) => {
     if (window.confirm('Are you sure you want to delete this invoice?')) {
       try {
-        const invoiceToDelete = invoices.find(inv => inv.id === id);
+        const invoiceToDelete = invoices.find(invoice => invoice.id === id);
         await deleteDoc(doc(db, 'invoices', id));
 
         // Add audit log
         await addAuditLog('INVOICE_DELETED', {
           invoiceId: id,
           invoiceNumber: invoiceToDelete?.invoiceNumber || 'Unknown',
-          amount: invoiceToDelete?.total || 0,
+          amount: invoiceToDelete?.amount || 0,
           clientName: invoiceToDelete?.clientName || 'Unknown',
           deletedAt: new Date()
         });
@@ -415,6 +402,28 @@ function Dashboard() {
       } catch (error) {
         console.error('Error deleting invoice:', error);
       }
+    }
+  };
+
+  const downloadInvoicePDF = async (invoice) => {
+    try {
+      // Get client data if available
+      let clientData = null;
+      if (invoice.clientId) {
+        const clientDoc = await getDoc(doc(db, 'clients', invoice.clientId));
+        if (clientDoc.exists()) {
+          clientData = clientDoc.data();
+        }
+      }
+
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('invoice', invoice, companySettings, clientData);
+
+      // Download the PDF
+      pdfDoc.save(`${invoice.invoiceNumber || 'Invoice'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
   };
 
@@ -1069,6 +1078,18 @@ function Dashboard() {
                           }}
                         >
                           🗑️ Delete
+                        </button>
+                        <button
+                          onClick={() => downloadInvoicePDF(inv)}
+                          style={{
+                            ...buttonStyle,
+                            background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                            fontSize: '12px',
+                            padding: '8px 16px',
+                            marginRight: '5px'
+                          }}
+                        >
+                          📄 Download PDF
                         </button>
                       </td>
                     </tr>

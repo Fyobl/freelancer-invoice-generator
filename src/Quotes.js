@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
+import { generatePDFWithLogo } from './pdfService.js';
 
 
 function Quotes({ user }) {
@@ -410,6 +411,28 @@ function Quotes({ user }) {
       } catch (error) {
         console.error('Error deleting quote:', error);
       }
+    }
+  };
+
+  const downloadQuotePDF = async (quote) => {
+    try {
+      // Get client data if available
+      let clientData = null;
+      if (quote.clientId) {
+        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
+        if (clientDoc.exists()) {
+          clientData = clientDoc.data();
+        }
+      }
+
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
+      
+      // Download the PDF
+      pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
   };
 
@@ -1022,6 +1045,19 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
+
+                    <button
+                      onClick={() => downloadQuotePDF(quote)}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                        fontSize: '12px',
+                        padding: '8px 16px',
+                        marginRight: '5px'
+                      }}
+                    >
+                      📄 Download PDF
+                    </button>
 
                     <button
                       onClick={() => handleDeleteQuote(quote)}

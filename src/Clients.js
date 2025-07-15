@@ -6,6 +6,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
+import { generatePDFWithLogo } from './pdfService.js';
 
 
 function Clients() {
@@ -173,6 +174,22 @@ function Clients() {
     return clientInvoices
       .filter(inv => inv.status === 'Unpaid' || inv.status === 'Overdue')
       .reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+  };
+
+  const downloadClientStatement = async (client, period = 'full') => {
+    try {
+      const clientInvoices = getClientInvoices(client.id, period);
+      
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('statement', { client, invoices: clientInvoices }, companySettings, null, period);
+      
+      // Download the PDF
+      const periodText = period === 'full' ? 'Full' : period;
+      pdfDoc.save(`Statement-${client.name}-${periodText}.pdf`);
+    } catch (error) {
+      console.error('Error generating statement PDF:', error);
+      alert('Error generating statement PDF. Please try again.');
+    }
   };
 
   // Show client invoice history
@@ -692,6 +709,20 @@ function Clients() {
                             onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
                           >
                             📋 History
+                          </button>
+                          <button
+                            onClick={() => downloadClientStatement(client)}
+                            style={{
+                              ...buttonStyle,
+                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                              fontSize: '11px',
+                              padding: '6px 12px',
+                              marginRight: 0
+                            }}
+                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                          >
+                            📄 Statement PDF
                           </button>
                           
                           <button
