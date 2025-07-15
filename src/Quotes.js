@@ -174,6 +174,7 @@ function Quotes({ user }) {
       // Calculate totals
       calculateQuoteTotals([...selectedProducts, { ...product, quantity: 1 }]);
       setSelectedProductId('');
+      setProductSearchTerm('');
     }
   };
 
@@ -659,7 +660,9 @@ function Quotes({ user }) {
                             key={product.id}
                             onClick={() => {
                               setSelectedProductId(product.id);
-                              setProductSearchTerm('');
+                              setProductSearchTerm(product.name);
+                              // Auto-add the product
+                              addProductToQuote(product.id);
                             }}
                             style={{
                               padding: '12px 15px',
