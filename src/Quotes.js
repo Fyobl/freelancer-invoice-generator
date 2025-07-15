@@ -1056,7 +1056,7 @@ function Quotes({ user }) {
                         marginRight: '5px'
                       }}
                     >
-                      📄 Download PDF
+                      📄 PDF
                     </button>
 
                     <button

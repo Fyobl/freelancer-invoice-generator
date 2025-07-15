@@ -1089,7 +1089,7 @@ function Dashboard() {
                             marginRight: '5px'
                           }}
                         >
-                          📄 Download PDF
+                          📄 PDF
                         </button>
                       </td>
                     </tr>

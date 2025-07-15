@@ -722,7 +722,7 @@ function Clients() {
                             onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
                             onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
                           >
-                            📄 Statement PDF
+                            📄 PDF
                           </button>
                           
                           <button
