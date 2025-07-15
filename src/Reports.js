@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  getDoc,
-  doc
-} from 'firebase/firestore';
-import { db, auth } from './firebase.js';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
 import Navigation from './Navigation.js';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { generateStatementPDF, downloadPDF } from './pdfService.js';
 
 function Reports() {
   const [invoices, setInvoices] = useState([]);
@@ -139,107 +129,56 @@ function Reports() {
     });
   };
 
-const downloadClientStatementPDF = async (clientName) => {
-    try {
-      const clientInvoices = filteredInvoices.filter(invoice => 
-        invoice.clientName?.toLowerCase() === clientName.toLowerCase()
-      );
+  
 
-      // Get client data
-      const clientsQuery = query(collection(db, 'clients'), where('userId', '==', user.uid));
-      const clientsSnapshot = await getDocs(clientsQuery);
-      const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const clientData = clientsData.find(client => client.name?.toLowerCase() === clientName.toLowerCase()) || { name: clientName };
+      // Revenue Overview
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('Revenue Overview', 20, currentY);
+      currentY += 10;
 
-      const period = dateRange === 'all' ? 'All Time' : 
-                    dateRange === 'week' ? 'Last 7 Days' :
-                    dateRange === 'month' ? 'Last Month' :
-                    dateRange === 'quarter' ? 'Last Quarter' :
-                    dateRange === 'year' ? 'Last Year' : 'All Time';
+      const revenueData = [
+        ['Total Revenue', `£${stats.totalRevenue?.toFixed(2) || '0.00'}`],
+        ['Paid Revenue', `£${stats.paidRevenue?.toFixed(2) || '0.00'}`],
+        ['Unpaid Revenue', `£${stats.unpaidRevenue?.toFixed(2) || '0.00'}`],
+        ['Overdue Revenue', `£${stats.overdueRevenue?.toFixed(2) || '0.00'}`]
+      ];
 
-      // Mock company settings
-      const companySettings = {
-          name: userData?.companyName || "Your Company",
-          address: userData?.companyAddress || "Your Company Address",
-          email: userData?.companyEmail || "Your Company Email",
-          phone: userData?.companyPhone || "Your Company Phone",
-      };
+      doc.autoTable({
+        startY: currentY,
+        head: [['Metric', 'Amount']],
+        body: revenueData,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 126, 234] }
+      });
 
-      const pdfDoc = await generateStatementPDF(clientData, clientInvoices, companySettings, period);
-      downloadPDF(pdfDoc, `Statement-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch (error) {
-      console.error('Error generating statement PDF:', error);
-      alert('Error generating statement PDF. Please try again.');
-    }
-  };
+      currentY = doc.lastAutoTable.finalY + 20;
 
-  const generateReportPDF = () => {
-    const doc = new jsPDF();
-    let currentY = 20;
+      // Invoice Statistics
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('Invoice Statistics', 20, currentY);
+      currentY += 10;
 
-    // Header
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('Business Report', 20, currentY);
-    currentY += 15;
+      const invoiceData = [
+        ['Total Invoices', stats.totalInvoices || 0],
+        ['Average Invoice Value', `£${stats.averageInvoiceValue?.toFixed(2) || '0.00'}`],
+        ['Paid Invoices', stats.statusCounts?.paid || 0],
+        ['Unpaid Invoices', stats.statusCounts?.unpaid || 0],
+        ['Overdue Invoices', stats.statusCounts?.overdue || 0]
+      ];
 
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, currentY);
-    currentY += 20;
+      doc.autoTable({
+        startY: currentY,
+        head: [['Metric', 'Value']],
+        body: invoiceData,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 126, 234] }
+      });
 
-    // Revenue Overview
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-    doc.text('Revenue Overview', 20, currentY);
-    currentY += 10;
+      currentY = doc.lastAutoTable.finalY + 20;
 
-    const revenueData = [
-      ['Total Revenue', `£${stats.totalRevenue?.toFixed(2) || '0.00'}`],
-      ['Paid Revenue', `£${stats.paidRevenue?.toFixed(2) || '0.00'}`],
-      ['Unpaid Revenue', `£${stats.unpaidRevenue?.toFixed(2) || '0.00'}`],
-      ['Overdue Revenue', `£${stats.overdueRevenue?.toFixed(2) || '0.00'}`]
-    ];
-
-    doc.autoTable({
-      startY: currentY,
-      head: [['Metric', 'Amount']],
-      body: revenueData,
-      theme: 'grid',
-      headStyles: { fillColor: [102, 126, 234] }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 20;
-
-    // Invoice Statistics
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-    doc.text('Invoice Statistics', 20, currentY);
-    currentY += 10;
-
-    const invoiceData = [
-      ['Total Invoices', stats.totalInvoices || 0],
-      ['Average Invoice Value', `£${stats.averageInvoiceValue?.toFixed(2) || '0.00'}`],
-      ['Paid Invoices', stats.statusCounts?.paid || 0],
-      ['Unpaid Invoices', stats.statusCounts?.unpaid || 0],
-      ['Overdue Invoices', stats.statusCounts?.overdue || 0]
-    ];
-
-    doc.autoTable({
-      startY: currentY,
-      head: [['Metric', 'Value']],
-      body: invoiceData,
-      theme: 'grid',
-      headStyles: { fillColor: [102, 126, 234] }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 20;
-
-    // Save the PDF
-    doc.save(`Business-Report-${new Date().toISOString().split('T')[0]}.pdf`);
-  };
-
-
+      
 
   // Styles
   const containerStyle = {
@@ -399,7 +338,7 @@ const downloadClientStatementPDF = async (clientName) => {
                 </select>
               </label>
             </div>
-
+            
           </div>
         </div>
 
