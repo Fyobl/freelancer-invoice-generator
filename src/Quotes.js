@@ -63,8 +63,408 @@ function Quotes() {
     }
   };
 
+  const user = auth.currentUser;
 
-function Quotes({ user }) {
+  useEffect(() => {
+    if (user) {
+      fetchQuotes();
+      fetchUserData();
+      fetchClients();
+      fetchProducts();
+      fetchCompanySettings();
+    }
+  }, [user]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close client dropdown if clicking outside
+      if (!event.target.closest('.client-dropdown-container')) {
+        // Only clear if we haven't selected a client yet
+        if (!selectedClientId) {
+          // Don't clear clientName as user might be typing a new client name
+        }
+      }
+      // Close product dropdown if clicking outside
+      if (!event.target.closest('.product-dropdown-container')) {
+        setProductSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const fetchCompanySettings = async () => {
+    try {
+      const companyDoc = await getDoc(doc(db, 'companySettings', user.uid));
+      if (companyDoc.exists()) {
+        setCompanySettings(companyDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+    }
+  };
+
+  const fetchQuotes = async () => {
+    try {
+      const q = query(collection(db, 'quotes'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setQuotes(data);
+
+      // Calculate next quote number
+      const maxQuoteNumber = data.reduce((max, quote) => {
+        const num = parseInt(quote.quoteNumber?.replace('QUO-', '')) || 0;
+        return Math.max(max, num);
+      }, 0);
+      setNextQuoteNumber(maxQuoteNumber + 1);
+    } catch (error) {
+      console.error('Error fetching quotes:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClients(data);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const handleClientSelect = (clientId) => {
+    setSelectedClientId(clientId);
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      setClientName(client ? client.name : '');
+    } else {
+      setClientName('');
+    }
+  };
+
+  const handleProductSelect = (productId) => {
+    setSelectedProductId(productId);
+  };
+
+  const addProductToQuote = (productId) => {
+    if (!productId) return;
+
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      const existingProductIndex = selectedProducts.findIndex(p => p.id === productId);
+
+      if (existingProductIndex >= 0) {
+        // Increase quantity if product already exists
+        const updatedProducts = [...selectedProducts];
+        updatedProducts[existingProductIndex].quantity += 1;
+        setSelectedProducts(updatedProducts);
+      } else {
+        // Add new product
+        setSelectedProducts([...selectedProducts, {
+          ...product,
+          quantity: 1
+        }]);
+      }
+
+      // Calculate totals
+      calculateQuoteTotals([...selectedProducts, { ...product, quantity: 1 }]);
+      setSelectedProductId('');
+      setProductSearchTerm('');
+    }
+  };
+
+  const removeProductFromQuote = (productIndex) => {
+    const updatedProducts = selectedProducts.filter((_, index) => index !== productIndex);
+    setSelectedProducts(updatedProducts);
+    calculateQuoteTotals(updatedProducts);
+  };
+
+  const updateProductQuantity = (productIndex, quantity) => {
+    if (quantity <= 0) {
+      removeProductFromQuote(productIndex);
+      return;
+    }
+
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[productIndex].quantity = quantity;
+    setSelectedProducts(updatedProducts);
+    calculateQuoteTotals(updatedProducts);
+  };
+
+  const calculateQuoteTotals = (products) => {
+    if (products.length === 0) {
+      setAmount('');
+      setVat('');
+      return;
+    }
+
+    const subtotal = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+    const avgVatRate = products.reduce((sum, product) => sum + product.vat, 0) / products.length;
+
+    setAmount(subtotal.toFixed(2));
+    setVat(avgVatRate.toFixed(1));
+  };
+
+  const addQuote = async () => {
+    if (!clientName.trim()) {
+      alert('Please fill in client name');
+      return;
+    }
+
+    if (selectedProducts.length === 0 && !amount.trim()) {
+      alert('Please select products or enter an amount');
+      return;
+    }
+
+    let finalAmount, finalVat;
+
+    if (selectedProducts.length > 0) {
+      finalAmount = selectedProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+      finalVat = selectedProducts.reduce((sum, product) => sum + product.vat, 0) / selectedProducts.length;
+    } else {
+      finalAmount = parseFloat(amount);
+      finalVat = parseFloat(vat) || 0;
+
+      if (isNaN(finalAmount) || finalAmount <= 0) {
+        alert('Amount must be a valid positive number');
+        return;
+      }
+    }
+
+    const quoteNumber = `QUO-${String(nextQuoteNumber).padStart(4, '0')}`;
+    const validUntilDate = validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    try {
+      await addDoc(collection(db, 'quotes'), {
+        quoteNumber,
+        clientName: clientName.trim(),
+        clientId: selectedClientId || null,
+        amount: finalAmount,
+        vat: finalVat,
+        validUntil: validUntilDate,
+        notes: notes.trim(),
+        status: 'Pending',
+        userId: user.uid,
+        selectedProducts: selectedProducts.length > 0 ? selectedProducts : null,
+        createdAt: serverTimestamp()
+      });
+
+      // Reset form
+      setClientName('');
+      setSelectedClientId('');
+      setSelectedProductId('');
+      setSelectedProducts([]);
+      setProductSearchTerm('');
+      setAmount('');
+      setVat('');
+      setValidUntil('');
+      setNotes('');
+
+      fetchQuotes();
+    } catch (error) {
+      console.error('Error adding quote:', error);
+      alert('Error creating quote. Please try again.');
+    }
+  };
+
+  const updateQuoteStatus = async (quoteId, newStatus) => {
+    try {
+      await updateDoc(doc(db, 'quotes', quoteId), {
+        status: newStatus
+      });
+      fetchQuotes();
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+    }
+  };
+
+  const convertToInvoice = async (quote) => {
+    try {
+      // Get next invoice number
+      const invoicesQuery = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+      const invoicesSnapshot = await getDocs(invoicesQuery);
+      const invoices = invoicesSnapshot.docs.map(doc => doc.data());
+
+      const maxInvoiceNumber = invoices.reduce((max, invoice) => {
+        const num = parseInt(invoice.invoiceNumber?.replace('INV-', '')) || 0;
+        return Math.max(max, num);
+      }, 0);
+
+      const invoiceNumber = `INV-${String(maxInvoiceNumber + 1).padStart(4, '0')}`;
+      const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Create invoice from quote
+      await addDoc(collection(db, 'invoices'), {
+        invoiceNumber,
+        clientName: quote.clientName,
+        clientId: quote.clientId,
+        amount: quote.amount,
+        vat: quote.vat,
+        dueDate,
+        notes: quote.notes,
+        status: 'Unpaid',
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+        convertedFromQuote: quote.quoteNumber
+      });
+
+      // Update quote status
+      await updateQuoteStatus(quote.id, 'Converted');
+    } catch (error) {
+      console.error('Error converting quote to invoice:', error);
+      alert('Error converting quote to invoice. Please try again.');
+    }
+  };
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, quoteId: null, quoteName: '' });
+
+  const handleDeleteQuote = (quote) => {
+    setDeleteConfirmation({ 
+      show: true, 
+      quoteId: quote.id, 
+      quoteName: quote.quoteNumber 
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmation.quoteId) {
+      try {
+        // Get the quote data before deleting
+        const quoteDoc = await getDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
+        if (quoteDoc.exists()) {
+          const quoteData = quoteDoc.data();
+
+          // Move to recycle bin
+          await addDoc(collection(db, 'recycleBin'), {
+            ...quoteData,
+            originalId: deleteConfirmation.quoteId,
+            originalCollection: 'quotes',
+            deletedAt: serverTimestamp(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            userId: user.uid
+          });
+
+          // Delete from original collection
+          await deleteDoc(doc(db, 'quotes', deleteConfirmation.quoteId));
+        }
+        fetchQuotes();
+      } catch (error) {
+        console.error('Error deleting quote:', error);
+      }
+    }
+    setDeleteConfirmation({ show: false, quoteId: null, quoteName: '' });
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ show: false, quoteId: null, quoteName: '' });
+  };
+
+  const filteredQuotes = quotes.filter(quote => {
+    const matchesSearch = quote.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         quote.quoteNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || quote.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Sort by quote number (extract numeric part) - newest first
+    const numA = parseInt(a.quoteNumber?.replace('QUO-', '') || '0');
+    const numB = parseInt(b.quoteNumber?.replace('QUO-', '') || '0');
+    return numB - numA;
+  });
+
+  const addAuditLog = async (action, details) => {
+    try {
+      await addDoc(collection(db, 'auditLogs'), {
+        action,
+        details,
+        userId: user.uid,
+        userEmail: user.email,
+        timestamp: new Date(),
+        createdAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error adding audit log:', error);
+    }
+  };
+
+  const deleteQuote = async (id) => {
+    if (window.confirm('Are you sure you want to delete this quote?')) {
+      try {
+        const quoteToDelete = quotes.find(quote => quote.id === id);
+        await deleteDoc(doc(db, 'quotes', id));
+
+        // Add audit log
+        await addAuditLog('QUOTE_DELETED', {
+          quoteId: id,
+          quoteNumber: quoteToDelete?.quoteNumber || 'Unknown',
+          amount: quoteToDelete?.amount || 0,
+          clientName: quoteToDelete?.clientName || 'Unknown',
+          deletedAt: new Date()
+        });
+
+        fetchQuotes();
+      } catch (error) {
+        console.error('Error deleting quote:', error);
+      }
+    }
+  };
+
+  const downloadQuotePDF = async (quote) => {
+    try {
+      // Get client data if available
+      let clientData = null;
+      if (quote.clientId) {
+        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
+        if (clientDoc.exists()) {
+          clientData = clientDoc.data();
+        }
+      }
+
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
+      
+      // Download the PDF
+      pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };</old_str>
   const [quotes, setQuotes] = useState([]);
   const [userData, setUserData] = useState(null);
   const [clients, setClients] = useState([]);

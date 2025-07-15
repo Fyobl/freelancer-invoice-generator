@@ -50,8 +50,296 @@ function Clients() {
     }
   };
 
+  const user = auth.currentUser;
 
-function Clients() {
+  useEffect(() => {
+    if (user) {
+      fetchClients();
+      fetchUserData();
+      fetchInvoices();
+      fetchCompanySettings();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    const q = query(collection(db, 'clients'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setClients(data);
+  };
+
+  const fetchInvoices = async () => {
+    const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setInvoices(data);
+  };
+
+  const fetchCompanySettings = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'companySettings', user.uid));
+      if (settingsDoc.exists()) {
+        setCompanySettings(settingsDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+    }
+  };
+
+  const addClient = async () => {
+    if (!name.trim() || !email.trim()) return;
+
+    await addDoc(collection(db, 'clients'), {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      notes: notes.trim(),
+      userId: user.uid,
+      createdAt: serverTimestamp()
+    });
+
+    resetForm();
+    fetchClients();
+  };
+
+  const updateClient = async () => {
+    if (!name.trim() || !email.trim()) return;
+
+    await updateDoc(doc(db, 'clients', editingId), {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      notes: notes.trim()
+    });
+
+    resetForm();
+    fetchClients();
+  };
+
+  const deleteClient = async (id) => {
+    if (window.confirm('Are you sure you want to delete this client?')) {
+      await deleteDoc(doc(db, 'clients', id));
+      fetchClients();
+    }
+  };
+
+  const editClient = (client) => {
+    setEditingId(client.id);
+    setName(client.name);
+    setEmail(client.email);
+    setPhone(client.phone || '');
+    setAddress(client.address || '');
+    setNotes(client.notes || '');
+  };
+
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setNotes('');
+    setEditingId(null);
+  };
+
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get client invoices for statements
+  const getClientInvoices = (clientId, period = 'full') => {
+    let clientInvoices = invoices.filter(inv => inv.clientId === clientId);
+
+    if (period !== 'full') {
+      const now = new Date();
+      const cutoffDate = new Date();
+
+      switch (period) {
+        case 'month':
+          cutoffDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          cutoffDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          cutoffDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+
+      clientInvoices = clientInvoices.filter(inv => {
+        const invDate = inv.createdAt?.toDate() || new Date(inv.dueDate);
+        return invDate >= cutoffDate;
+      });
+    }
+
+    return clientInvoices;
+  };
+
+  // Calculate total owed by client
+  const getClientTotalOwed = (clientId) => {
+    const clientInvoices = invoices.filter(inv => inv.clientId === clientId);
+    return clientInvoices
+      .filter(inv => inv.status === 'Unpaid' || inv.status === 'Overdue')
+      .reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+  };
+
+  const downloadClientStatement = async (client, period = 'full') => {
+    try {
+      const clientInvoices = getClientInvoices(client.id, period);
+      
+      // Generate PDF with logo
+      const pdfDoc = await generatePDFWithLogo('statement', { client, invoices: clientInvoices }, companySettings, null, period);
+      
+      // Download the PDF
+      const periodText = period === 'full' ? 'Full' : period;
+      pdfDoc.save(`Statement-${client.name}-${periodText}.pdf`);
+    } catch (error) {
+      console.error('Error generating statement PDF:', error);
+      alert('Error generating statement PDF. Please try again.');
+    }
+  };
+
+  // Show client invoice history
+  const showClientHistory = (client) => {
+    const clientInvoices = getClientInvoices(client.id);
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      backdrop-filter: blur(4px);
+    `;
+
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 2px solid #667eea;
+    `;
+
+    const totalOwed = getClientTotalOwed(client.id);
+    const totalRevenue = clientInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
+    popup.innerHTML = `
+      <div style="text-align: center; margin-bottom: 25px;">
+        <div style="font-size: 36px; margin-bottom: 15px;">📋📊</div>
+        <h2 style="color: #333; margin-bottom: 10px; font-size: 1.5rem;">Invoice History - ${client.name}</h2>
+        <p style="color: #666; margin-bottom: 20px;">Complete invoice history for this client</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+            <h4 style="margin: 0 0 5px 0; color: #28a745; font-size: 0.9rem;">Total Revenue</h4>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: bold; color: #333;">£${totalRevenue.toFixed(2)}</p>
+          </div>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+            <h4 style="margin: 0 0 5px 0; color: #dc3545; font-size: 0.9rem;">Amount Owed</h4>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: bold; color: #333;">£${totalOwed.toFixed(2)}</p>
+          </div>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+            <h4 style="margin: 0 0 5px 0; color: #667eea; font-size: 0.9rem;">Total Invoices</h4>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: bold; color: #333;">${clientInvoices.length}</p>
+          </div>
+        </div>
+      </div>
+
+      ${clientInvoices.length > 0 ? `
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <th style="padding: 12px; text-align: left; font-size: 13px;">Invoice #</th>
+                <th style="padding: 12px; text-align: left; font-size: 13px;">Date</th>
+                <th style="padding: 12px; text-align: left; font-size: 13px;">Due Date</th>
+                <th style="padding: 12px; text-align: left; font-size: 13px;">Status</th>
+                <th style="padding: 12px; text-align: right; font-size: 13px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${clientInvoices.map((invoice, index) => `
+                <tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'}; border-bottom: 1px solid #e9ecef;">
+                  <td style="padding: 12px; font-size: 12px;">${invoice.invoiceNumber || 'N/A'}</td>
+                  <td style="padding: 12px; font-size: 12px;">${invoice.createdAt ? new Date(invoice.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
+                  <td style="padding: 12px; font-size: 12px;">${invoice.dueDate || 'N/A'}</td>
+                  <td style="padding: 12px;">
+                    <span style="
+                      padding: 4px 8px; 
+                      border-radius: 12px; 
+                      font-size: 11px; 
+                      font-weight: bold;
+                      background: ${invoice.status === 'Paid' ? '#d4edda' : invoice.status === 'Overdue' ? '#f8d7da' : '#fff3cd'};
+                      color: ${invoice.status === 'Paid' ? '#155724' : invoice.status === 'Overdue' ? '#721c24' : '#856404'};
+                    ">
+                      ${invoice.status || 'Unknown'}
+                    </span>
+                  </td>
+                  <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 12px;">£${(parseFloat(invoice.amount) || 0).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : `
+        <div style="text-align: center; padding: 40px; color: #666;">
+          <p style="font-size: 1.1rem; margin: 0;">No invoices found for this client.</p>
+        </div>
+      `}
+
+      <div style="text-align: center; margin-top: 25px;">
+        <button onclick="closeHistoryModal()" style="background: #6c757d; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 14px;">Close</button>
+      </div>
+    `;
+
+    modal.appendChild(popup);
+    document.body.appendChild(modal);
+
+    // Add global function for the popup
+    window.closeHistoryModal = () => {
+      document.body.removeChild(modal);
+      delete window.closeHistoryModal;
+    };
+
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        window.closeHistoryModal();
+      }
+    });
+  };</old_str>
   const [clients, setClients] = useState([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
