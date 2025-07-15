@@ -13,56 +13,26 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { generatePDFWithLogo } from './pdfService.js';
 
-function Quotes() {
+
+function Quotes({ user }) {
   const [quotes, setQuotes] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [companySettings, setCompanySettings] = useState({});
-  const [userData, setUserData] = useState(null);
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [editingQuote, setEditingQuote] = useState(null);
-
-  // Form states
-  const [clientName, setClientName] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   const [amount, setAmount] = useState('');
   const [vat, setVat] = useState('');
   const [validUntil, setValidUntil] = useState('');
-  const [status, setStatus] = useState('Pending');
   const [notes, setNotes] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [productSearchTerm, setProductSearchTerm] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1);
-  const [selectedProductId, setSelectedProductId] = useState('');
-
-  // Download Quote PDF function
-  const downloadQuotePDF = async (quote) => {
-    try {
-      // Get client data if available
-      let clientData = null;
-      if (quote.clientId) {
-        const clientDoc = await getDoc(doc(db, 'clients', quote.clientId));
-        if (clientDoc.exists()) {
-          clientData = clientDoc.data();
-        }
-      }
-
-      // Generate PDF with logo
-      const pdfDoc = await generatePDFWithLogo('quote', quote, companySettings, clientData);
-
-      // Download the PDF
-      pdfDoc.save(`${quote.quoteNumber || 'Quote'}.pdf`);
-    } catch (error) {
-      console.error('Error generating Quote PDF:', error);
-      alert('Error generating Quote PDF. Please try again.');
-    }
-  };
-
-  const user = auth.currentUser;
 
   useEffect(() => {
     if (user) {
@@ -1052,19 +1022,6 @@ function Quotes() {
                         🔄 Convert to Invoice
                       </button>
                     )}
-
-                    <button
-                      onClick={() => downloadQuotePDF(quote)}
-                      style={{
-                        ...buttonStyle,
-                        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                        fontSize: '12px',
-                        padding: '8px 16px',
-                        marginRight: '5px'
-                      }}
-                    >
-                      📄 PDF
-                    </button>
 
                     <button
                       onClick={() => handleDeleteQuote(quote)}

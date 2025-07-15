@@ -6,27 +6,20 @@ import {
   getDoc
 } from 'firebase/firestore';
 import Navigation from './Navigation.js';
-import { generatePDFWithLogo } from './pdfService.js';
+
 
 function Clients() {
   const [clients, setClients] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [companySettings, setCompanySettings] = useState({});
-  const [userData, setUserData] = useState(null);
-  const [showClientForm, setShowClientForm] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
-
-  // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [postcode, setPostcode] = useState('');
-  const [country, setCountry] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [userData, setUserData] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [companySettings, setCompanySettings] = useState({});
   const [expandedClients, setExpandedClients] = useState({});
 
   const user = auth.currentUser;
@@ -91,9 +84,6 @@ function Clients() {
       email: email.trim(),
       phone: phone.trim(),
       address: address.trim(),
-      city: city.trim(),
-      postcode: postcode.trim(),
-      country: country.trim(),
       notes: notes.trim(),
       userId: user.uid,
       createdAt: serverTimestamp()
@@ -111,9 +101,6 @@ function Clients() {
       email: email.trim(),
       phone: phone.trim(),
       address: address.trim(),
-      city: city.trim(),
-      postcode: postcode.trim(),
-      country: country.trim(),
       notes: notes.trim()
     });
 
@@ -134,9 +121,6 @@ function Clients() {
     setEmail(client.email);
     setPhone(client.phone || '');
     setAddress(client.address || '');
-    setCity(client.city || '');
-    setPostcode(client.postcode || '');
-    setCountry(client.country || '');
     setNotes(client.notes || '');
   };
 
@@ -145,9 +129,6 @@ function Clients() {
     setEmail('');
     setPhone('');
     setAddress('');
-    setCity('');
-    setPostcode('');
-    setCountry('');
     setNotes('');
     setEditingId(null);
   };
@@ -192,22 +173,6 @@ function Clients() {
     return clientInvoices
       .filter(inv => inv.status === 'Unpaid' || inv.status === 'Overdue')
       .reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
-  };
-
-  const downloadClientStatement = async (client, period = 'full') => {
-    try {
-      const clientInvoices = getClientInvoices(client.id, period);
-
-      // Generate PDF with logo
-      const pdfDoc = await generatePDFWithLogo('statement', { client, invoices: clientInvoices }, companySettings, null, period);
-
-      // Download the PDF
-      const periodText = period === 'full' ? 'Full' : period;
-      pdfDoc.save(`Statement-${client.name}-${periodText}.pdf`);
-    } catch (error) {
-      console.error('Error generating statement PDF:', error);
-      alert('Error generating statement PDF. Please try again.');
-    }
   };
 
   // Show client invoice history
@@ -331,6 +296,12 @@ function Clients() {
       }
     });
   };
+
+  
+
+  
+
+  
 
   // Styles
   const containerStyle = {
@@ -549,33 +520,6 @@ function Clients() {
                 style={textareaStyle}
               />
 
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>City</label>
-              <input
-                placeholder="City"
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                style={inputStyle}
-              />
-
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Postcode</label>
-              <input
-                placeholder="Postcode"
-                type="text"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value)}
-                style={inputStyle}
-              />
-
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Country</label>
-              <input
-                placeholder="Country"
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                style={inputStyle}
-              />
-
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Notes
               </label>
@@ -711,21 +655,6 @@ function Clients() {
                                   <strong>📍 Address:</strong> {client.address}
                                 </p>
                               )}
-                               {client.city && (
-                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                                  <strong>📍 City:</strong> {client.city}
-                                </p>
-                              )}
-                               {client.postcode && (
-                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                                  <strong>📍 Postcode:</strong> {client.postcode}
-                                </p>
-                              )}
-                               {client.country && (
-                                <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-                                  <strong>📍 Country:</strong> {client.country}
-                                </p>
-                              )}
                               {client.notes && (
                                 <p style={{ margin: '0 0 8px 0', color: '#666' }}>
                                   <strong>📝 Notes:</strong> {client.notes}
@@ -764,21 +693,7 @@ function Clients() {
                           >
                             📋 History
                           </button>
-                          <button
-                            onClick={() => downloadClientStatement(client)}
-                            style={{
-                              ...buttonStyle,
-                              background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
-                              fontSize: '11px',
-                              padding: '6px 12px',
-                              marginRight: 0
-                            }}
-                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                          >
-                            📄 PDF
-                          </button>
-
+                          
                           <button
                             onClick={() => deleteClient(client.id)}
                             style={{
