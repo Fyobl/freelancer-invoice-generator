@@ -816,7 +816,7 @@ function Dashboard() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Due Date
               </label>
               <input
@@ -828,7 +828,7 @@ function Dashboard() {
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               />
 
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Status
               </label>
               <select
