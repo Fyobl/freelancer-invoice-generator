@@ -849,7 +849,6 @@ function Quotes() {
                         borderRadius: '4px',
                         padding: '6px 10px',
                         cursor: 'pointer',
-```python
                         fontSize: '12px'
                       }}
                     >

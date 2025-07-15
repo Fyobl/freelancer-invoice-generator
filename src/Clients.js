@@ -770,7 +770,7 @@ function Clients() {
                               ...buttonStyle,
                               background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
                               fontSize: '11px',
-                              padding: '6px 12px,
+                              padding: '6px 12px',
                               marginRight: 0
                             }}
                             onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
