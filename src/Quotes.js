@@ -353,9 +353,9 @@ function Quotes({ user }) {
     return numB - numA;
   });
 
-  
 
-  
+
+
 
   // Styles
   const containerStyle = {
@@ -544,6 +544,7 @@ function Quotes({ user }) {
                           onClick={() => {
                             setSelectedClientId(client.id);
                             setClientName(client.name);
+                            setClientName(''); // Clear the search term
                           }}
                           style={{
                             padding: '12px 15px',
@@ -609,7 +610,7 @@ function Quotes({ user }) {
                             key={product.id}
                             onClick={() => {
                               setSelectedProductId(product.id);
-                              setProductSearchTerm(product.name);
+                              setProductSearchTerm('');
                             }}
                             style={{
                               padding: '12px 15px',
@@ -937,7 +938,7 @@ function Quotes({ user }) {
                         🔄 Convert to Invoice
                       </button>
                     )}
-                    
+
                     <button
                       onClick={() => handleDeleteQuote(quote)}
                       style={{

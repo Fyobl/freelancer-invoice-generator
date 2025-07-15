@@ -599,6 +599,7 @@ function Dashboard() {
                           onClick={() => {
                             setSelectedClientId(client.id);
                             setClientName(client.name);
+                            setSearchTerm('');
                           }}
                           style={{
                             padding: '12px 15px',
@@ -626,7 +627,7 @@ function Dashboard() {
                 )}
               </div>
 
-              
+
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
                 Add Product/Service
               </label>
@@ -665,7 +666,7 @@ function Dashboard() {
                             key={product.id}
                             onClick={() => {
                               setSelectedProductId(product.id);
-                              setProductSearchTerm(product.name);
+                              setProductSearchTerm('');
                             }}
                             style={{
                               padding: '12px 15px',
