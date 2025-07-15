@@ -622,6 +622,33 @@ function Quotes({ user }) {
                       zIndex: 1000,
                       boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                     }}>
+                      {/* Close button */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        padding: '8px 12px',
+                        borderBottom: '1px solid #f0f0f0',
+                        background: '#f8f9fa'
+                      }}>
+                        <button
+                          onClick={() => setProductSearchTerm('')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            color: '#666',
+                            padding: '0',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                       {products
                         .filter(product => 
                           product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
