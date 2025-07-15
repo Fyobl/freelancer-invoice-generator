@@ -32,7 +32,7 @@ const getEmailSettings = async () => {
       invoiceSubject: 'Invoice {invoiceNumber} from {companyName}',
       invoiceTemplate: `Dear {clientName},
 
-Please find attached invoice {invoiceNumber} for the amount of £{totalAmount}.
+Invoice {invoiceNumber} for the amount of £{totalAmount} is ready.
 
 Payment is due by {dueDate}.
 
@@ -44,7 +44,7 @@ Best regards,
       quoteSubject: 'Quote {quoteNumber} from {companyName}',
       quoteTemplate: `Dear {clientName},
 
-Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
+Quote {quoteNumber} for the amount of £{totalAmount} is ready.
 
 This quote is valid until {validUntil}.
 
@@ -56,7 +56,7 @@ Best regards,
       statementSubject: 'Account Statement from {companyName}',
       statementTemplate: `Dear {clientName},
 
-Please find attached your account statement for the period: {period}.
+Your account statement for the period: {period} is ready.
 
 Statement Summary:
 - Total Invoices: {totalInvoices}
@@ -91,117 +91,7 @@ const replaceTemplateVariables = (template, data) => {
   return result;
 };
 
-// Show email instructions popup
-const showEmailInstructions = (documentType, documentNumber, downloadFunction, emailFunction) => {
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    backdrop-filter: blur(4px);
-  `;
-
-  const popup = document.createElement('div');
-  popup.style.cssText = `
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    max-width: 500px;
-    width: 90%;
-    text-align: center;
-    border: 2px solid #667eea;
-  `;
-
-  popup.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 20px;">📧✨</div>
-    <h2 style="color: #333; margin-bottom: 15px; font-size: 1.5rem;">Email ${documentType.charAt(0).toUpperCase() + documentType.slice(1)}</h2>
-    <p style="color: #666; margin-bottom: 25px; line-height: 1.5;">
-      Ready to send ${documentType} ${documentNumber}? Follow these simple steps:
-    </p>
-
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 25px; text-align: left;">
-      <h3 style="margin: 0 0 15px 0; color: #555; font-size: 1.1rem;">📋 Steps to Send:</h3>
-      <ol style="margin: 0; padding-left: 20px; color: #666; line-height: 1.6;">
-        <li><strong>Download the PDF</strong> - Click the button below to save the ${documentType}</li>
-        <li><strong>Open your email</strong> - Click "Open Email" to launch your default email client</li>
-        <li><strong>Attach the PDF</strong> - Attach the downloaded PDF file to your email</li>
-        <li><strong>Send</strong> - Review and send your professional ${documentType}!</li>
-      </ol>
-    </div>
-
-    <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
-      <button onclick="downloadPDF()" style="
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-      ">
-        📄 Download PDF
-      </button>
-      <button onclick="openEmail()" style="
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-      ">
-        📧 Open Email
-      </button>
-    </div>
-
-    <button onclick="closeModal()" style="
-      background: #6c757d;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-    ">
-      Close
-    </button>
-  `;
-
-  modal.appendChild(popup);
-  document.body.appendChild(modal);
-
-  // Add global functions for the popup
-  window.downloadPDF = downloadFunction;
-  window.openEmail = emailFunction;
-  window.closeModal = () => {
-    document.body.removeChild(modal);
-    delete window.downloadPDF;
-    delete window.openEmail;
-    delete window.closeModal;
-  };
-
-  // Close on background click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      window.closeModal();
-    }
-  });
-};
-
-// Send invoice via email
+// Send invoice via email (without PDF)
 const sendInvoiceViaEmail = async (invoice, companySettings) => {
   try {
     const emailSettings = await getEmailSettings();
@@ -226,7 +116,7 @@ const sendInvoiceViaEmail = async (invoice, companySettings) => {
     const subject = emailSettings?.invoiceSubject || 'Invoice {invoiceNumber} from {companyName}';
     const body = emailSettings?.invoiceTemplate || `Dear {clientName},
 
-Please find attached invoice {invoiceNumber} for the amount of £{totalAmount}.
+Invoice {invoiceNumber} for the amount of £{totalAmount} is ready.
 
 Payment is due by {dueDate}.
 
@@ -239,26 +129,8 @@ Best regards,
     const finalSubject = replaceTemplateVariables(subject, templateData);
     const finalBody = replaceTemplateVariables(body, templateData);
 
-    const downloadPDF = async () => {
-      try {
-        console.log('Starting invoice PDF generation');
-        const { generateInvoicePDF } = await import('./simplePdfService.js');
-        const doc = generateInvoicePDF(invoice, companySettings);
-        const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        console.log('PDF generation completed successfully');
-        doc.save(fileName);
-      } catch (error) {
-        console.error('Error generating invoice PDF:', error);
-        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-      }
-    };
-
-    const openEmailClient = () => {
-      const mailtoLink = `mailto:${invoice.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-      window.location.href = mailtoLink;
-    };
-
-    showEmailInstructions('invoice', invoice.invoiceNumber, downloadPDF, openEmailClient);
+    const mailtoLink = `mailto:${invoice.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+    window.location.href = mailtoLink;
 
   } catch (error) {
     console.error('Error creating invoice email:', error);
@@ -266,7 +138,7 @@ Best regards,
   }
 };
 
-// Send quote via email
+// Send quote via email (without PDF)
 const sendQuoteViaEmail = async (quote, companySettings) => {
   try {
     const emailSettings = await getEmailSettings();
@@ -288,7 +160,7 @@ const sendQuoteViaEmail = async (quote, companySettings) => {
     const subject = emailSettings?.quoteSubject || 'Quote {quoteNumber} from {companyName}';
     const body = emailSettings?.quoteTemplate || `Dear {clientName},
 
-Please find attached quote {quoteNumber} for the amount of £{totalAmount}.
+Quote {quoteNumber} for the amount of £{totalAmount} is ready.
 
 This quote is valid until {validUntil}.
 
@@ -301,26 +173,8 @@ Best regards,
     const finalSubject = replaceTemplateVariables(subject, templateData);
     const finalBody = replaceTemplateVariables(body, templateData);
 
-    const downloadPDF = async () => {
-      try {
-        console.log('Starting quote PDF generation');
-        const { generateQuotePDF } = await import('./simplePdfService.js');
-        const doc = generateQuotePDF(quote, companySettings);
-        const fileName = `quote_${quote.quoteNumber}_${quote.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        console.log('PDF generation completed successfully');
-        doc.save(fileName);
-      } catch (error) {
-        console.error('Error generating quote PDF:', error);
-        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-      }
-    };
-
-    const openEmailClient = () => {
-      const mailtoLink = `mailto:${quote.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-      window.location.href = mailtoLink;
-    };
-
-    showEmailInstructions('quote', quote.quoteNumber, downloadPDF, openEmailClient);
+    const mailtoLink = `mailto:${quote.clientEmail || ''}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+    window.location.href = mailtoLink;
 
   } catch (error) {
     console.error('Error creating quote email:', error);
@@ -328,7 +182,7 @@ Best regards,
   }
 };
 
-// Send client statement via email
+// Send client statement via email (without PDF)
 const sendClientStatementViaEmail = async (client, invoices, companySettings, period = 'full') => {
   try {
     const emailSettings = await getEmailSettings();
@@ -352,7 +206,7 @@ const sendClientStatementViaEmail = async (client, invoices, companySettings, pe
     const subject = emailSettings?.statementSubject || 'Account Statement from {companyName}';
     const body = emailSettings?.statementTemplate || `Dear {clientName},
 
-Please find attached your account statement for the period: {period}.
+Your account statement for the period: {period} is ready.
 
 Statement Summary:
 - Total Invoices: {totalInvoices}
@@ -369,26 +223,8 @@ Best regards,
     const finalSubject = replaceTemplateVariables(subject, templateData);
     const finalBody = replaceTemplateVariables(body, templateData);
 
-    const downloadPDF = async () => {
-      try {
-        console.log('Starting statement PDF generation');
-        const { generateStatementPDF } = await import('./simplePdfService.js');
-        const doc = generateStatementPDF(client, invoices, companySettings, period);
-        const fileName = `statement_${client.name.replace(/[^a-zA-Z0-9]/g, '_')}_${period}_${new Date().toISOString().split('T')[0]}.pdf`;
-        console.log('PDF generation completed successfully');
-        doc.save(fileName);
-      } catch (error) {
-        console.error('Error generating statement PDF:', error);
-        alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-      }
-    };
-
-    const openEmailClient = () => {
-      const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
-      window.location.href = mailtoLink;
-    };
-
-    showEmailInstructions('statement', `${client.name}_${period}`, downloadPDF, openEmailClient);
+    const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(finalSubject)}&body=${encodeURIComponent(finalBody)}`;
+    window.location.href = mailtoLink;
 
   } catch (error) {
     console.error('Error creating statement email:', error);

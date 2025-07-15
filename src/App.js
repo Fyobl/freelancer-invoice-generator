@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { createDefaultTemplates } from './pdfTemplateService.js';
 import Home from './Home.js';
 import Login from './Login.js';
 import Register from './Register.js';
@@ -16,7 +15,6 @@ import CompanySettings from './CompanySettings.js';
 import AccountSettings from './AccountSettings.js';
 import EmailSettings from './EmailSettings.js';
 import Admin from './Admin.js';
-import PDFPreview from './PDFPreview.js';
 import Subscription from './Subscription.js';
 import RecycleBin from './RecycleBin.js';
 import './App.css';
@@ -42,8 +40,7 @@ function App() {
       setLoading(false);
     });
 
-    // Initialize default templates
-    createDefaultTemplates().catch(console.error);
+
 
     return () => unsubscribe();
   }, []);
@@ -90,7 +87,6 @@ function App() {
 
               <Route path="/subscription" element={<Subscription user={user} />} />
               <Route path="/admin" element={<Admin user={user} />} />
-              <Route path="/pdf-preview" element={<PDFPreview user={user} />} />
               <Route path="/recycle-bin" element={<RecycleBin user={user} />} />
               <Route path="/settings" element={<Navigate to="/company-settings" />} />
             </>
