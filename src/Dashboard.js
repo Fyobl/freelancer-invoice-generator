@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import Navigation from './Navigation.js';
-import { sendInvoiceViaEmail } from './emailService.js';
+
 import { incrementInvoiceCount, checkSubscriptionStatus } from './subscriptionService.js';
 
 function Dashboard() {
@@ -484,46 +484,10 @@ function Dashboard() {
     setSelectedProducts([]);
   };
 
-  const downloadPDF = async (invoice) => {
-    try {
-      console.log('Starting PDF download for invoice:', invoice.invoiceNumber);
-      console.log('Starting invoice PDF generation');
-
-      // Use simple PDF generation
-      const { generateInvoicePDF } = await import('./simplePdfService.js');
-      const doc = generateInvoicePDF(invoice, companySettings);
-
-      // Download the PDF
-      const fileName = `invoice_${invoice.invoiceNumber}_${invoice.clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-      console.log('PDF generation completed successfully');
-      console.log('Attempting to save PDF with filename:', fileName);
-      doc.save(fileName);
-      console.log('PDF downloaded successfully');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      console.error('Error details:', error.message, error.stack);
-      alert('Error generating PDF: ' + (error.message || 'Unknown error occurred'));
-    }
-  };
+  
 
 
-  const sendInvoiceEmail = async (invoice) => {
-    try {
-      // Get client email from the clients array
-      const client = clients.find(c => c.id === invoice.clientId);
-      const recipientEmail = client?.email || prompt('Enter client email address:');
-
-      if (!recipientEmail) {
-        alert('Email address is required to send invoice');
-        return;
-      }
-
-      await sendInvoiceViaEmail(invoice, companySettings, recipientEmail);
-    } catch (error) {
-      console.error('Error sending invoice email:', error);
-      alert('Error sending email: ' + (error.message || 'Unknown error occurred'));
-    }
-  };
+  
 
   // Filter invoices based on search and status
   const filteredInvoices = invoices.filter(invoice => {
@@ -864,37 +828,6 @@ function Dashboard() {
                       <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>{inv.dueDate}</td>
                       <td style={{ padding: '15px', textAlign: 'center' }}>
                         <button
-                          onClick={() => downloadPDF(inv)}
-                          style={{
-                            padding: '8px 15px',
-                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            marginRight: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          📄 PDF
-                        </button>
-                        <button
-                          onClick={() => sendInvoiceEmail(inv)}
-                          style={{
-                            padding: '8px 15px',
-                            background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px', marginRight: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          📧 Email
-                        </button>
-                        <button
                           onClick={() => handleDelete(inv)}
                           style={{
                             padding: '8px 15px',
@@ -907,7 +840,7 @@ function Dashboard() {
                             cursor: 'pointer'
                           }}
                         >
-                          🗑️
+                          🗑️ Delete
                         </button>
                       </td>
                     </tr>
